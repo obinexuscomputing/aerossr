@@ -8,78 +8,63 @@ import { readFileSync } from 'fs';
 
 const pkg = JSON.parse(readFileSync('./package.json'));
 
-const external = [
-  ...Object.keys(pkg.dependencies || {}),
-  ...Object.keys(pkg.peerDependencies || {}),
-  'path',
-  'fs',
-  'http',
-  'crypto',
-  'zlib',
-  'util'
+const builtins = [
+  'path', 'fs', 'http', 'crypto', 'zlib', 'util', 'url', 'fs/promises'
 ];
 
-const plugins = [
-  resolve({
-    preferBuiltins: true,
-  }),
-  commonjs(),
-  json(),
-  typescript({
-    tsconfig: './tsconfig.build.json',
-    declaration: false,
-  }),
+const external = [
+  ...builtins,
+  ...Object.keys(pkg.dependencies || {}),
+  ...Object.keys(pkg.peerDependencies || {})
 ];
+
+const createTypescriptPlugin = (outDir) => typescript({
+  tsconfig: './tsconfig.build.json',
+  declaration: true,
+  declarationMap: true,
+  outDir,
+  rootDir: 'src'
+});
 
 export default [
   {
     input: 'src/index.ts',
-    output: [
-      {
-        file: pkg.module || 'dist/esm/index.js',
-        format: 'esm',
-        sourcemap: true,
-      },
-    ],
+    output: {
+      dir: 'dist/esm',
+      format: 'esm',
+      preserveModules: true,
+      sourcemap: true,
+      exports: 'named'
+    },
     external,
-    plugins,
+    plugins: [
+      resolve({ preferBuiltins: true, browser: false }),
+      commonjs(),
+      json(),
+      createTypescriptPlugin('dist/esm'),
+    ],
   },
   {
     input: 'src/index.ts',
-    output: [
-      {
-        file: pkg.main || 'dist/cjs/index.js',
-        format: 'cjs',
-        sourcemap: true,
-      },
-    ],
+    output: {
+      dir: 'dist/cjs',
+      format: 'cjs',
+      preserveModules: true,
+      sourcemap: true,
+      exports: 'named'
+    },
     external,
-    plugins,
-  },
-  {
-    input: 'src/index.ts',
-    output: [
-      {
-        file: 'dist/umd/index.js',
-        format: 'umd',
-        name: 'AeroSSR',
-        sourcemap: true,
-        globals: {
-          path: 'path',
-          fs: 'fs',
-          http: 'http',
-          crypto: 'crypto',
-          zlib: 'zlib',
-          util: 'util',
-        },
-      },
+    plugins: [
+      resolve({ preferBuiltins: true, browser: false }),
+      commonjs(),
+      json(),
+      createTypescriptPlugin('dist/cjs'),
     ],
-    external,
-    plugins: [...plugins, terser()],
   },
   {
     input: 'src/index.ts',
     output: [{ file: 'dist/types/index.d.ts', format: 'es' }],
+    external,
     plugins: [dts()],
-  },
+  }
 ];
