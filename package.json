@@ -42,12 +42,10 @@
 
         "clean": "rimraf dist",
 
-        "test": "cross-env NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest",
-
-        "test:watch": "cross-env NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest --watch",
-
-        "test:coverage": "cross-env NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest --coverage",
-
+        "test": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest --no-warnings",
+        "test:watch": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest --watch --no-warnings",
+        "test:coverage": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest --coverage --no-warnings"
+    ,
         "lint": "eslint . --ext .ts",
 
         "lint:fix": "eslint . --ext .ts --fix",
