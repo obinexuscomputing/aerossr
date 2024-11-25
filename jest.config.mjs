@@ -1,23 +1,22 @@
-export default {
+const config = {
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^@/(.*)$': '<rootDir>/src/$1'
   },
   transform: {
-    '^.+\\.tsx?$': [
+    '^.+\\.ts?$': [
       'ts-jest',
       {
         useESM: true,
+        tsconfig: 'tsconfig.test.json'
       },
     ],
   },
   roots: ['<rootDir>/src', '<rootDir>/tests'],
   testMatch: ['**/*.test.ts'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1'
-  },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   collectCoverageFrom: [
     'src/**/*.ts',
@@ -33,3 +32,5 @@ export default {
     }
   }
 };
+
+export default config;
