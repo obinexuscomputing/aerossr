@@ -1,15 +1,15 @@
-import path from 'path';
+import { generateBundle, resolveDependencies, minifyBundle } from '../../src/utils/bundler';
 import fs from 'fs/promises';
-import { generateBundle, resolveDependencies, minifyBundle } from '../bundler';
 
 jest.mock('fs/promises');
+const mockFs = fs as jest.Mocked<typeof fs>;
 
-describe('Bundler Utilities', () => {
-  const mockFs = fs as jest.Mocked<typeof fs>;
-  const mockProjectPath = path.join(__dirname, '../mocks/mockProject');
-  const mockIndexPath = path.join(mockProjectPath, 'index.js');
-  const mockDependencyPath = path.join(mockProjectPath, 'dependency.js');
-
+describe('Bundler', () => {
+  test('should generate bundle', async () => {
+    mockFs.readFile.mockResolvedValue('const test = true;');
+    const bundle = await generateBundle('./test', 'index.js');
+    expect(bundle).toBeDefined();
+  });
   beforeEach(() => {
     mockFs.readFile.mockImplementation(async (path: string) => {
       if (path === mockIndexPath) {

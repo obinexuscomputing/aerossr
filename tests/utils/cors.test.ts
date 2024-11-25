@@ -1,6 +1,16 @@
-import { ServerResponse } from 'http';
-import { setCorsHeaders } from '../cors';
+import { setCorsHeaders } from '../../src/utils/cors';
+import type { ServerResponse } from 'http';
 
+describe('CORS', () => {
+  test('should set CORS headers', () => {
+    const res = {
+      setHeader: jest.fn(),
+    } as unknown as ServerResponse;
+
+    setCorsHeaders(res);
+    expect(res.setHeader).toHaveBeenCalled();
+  });
+});
 describe('CORS Utilities', () => {
   let mockResponse: jest.Mocked<ServerResponse>;
 

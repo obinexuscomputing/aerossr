@@ -9,16 +9,21 @@ describe('Logger', () => {
   const consoleErrorSpy = jest.spyOn(console, 'error');
   const logFilePath = '/test/log/file.log';
 
+  const logFilePath = './test.log';
+
   beforeEach(() => {
-    mockFs.existsSync.mockReturnValue(true);
-    mockFs.accessSync.mockImplementation();
-    mockFs.appendFile.mockImplementation((_, __, callback) => callback(null));
-    consoleSpy.mockImplementation();
-    consoleErrorSpy.mockImplementation();
+    jest.spyOn(fs, 'appendFileSync');
+    jest.spyOn(console, 'log');
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    jest.restoreAllMocks();
+  });
+
+  test('should log messages', () => {
+    const logger = new Logger({ logFilePath });
+    logger.log('test message');
+    expect(console.log).toHaveBeenCalled();
   });
 
   test('should initialize with valid log file path', () => {

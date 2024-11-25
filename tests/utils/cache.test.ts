@@ -6,9 +6,9 @@ describe('Cache Utilities', () => {
   });
 
   test('should set and get values', () => {
-    const cache = createCache<number>();
-    cache.set('test', 123);
-    expect(cache.get('test')).toBe(123);
+    const cache = createCache<string>();
+    cache.set('key', 'value');
+    expect(cache.get('key')).toBe('value');
   });
 
   test('should clear all values', () => {

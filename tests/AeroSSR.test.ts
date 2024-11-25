@@ -1,4 +1,3 @@
-// src/__tests__/AeroSSR.test.ts
 import { createServer } from 'http';
 import { AddressInfo } from 'net';
 import fetch from 'node-fetch';
@@ -16,15 +15,30 @@ describe('AeroSSR Core', () => {
   const mockFs = fs as jest.Mocked<typeof fs>;
 
   beforeEach(() => {
-    testPort = Math.floor(Math.random() * 10000) + 50000; // Random port between 50000-60000
-    aero = new AeroSSR({ port: testPort });
-    
+    aero = new AeroSSR({ port: 3000 });
+
     // Mock file system
     mockFs.readFile.mockResolvedValue('<html><head></head><body></body></html>');
     mockFs.writeFile.mockResolvedValue();
     mockFs.mkdir.mockResolvedValue();
   });
+  test('should start server', async () => {
+    const server = await aero.start();
+    expect(server).toBeDefined();
+    await aero.stop();
+  });
 
+  test('should handle routes', async () => {
+    aero.route('/test', (req: IncomingMessage, res: ServerResponse) => {
+      res.writeHead(200);
+      res.end('test');
+    });
+
+    await aero.start();
+    const server = await aero.start();
+    expect(server).toBeDefined();
+    await aero.stop();
+  });
   afterEach(async () => {
     await aero.stop();
     jest.clearAllMocks();
