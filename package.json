@@ -1,18 +1,31 @@
 {
 
     "name": "@obinexuscomputing/aerossr",
+
     "version": "1.0.0",
+
     "main": "./dist/cjs/index.js",
+
     "module": "./dist/esm/index.js",
+
     "types": "./dist/types/index.d.ts",
+
     "type": "module",
+
     "exports": {
+
         ".": {
+
             "import": "./dist/esm/index.js",
+
             "require": "./dist/cjs/index.js",
+
             "types": "./dist/types/index.d.ts"
+
         }
+
     },
+
     "keywords": [],
 
     "author": "",
@@ -29,11 +42,11 @@
 
         "clean": "rimraf dist",
 
-        "test": "jest",
+        "test": "NODE_OPTIONS=--experimental-vm-modules jest",
 
-        "test:watch": "jest --watch",
+        "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
 
-        "test:coverage": "jest --coverage",
+        "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
 
         "lint": "eslint . --ext .ts",
 
@@ -71,7 +84,7 @@
 
         "@rollup/plugin-typescript": "^11.1.6",
 
-        "@types/jest": "^27.0.0",
+        "@types/jest": "^27.5.2",
 
         "@types/node": "^16.18.119",
 
@@ -79,13 +92,15 @@
 
         "@typescript-eslint/parser": "^4.0.0",
 
+        "cross-env": "^7.0.3",
+
         "eslint": "^7.0.0",
 
         "eslint-config-prettier": "^8.0.0",
 
         "eslint-plugin-prettier": "^4.0.0",
 
-        "jest": "^27.0.0",
+        "jest": "^27.5.1",
 
         "prettier": "^2.0.0",
 
@@ -97,7 +112,7 @@
 
         "rollup-plugin-polyfill-node": "^0.13.0",
 
-        "ts-jest": "^27.0.0",
+        "ts-jest": "^27.1.5",
 
         "ts-node": "^10.0.0",
 
