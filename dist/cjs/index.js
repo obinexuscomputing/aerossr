@@ -1,8 +1,10 @@
 'use strict';
 
+Object.defineProperty(exports, '__esModule', { value: true });
+
 var AeroSSR = require('./AeroSSR.js');
 
 
 
-module.exports = AeroSSR.AeroSSR;
+exports.default = AeroSSR.AeroSSR;
 //# sourceMappingURL=index.js.map
