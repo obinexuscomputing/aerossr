@@ -1,9 +1,7 @@
-export {};
-
 import { TextEncoder, TextDecoder } from 'util';
-
-(global as any).TextEncoder = TextEncoder;
-(global as any).TextDecoder = TextDecoder;
+import jest from 'jest';
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
 
 jest.setTimeout(10000);
 

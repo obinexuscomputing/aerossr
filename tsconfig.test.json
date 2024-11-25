@@ -10,7 +10,7 @@
   "include": [
     "src/**/*",
     "tests/**/*",
-    "jest.setup.ts"
+    "jest.setup.js"
   ],
   "exclude": [
     "node_modules",
