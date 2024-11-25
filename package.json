@@ -41,10 +41,9 @@
         "build:types": "tsc -p tsconfig.build.json",
 
         "clean": "rimraf dist",
-
-        "test": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest --no-warnings",
-        "test:watch": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest --watch --no-warnings",
-        "test:coverage": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest --coverage --no-warnings"
+        "test": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest",
+        "test:watch": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest --watch",
+        "test:coverage": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest --coverage"
     ,
         "lint": "eslint . --ext .ts",
 
