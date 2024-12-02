@@ -8,12 +8,27 @@
     "exports": {
         ".": {
             "import": "./dist/esm/index.js",
-            "require": "./dist/cjs/index.js",
+            "require": "./dist/cjs/index.cjs",
             "types": "./dist/types/index.d.ts"
         }
     },
-    "keywords": [],
-    "author": "",
+    "keywords": [
+        "ssr",
+        "server-side-rendering",
+        "node",
+        "typescript",
+        "static-server",
+        "middleware",
+        "bundler",
+        "caching",
+        "performance",
+        "compression",
+        "etag",
+        "http-server",
+        "file-server",
+        "web-server"
+    ],
+    "author": "OBINexusComputing <Nnamdi Michael Okpala>",
     "license": "ISC",
     "scripts": {
         "dev": "rollup -c -w",
