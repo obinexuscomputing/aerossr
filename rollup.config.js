@@ -79,6 +79,7 @@ export default [
       dir: 'dist/cjs',
       format: 'cjs',
       preserveModules: true,
+      entryFileNames: '[name].cjs',
       sourcemap: true,
       exports: 'named'
     },
