@@ -8,7 +8,9 @@ import nodePolyfills from 'rollup-plugin-polyfill-node';
 import analyze from 'rollup-plugin-analyzer';
 import filesize from 'rollup-plugin-filesize';
 import { readFileSync } from 'fs';
-
+import { defineConfig
+ } from 'rollup';
+ 
 const pkg = JSON.parse(readFileSync('./package.json'));
 const isProduction = process.env.NODE_ENV === 'production';
 
