@@ -23,34 +23,57 @@ High-performance server-side rendering framework with built-in bundling and stat
 npm install @obinexuscomputing/aerossr
 ```
 
-## Quick Start
+## Usage
+
+### TypeScript
 
 ```typescript
 import { AeroSSR, StaticFileMiddleware } from '@obinexuscomputing/aerossr';
 
-// Create server instance
 const app = new AeroSSR({
   port: 3000,
   compression: true,
   logFilePath: 'logs/server.log'
 });
 
-// Add static file middleware
 app.use(new StaticFileMiddleware({
   root: 'public',
   maxAge: 86400
 }).middleware());
 
-// Add routes
 app.route('/api/hello', async (req, res) => {
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ message: 'Hello World!' }));
 });
 
-// Start server
-app.start().then(() => {
-  console.log('Server running on port 3000');
+app.start().then(() => console.log('Server running on port 3000'));
+```
+
+### JavaScript
+
+```javascript
+const { AeroSSR, StaticFileMiddleware } = require('@obinexuscomputing/aerossr');
+
+const app = new AeroSSR({
+  port: 3000,
+  compression: true
 });
+
+app.use(new StaticFileMiddleware({
+  root: 'public'
+}).middleware());
+
+app.use(async (req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  await next();
+});
+
+app.route('/api/data', async (req, res) => {
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ success: true }));
+});
+
+app.start();
 ```
 
 ## Core Features
@@ -58,7 +81,7 @@ app.start().then(() => {
 ### Server Configuration
 
 ```typescript
-const server = new AeroSSR({
+const app = new AeroSSR({
   port: 3000,
   cacheMaxAge: 3600,
   corsOrigins: '*',
@@ -67,7 +90,7 @@ const server = new AeroSSR({
 });
 ```
 
-### Static File Serving
+### Static Files
 
 ```typescript
 app.use(new StaticFileMiddleware({
@@ -81,22 +104,13 @@ app.use(new StaticFileMiddleware({
 }).middleware());
 ```
 
-### Middleware Support
+### Middleware
 
 ```typescript
 app.use(async (req, res, next) => {
   const start = Date.now();
   await next();
   console.log(`${req.method} ${req.url} - ${Date.now() - start}ms`);
-});
-```
-
-### Route Handling
-
-```typescript
-app.route('/api/users', async (req, res) => {
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ users: [] }));
 });
 ```
 
@@ -110,29 +124,23 @@ cache.set('key', 'value');
 const value = cache.get('key');
 ```
 
-## API Reference
-
-See [API Documentation](./docs/API.md) for detailed API reference.
-
-## Performance Optimization
-
-- Enable compression for text-based responses
-- Use appropriate cache settings for static files
-- Implement response caching for frequently accessed data
-- Use ETags for client-side caching
-- Monitor memory usage with cache size limits
-
 ## Security Features
 
-- CORS protection
-- XSS prevention
+- CORS protection with configurable origins
+- XSS prevention through automatic escaping
 - Path traversal protection
-- Dot file access control
+- Configurable dot file access control
 - Secure defaults
 
-## TypeScript Support
+## Performance Features
 
-Full TypeScript support with type definitions included:
+- Compression for text-based responses
+- Configurable cache settings for static files
+- Response caching system
+- ETag support for client-side caching
+- Memory usage monitoring
+
+## TypeScript Support
 
 ```typescript
 import type {
@@ -143,20 +151,46 @@ import type {
 } from '@obinexuscomputing/aerossr';
 ```
 
-## Contributing
+## Roadmap
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+### Current Development
+- Hot Module Replacement (HMR)
+- React server components
+- WebSocket support
+- HTTP/2 implementation
+- Database integrations
+- GraphQL middleware
+
+### Future Features
+- Authentication middleware
+- Rate limiting
+- Request validation
+- API documentation generator
+- Project scaffolding CLI
+- Plugin system
+- Analytics
+- Service workers
+
+### Performance
+- Bundling optimization
+- Memory management
+- Response streaming
+- Distributed caching
+- Image optimization
+
+### Developer Experience
+- Enhanced error reporting
+- Development tools
+- Framework integrations
+- Zero-config deployment
+- Testing utilities
+
+## Documentation & Support
+
+- [API Documentation](./docs/API.md)
+- [GitHub Issues](https://github.com/obinexus/aerossr/issues)
+- [GitHub Discussions](https://github.com/obinexus/aerossr/discussions)
 
 ## License
 
 MIT © ObiNexus Computing
-
-## Support
-
-- Documentation: [Full Documentation](./docs)
-- Issues: [GitHub Issues](https://github.com/obinexus/aerossr/issues)
-- Discussions: [GitHub Discussions](https://github.com/obinexus/aerossr/discussions)

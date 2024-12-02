@@ -1,5 +1,6 @@
-'use strict';
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.handleError = exports.generateErrorPage = void 0;
 function generateErrorPage(statusCode, message) {
     return `
     <!DOCTYPE html>
@@ -20,6 +21,7 @@ function generateErrorPage(statusCode, message) {
     </html>
   `;
 }
+exports.generateErrorPage = generateErrorPage;
 async function handleError(error, _req, res) {
     console.error('Server error:', error);
     const statusCode = error.statusCode || 500;
@@ -30,7 +32,5 @@ async function handleError(error, _req, res) {
     });
     res.end(errorPage);
 }
-
-exports.generateErrorPage = generateErrorPage;
 exports.handleError = handleError;
 //# sourceMappingURL=errorHandler.js.map

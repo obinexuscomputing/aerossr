@@ -1,3 +1,6 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.injectMetaTags = void 0;
 function injectMetaTags(html, meta = {}, defaultMeta = {}) {
     const finalMeta = { ...defaultMeta, ...meta };
     const metaTags = `
@@ -8,6 +11,5 @@ function injectMetaTags(html, meta = {}, defaultMeta = {}) {
     `;
     return html.replace('</head>', `${metaTags}</head>`);
 }
-
-export { injectMetaTags };
+exports.injectMetaTags = injectMetaTags;
 //# sourceMappingURL=html.js.map
