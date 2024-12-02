@@ -5,12 +5,8 @@ import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
 import dts from 'rollup-plugin-dts';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
-import analyze from 'rollup-plugin-analyzer';
-import filesize from 'rollup-plugin-filesize';
 import { readFileSync } from 'fs';
-import { defineConfig
- } from 'rollup';
- 
+
 const pkg = JSON.parse(readFileSync('./package.json'));
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -42,11 +38,6 @@ const commonPlugins = [
   commonjs(),
   json(),
   nodePolyfills(),
-  analyze({ 
-    summaryOnly: true,
-    limit: 10
-  }),
-  filesize(),
   isProduction && terser({
     compress: {
       drop_console: true,
@@ -59,7 +50,7 @@ const commonPlugins = [
   })
 ].filter(Boolean);
 
-export default defineConfig([
+export default [
   // ESM build
   {
     input: 'src/index.ts',
@@ -68,11 +59,7 @@ export default defineConfig([
       format: 'esm',
       preserveModules: true,
       sourcemap: true,
-      exports: 'named',
-      manualChunks: {
-        'vendor': external,
-        'utils': ['src/utils/*']
-      }
+      exports: 'named'
     },
     external,
     plugins: [
@@ -93,11 +80,7 @@ export default defineConfig([
       format: 'cjs',
       preserveModules: true,
       sourcemap: true,
-      exports: 'named',
-      manualChunks: {
-        'vendor': external,
-        'utils': ['src/utils/*']
-      }
+      exports: 'named'
     },
     external,
     plugins: [
@@ -124,7 +107,4 @@ export default defineConfig([
       exclude: 'node_modules/**'
     }
   }
-], {
-  cache: true,
-  perf: true
-});
+];
