@@ -19,7 +19,6 @@ const external = [
   ...Object.keys(pkg.dependencies || {}),
   ...Object.keys(pkg.peerDependencies || {})
 ];
-
 const createTypescriptPlugin = (outDir) => typescript({
   tsconfig: './tsconfig.build.json',
   declaration: true,
@@ -27,7 +26,8 @@ const createTypescriptPlugin = (outDir) => typescript({
   outDir,
   rootDir: 'src',
   incremental: true,
-  tsBuildInfoFile: `./buildcache/${outDir.replace('dist/', '')}.tsbuildinfo`
+  tsBuildInfoFile: `./buildcache/${outDir.replace('dist/', '')}.tsbuildinfo`,
+  outputToFilesystem: true // Explicitly set warning flag
 });
 
 const commonPlugins = [
