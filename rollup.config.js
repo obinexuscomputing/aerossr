@@ -5,6 +5,8 @@ import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
 import dts from 'rollup-plugin-dts';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
+import alias from '@rollup/plugin-alias';
+import { resolve as resolvePath } from 'path';
 import { readFileSync } from 'fs';
 
 const pkg = JSON.parse(readFileSync('./package.json'));
@@ -19,18 +21,24 @@ const external = [
   ...Object.keys(pkg.dependencies || {}),
   ...Object.keys(pkg.peerDependencies || {})
 ];
+
 const createTypescriptPlugin = (outDir) => typescript({
   tsconfig: './tsconfig.build.json',
-  declaration: true,
-  declarationMap: true,
   outDir,
   rootDir: 'src',
   incremental: true,
   tsBuildInfoFile: `./buildcache/${outDir.replace('dist/', '')}.tsbuildinfo`,
-  outputToFilesystem: true // Explicitly set warning flag
+  outputToFilesystem: true
+});
+
+const createAliasPlugin = () => alias({
+  entries: [
+    { find: '@', replacement: resolve(new URL('.', import.meta.url).pathname, 'src') },
+  ],
 });
 
 const commonPlugins = [
+  createAliasPlugin(),
   resolve({ 
     preferBuiltins: true,
     browser: false
@@ -51,7 +59,6 @@ const commonPlugins = [
 ].filter(Boolean);
 
 export default [
-  // ESM build
   {
     input: 'src/index.ts',
     output: {
@@ -71,8 +78,6 @@ export default [
       exclude: 'node_modules/**'
     }
   },
-
-  // CJS build
   {
     input: 'src/index.ts',
     output: {
@@ -93,19 +98,13 @@ export default [
       exclude: 'node_modules/**'
     }
   },
-
-  // Types build
   {
     input: 'src/index.ts',
-    output: [{ 
-      file: 'dist/types/index.d.ts', 
-      format: 'es' 
-    }],
+    output: {
+      file: 'dist/types/index.d.ts',
+      format: 'es'
+    },
     external,
-    plugins: [dts()],
-    watch: {
-      clearScreen: false,
-      exclude: 'node_modules/**'
-    }
+    plugins: [dts()]
   }
 ];
