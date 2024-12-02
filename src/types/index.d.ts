@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
 
-export interface AeroSSRConfig {
+ interface AeroSSRConfig {
   port?: number;
   cacheMaxAge?: number;
   corsOrigins?: string;
@@ -17,13 +17,13 @@ export interface AeroSSRConfig {
   };
 }
 
-export interface CacheStore<T> {
+ interface CacheStore<T> {
   get(key: string): T | undefined;
   set(key: string, value: T): void;
   clear(): void;
 }
 
-export interface StaticFileOptions {
+ interface StaticFileOptions {
   root: string;
   maxAge?: number;
   index?: string[];
@@ -33,29 +33,29 @@ export interface StaticFileOptions {
   cacheSize?: number;
 }
 
-export type RouteHandler = (
+ type RouteHandler = (
   req: IncomingMessage,
   res: ServerResponse
 ) => Promise<void> | void;
 
 
-export type Middleware = (
+ type Middleware = (
   req: IncomingMessage,
   res: ServerResponse,
   next: () => Promise<void>
 ) => Promise<void>;
 
-export interface LoggerOptions {
+ interface LoggerOptions {
   logFilePath?: string | null;
 }
 
-export interface CacheStore<T> {
+ interface CacheStore<T> {
   get(key: string): T | undefined;
   set(key: string, value: T): void;
   clear(): void;
 }
 
-export interface StaticFileOptions {
+ interface StaticFileOptions {
   root: string;
   maxAge?: number;
   index?: string[];
@@ -65,6 +65,6 @@ export interface StaticFileOptions {
   cacheSize?: number;
 }
 
-export interface ErrorResponse extends Error {
+ interface ErrorResponse extends Error {
   statusCode?: number;
 }

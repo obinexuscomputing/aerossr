@@ -23,7 +23,9 @@ const external = [
 ];
 
 const createTypescriptPlugin = (outDir) => typescript({
-  tsconfig: './tsconfig.build.json',
+  tsconfig: './tsconfig.build.json', // Ensure you have a valid tsconfig.build.json
+  declaration: true,
+  declarationMap: true,
   outDir,
   rootDir: 'src',
   incremental: true,
@@ -33,7 +35,7 @@ const createTypescriptPlugin = (outDir) => typescript({
 
 const createAliasPlugin = () => alias({
   entries: [
-    { find: '@', replacement: resolve(new URL('.', import.meta.url).pathname, 'src') },
+    { find: '@', replacement: resolvePath(__dirname, 'src') },
   ],
 });
 
