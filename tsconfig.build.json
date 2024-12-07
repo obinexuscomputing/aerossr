@@ -21,7 +21,6 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
     "emitDeclarationOnly": true,
     "declarationDir": "./dist/types",
     "types": ["jest", "node"],
