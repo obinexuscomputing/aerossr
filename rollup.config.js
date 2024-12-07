@@ -28,6 +28,7 @@ const createTypescriptPlugin = (outDir) => typescript({
   declarationMap: true,
   outDir,
   rootDir: 'src',
+  declarationDir: path.join(outDir, 'types'),
   incremental: true,
   tsBuildInfoFile: `./buildcache/${outDir.replace('dist/', '')}.tsbuildinfo`,
   outputToFilesystem: true
