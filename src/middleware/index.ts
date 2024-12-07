@@ -1,2 +1,2 @@
 
-export * from "./staticFileMiddleware";
+export * from "./StaticFileMiddleware";
