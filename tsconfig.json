@@ -24,7 +24,7 @@
     "noFallthroughCasesInSwitch": true,
     "moduleResolution": "node",
     "emitDeclarationOnly": true,
-    "declarationDir": "./dist/types",
+    "declarationDir": "./src/@types",
     "baseUrl": "./",
     "paths": {
       "@/*": [
