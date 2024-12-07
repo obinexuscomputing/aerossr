@@ -4,7 +4,7 @@
       "types": ["jest", "node"],
       "esModuleInterop": true,
       "module": "ESNext",
-      "moduleResolution": "node",
+      "moduleResolution": "NodeNext",
       "baseUrl": ".",
       "paths": {
         "@/*": ["src/*"]
