@@ -4,8 +4,7 @@ var fs = require('fs/promises');
 var path = require('path');
 var util = require('util');
 var zlib = require('zlib');
-require('fs');
-var etag = require('../utils/etag.cjs');
+var _utils = require('@utils');
 
 function _interopNamespaceDefault(e) {
     var n = Object.create(null);
@@ -28,6 +27,12 @@ var path__namespace = /*#__PURE__*/_interopNamespaceDefault(path);
 
 const gzipAsync = util.promisify(zlib.gzip);
 class StaticFileMiddleware {
+    root;
+    maxAge;
+    index;
+    dotFiles;
+    compression;
+    etag;
     constructor(options) {
         this.root = options.root;
         this.maxAge = options.maxAge || 86400;
@@ -39,8 +44,8 @@ class StaticFileMiddleware {
     async serveFile(filepath, stats, req, res) {
         const ext = path__namespace.extname(filepath).toLowerCase();
         const mimeType = this.getMimeType(ext);
-        const etag$1 = this.etag ? etag.generateETag(`${filepath}:${stats.mtime.toISOString()}`) : null;
-        if (etag$1 && req.headers['if-none-match'] === etag$1) {
+        const etag = this.etag ? _utils.generateETag(`${filepath}:${stats.mtime.toISOString()}`) : null;
+        if (etag && req.headers['if-none-match'] === etag) {
             res.writeHead(304);
             res.end();
             return;
@@ -50,8 +55,8 @@ class StaticFileMiddleware {
             'Cache-Control': `public, max-age=${this.maxAge}`,
             'Last-Modified': stats.mtime.toUTCString()
         };
-        if (etag$1) {
-            headers['ETag'] = etag$1;
+        if (etag) {
+            headers['ETag'] = etag;
         }
         const content = await fs.readFile(filepath);
         if (this.compression && this.isCompressible(mimeType) && content.length > 1024) {

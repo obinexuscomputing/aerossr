@@ -24,6 +24,7 @@ var fs__namespace = /*#__PURE__*/_interopNamespaceDefault(fs);
 var path__namespace = /*#__PURE__*/_interopNamespaceDefault(path);
 
 class Logger {
+    logFilePath;
     constructor(options = {}) {
         this.logFilePath = options.logFilePath || null;
         if (this.logFilePath) {

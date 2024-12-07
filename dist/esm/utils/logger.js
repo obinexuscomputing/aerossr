@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 class Logger {
+    logFilePath;
     constructor(options = {}) {
         this.logFilePath = options.logFilePath || null;
         if (this.logFilePath) {

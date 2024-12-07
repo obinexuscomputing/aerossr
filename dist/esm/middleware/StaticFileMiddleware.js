@@ -2,11 +2,16 @@ import { readFile, stat } from 'fs/promises';
 import * as path from 'path';
 import { promisify } from 'util';
 import { gzip } from 'zlib';
-import 'fs';
-import { generateETag } from '../utils/etag.js';
+import { generateETag } from '@utils';
 
 const gzipAsync = promisify(gzip);
 class StaticFileMiddleware {
+    root;
+    maxAge;
+    index;
+    dotFiles;
+    compression;
+    etag;
     constructor(options) {
         this.root = options.root;
         this.maxAge = options.maxAge || 86400;

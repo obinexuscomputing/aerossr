@@ -38,6 +38,7 @@ const createTypescriptPlugin = (outDir) => typescript({
 const createAliasPlugin = () => alias({
   entries: [
     { find: '@', replacement: resolvePath(process.cwd(), 'src') },
+    { find: '@utils', replacement: resolvePath(process.cwd(), 'src/utils') }, // Add this
   ],
 });
 
@@ -109,6 +110,15 @@ export default [
       format: 'es'
     },
     external,
-    plugins: [dts()]
+    plugins: [
+      dts({
+        compilerOptions: {
+          paths: {
+            "@utils/*": ["src/utils/*"]
+          }
+        }
+      })
+    ]
   }
+  
 ];
