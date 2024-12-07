@@ -40,7 +40,6 @@ const createAliasPlugin = () => alias({
     { find: '@', replacement: resolvePath(process.cwd(), 'src') },
   ],
 });
-
 const commonPlugins = [
   createAliasPlugin(),
   resolve({ 
