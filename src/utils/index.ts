@@ -5,3 +5,4 @@ export * from './errorHandler';
 export * from './etag';
 export * from './html';
 export * from './bundler';
+export * from './etag';
