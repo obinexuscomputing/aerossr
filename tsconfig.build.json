@@ -24,6 +24,8 @@
     "moduleResolution": "node",
     "emitDeclarationOnly": true,
     "declarationDir": "./dist/types",
+    "types": ["jest", "node"],
+    "allowJs": true,
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"],
