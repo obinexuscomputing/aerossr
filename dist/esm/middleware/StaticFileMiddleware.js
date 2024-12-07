@@ -2,7 +2,8 @@ import { readFile, stat } from 'fs/promises';
 import * as path from 'path';
 import { promisify } from 'util';
 import { gzip } from 'zlib';
-import { generateETag } from '@utils/index';
+import 'fs';
+import { generateETag } from '../utils/etag.js';
 
 const gzipAsync = promisify(gzip);
 class StaticFileMiddleware {

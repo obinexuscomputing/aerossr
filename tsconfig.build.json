@@ -1,5 +1,5 @@
 {
-"compilerOptions": {
+  "compilerOptions": {
     "target": "ES2020",
     "module": "ESNext",
     "lib": ["ES2020"],
@@ -19,25 +19,19 @@
     "alwaysStrict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
     "emitDeclarationOnly": true,
     "declarationDir": "./dist/types",
     "types": ["jest", "node"],
     "allowJs": true,
     "baseUrl": "./",
-
     "paths": {
       "@/*": ["src/*"],
-      "@middleware": ["src/middleware*"],
-      "@utils": ["src/utils"],
-      "@types": ["src/types"]
+      "@middleware": ["src/middleware/index.ts"],
+      "@utils": ["src/utils/index.ts"],
+      "@types": ["src/types/index.ts"]
     },
     "esModuleInterop": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*"],

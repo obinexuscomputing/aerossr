@@ -4,7 +4,8 @@ var fs = require('fs/promises');
 var path = require('path');
 var util = require('util');
 var zlib = require('zlib');
-var index = require('@utils/index');
+require('fs');
+var etag = require('../utils/etag.cjs');
 
 function _interopNamespaceDefault(e) {
     var n = Object.create(null);
@@ -38,8 +39,8 @@ class StaticFileMiddleware {
     async serveFile(filepath, stats, req, res) {
         const ext = path__namespace.extname(filepath).toLowerCase();
         const mimeType = this.getMimeType(ext);
-        const etag = this.etag ? index.generateETag(`${filepath}:${stats.mtime.toISOString()}`) : null;
-        if (etag && req.headers['if-none-match'] === etag) {
+        const etag$1 = this.etag ? etag.generateETag(`${filepath}:${stats.mtime.toISOString()}`) : null;
+        if (etag$1 && req.headers['if-none-match'] === etag$1) {
             res.writeHead(304);
             res.end();
             return;
@@ -49,8 +50,8 @@ class StaticFileMiddleware {
             'Cache-Control': `public, max-age=${this.maxAge}`,
             'Last-Modified': stats.mtime.toUTCString()
         };
-        if (etag) {
-            headers['ETag'] = etag;
+        if (etag$1) {
+            headers['ETag'] = etag$1;
         }
         const content = await fs.readFile(filepath);
         if (this.compression && this.isCompressible(mimeType) && content.length > 1024) {
