@@ -5,13 +5,13 @@
     "moduleResolution": "Node",
     "declaration": true,
     "declarationMap": true,
-    "outDir": "./dist",
+    "outDir": "./dist", // Unified output directory
     "rootDir": "./src",
-    "baseUrl": "./src", // Base URL set to the 'src' directory
+    "baseUrl": "./src",
     "paths": {
-      "@/*": ["*"], // Alias '@' to the 'src' directory
-      "@utils/*": ["utils/*"], // Alias '@utils' to 'src/utils'
-      "@types/*": ["@types/*"] // Alias '@types' to 'src/@types'
+      "@/*": ["*"],
+      "@utils/*": ["utils/*"],
+      "@types/*": ["@types/*"]
     },
     "esModuleInterop": true,
     "skipLibCheck": true,
