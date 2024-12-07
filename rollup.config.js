@@ -39,7 +39,9 @@ const createAliasPlugin = () => alias({
   entries: [
     { find: '@', replacement: resolvePath(process.cwd(), 'src') },
   ],
-});const commonPlugins = [
+});
+
+const commonPlugins = [
   createAliasPlugin(),
   resolve({
     preferBuiltins: true,
@@ -48,19 +50,7 @@ const createAliasPlugin = () => alias({
   commonjs(),
   json(),
   nodePolyfills(),
-  typescript({
-    tsconfig: './tsconfig.build.json',
-    declaration: true,
-    declarationMap: true,
-    outDir: path.join('dist', 'cjs'),
-    rootDir: 'src',
-    declarationDir: path.join('dist', 'cjs', 'types'),
-    incremental: true,
-    tsBuildInfoFile: `./buildcache/cjs.tsbuildinfo`,
-    outputToFilesystem: true
-  }),
   isProduction && terser({
-
     compress: {
       drop_console: true,
       pure_funcs: ['console.log'],
@@ -84,8 +74,8 @@ export default [
     },
     external,
     plugins: [
-      createTypescriptPlugin('dist/esm'),
-      ...commonPlugins
+      ...commonPlugins,
+      createTypescriptPlugin('dist/esm')
     ],
     watch: {
       clearScreen: false,
@@ -104,8 +94,8 @@ export default [
     },
     external,
     plugins: [
-      createTypescriptPlugin('dist/cjs'),
-      ...commonPlugins
+      ...commonPlugins,
+      createTypescriptPlugin('dist/cjs')
     ],
     watch: {
       clearScreen: false,
