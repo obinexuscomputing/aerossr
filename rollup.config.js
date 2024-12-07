@@ -8,6 +8,7 @@ import nodePolyfills from 'rollup-plugin-polyfill-node';
 import alias from '@rollup/plugin-alias';
 import { resolve as resolvePath } from 'path';
 import { readFileSync } from 'fs';
+import path from 'path';
 
 const pkg = JSON.parse(readFileSync('./package.json'));
 const isProduction = process.env.NODE_ENV === 'production';
