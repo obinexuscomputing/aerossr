@@ -24,7 +24,7 @@ const external = [
 ];
 
 const createTypescriptPlugin = (outDir) => typescript({
-  tsconfig: './tsconfig.build.json',
+  tsconfig: './tsconfig.json',
   declaration: true,
   declarationMap: true,
   outDir,
