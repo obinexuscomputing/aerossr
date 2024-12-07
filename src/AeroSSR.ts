@@ -16,11 +16,11 @@ import { AeroSSRConfig, RouteHandler, Middleware } from './types';
 const gzipAsync = promisify(gzip)
 
 export class AeroSSR {
-  private readonly config: Required<AeroSSRConfig>;
-  private readonly logger: Logger;
-  private server: Server | null;
-  private readonly routes: Map<string, RouteHandler>;
-  private readonly middlewares: Middleware[];
+  public readonly config: Required<AeroSSRConfig>;
+  public readonly logger: Logger;
+  public server: Server | null;
+  public readonly routes: Map<string, RouteHandler>;
+  public readonly middlewares: Middleware[];
 
   constructor(config: AeroSSRConfig = {}) {
     this.config = {
