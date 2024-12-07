@@ -1,4 +1,4 @@
-import '@jest/globals';
+import { jest } from '@jest/globals';
 import { TextDecoder } from 'util';
 
 global.TextDecoder = TextDecoder;
