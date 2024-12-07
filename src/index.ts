@@ -2,3 +2,4 @@
 export * from './types/index'
 export * from './middleware/index'
 export * from './utils/index'
+export * from './AeroSSR'
