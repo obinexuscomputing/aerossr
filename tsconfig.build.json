@@ -4,10 +4,13 @@
     "module": "ESNext",
     "lib": ["ES2020"],
     "declaration": true,
+    "isolatedDeclarations": false,
+    
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
+    "inlineSourceMap": false,
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
