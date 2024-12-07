@@ -1,10 +1,13 @@
-import { TextEncoder, TextDecoder } from 'util';
-import jest from 'jest';
-global.TextEncoder = TextEncoder;
+import { TextDecoder } from 'util';
+import '@jest/globals';
+
 global.TextDecoder = TextDecoder;
 
-jest.setTimeout(10000);
+// Move setTimeout to beforeAll
+beforeAll(() => {
+  jest.setTimeout(10000);
+});
 
 beforeEach(() => {
-    jest.clearAllMocks();
+  jest.clearAllMocks();
 });
