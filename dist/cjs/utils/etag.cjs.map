@@ -1,1 +1,1 @@
-{"version":3,"file":"etag.cjs","sources":["../../../../src/utils/etag.ts"],"sourcesContent":[null],"names":[],"mappings":";;;;AAEM,SAAU,YAAY,CAAC,OAAwB,EAAA;AACnD,IAAA,OAAO,MAAM,CAAC,UAAU,CAAC,KAAK,CAAC,CAAC,MAAM,CAAC,OAAO,CAAC,CAAC,MAAM,CAAC,KAAK,CAAC,CAAC;AAChE;;;;"}
+{"version":3,"file":"etag.cjs","sources":["../../../../src/utils/etag.ts"],"sourcesContent":[null],"names":["crypto"],"mappings":";;;;;;;;;;;;;;;;;;;;;;;AAEM,SAAU,YAAY,CAAC,OAAwB,EAAA;AACnD,IAAA,OAAOA,iBAAM,CAAC,UAAU,CAAC,KAAK,CAAC,CAAC,MAAM,CAAC,OAAO,CAAC,CAAC,MAAM,CAAC,KAAK,CAAC,CAAC;AAChE;;;;"}

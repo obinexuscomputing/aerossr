@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 function generateETag(content) {
     return crypto.createHash('md5').update(content).digest('hex');
