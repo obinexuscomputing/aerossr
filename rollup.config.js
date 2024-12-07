@@ -108,7 +108,6 @@ export default [
   {
     input: 'src/index.ts',
     output: {
-      dir: 'dist/types',
       format: 'es',
       preserveModules: true,
       file: 'dist/types/index.d.ts',
