@@ -5,7 +5,7 @@ import { gzip } from 'zlib';
 import { IncomingMessage, ServerResponse } from 'http';
 import { generateETag } from '@/utils';
 import { Stats } from 'fs';
-import { StaticFileOptions, Middleware } from '@/types';
+import { StaticFileOptions, Middleware } from '../types';
 
 const gzipAsync = promisify(gzip);
 

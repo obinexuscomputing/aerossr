@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { StaticFileOptions as StaticFileOptions$1, Middleware as Middleware$1, LoggerOptions as LoggerOptions$1, CacheStore as CacheStore$1 } from '@/types';
+import { StaticFileOptions as StaticFileOptions$1, Middleware as Middleware$1, CacheStore as CacheStore$1 } from '@/types';
 
 interface AeroSSRConfig {
     port?: number;
@@ -61,7 +61,7 @@ declare class StaticFileMiddleware {
 
 declare class Logger {
     private logFilePath;
-    constructor(options?: LoggerOptions$1);
+    constructor(options?: LoggerOptions);
     log(message: string): void;
     logRequest(req: IncomingMessage): void;
 }
