@@ -3,4 +3,4 @@ export * from './types/index'
 
 export * from './types'
 export * from './middleware/index'
-export * from './utils/'
+export * from './utils/index'
