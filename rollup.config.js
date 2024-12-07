@@ -35,7 +35,7 @@ const createTypescriptPlugin = (outDir) => typescript({
 
 const createAliasPlugin = () => alias({
   entries: [
-    { find: '@', replacement: resolvePath(__dirname, 'src') },
+    { find: '@', replacement: resolvePath(process.cwd(), 'src') },
   ],
 });
 
