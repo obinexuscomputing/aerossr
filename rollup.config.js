@@ -59,79 +59,72 @@ const createTypescriptPlugin = (outDir) =>
     tsconfig: './tsconfig.json',
     declaration: true,
     declarationMap: true,
-    declarationDir: `${outDir}/types`, // Use declarationDir matching Rollup output
+    declarationDir: `${outDir}/types`,
     rootDir: 'src',
     incremental: true,
     tsBuildInfoFile: `./buildcache/${outDir.replace('dist/', '')}.tsbuildinfo`,
   });
-  
-export default [
-  {
-    input: 'src/index.ts',
-    output: {
-      dir: 'dist/esm', // Matches TypeScript's `outDir`
-      format: 'esm',
-      preserveModules: true,
-      sourcemap: true,
-      exports: 'named'
+
+  export default [
+    {
+      input: 'src/index.ts',
+      output: {
+        dir: 'dist/esm',
+        format: 'esm',
+        preserveModules: true,
+        sourcemap: true,
+        exports: 'named',
+      },
+      external,
+      plugins: [
+        ...commonPlugins,
+        createTypescriptPlugin('dist/esm'), // Matches Rollup dir
+      ],
+      watch: {
+        clearScreen: false,
+        exclude: 'node_modules/**',
+      },
     },
-    external,
-    plugins: [
-      ...commonPlugins,
-      createTypescriptPlugin('dist/esm'), // Correct outDir for ES modules
-    ]
-    
-  
-,  
-    watch: {
-      clearScreen: false,
-      exclude: 'node_modules/**'
-    }
-  },
-  {
-    input: 'src/index.ts',
-    output: {
-      dir: 'dist/cjs', // Matches Rollup's `dir`
-      format: 'cjs',
-      preserveModules: true,
-      sourcemap: true,
-      exports: 'named'
+    {
+      input: 'src/index.ts',
+      output: {
+        dir: 'dist/cjs',
+        format: 'cjs',
+        preserveModules: true,
+        sourcemap: true,
+        entryFileNames: '[name].cjs',
+        exports: 'named',
+      },
+      external,
+      plugins: [
+        ...commonPlugins,
+        createTypescriptPlugin('dist/cjs'), // Matches Rollup dir
+      ],
+      watch: {
+        clearScreen: false,
+        exclude: 'node_modules/**',
+      },
     },
-    external,
-    plugins: [
-      ...commonPlugins,
-      createTypescriptPlugin('dist/cjs'), // Correct outDir for CJS
-    ],
-    ],
-    watch: {
-      clearScreen: false,
-      exclude: 'node_modules/**'
-    }
-  },
-  {
-    input: 'src/index.ts',
-  output: {
-    dir: 'dist/types',
-    format: 'es'
-  },
-    external,
-    plugins: [
-      createAliasPlugin(),
-  typescript({
-    tsconfig: './tsconfig.json'
-  }),
-  dts({
-    respectExternal: true,
-    compilerOptions: {
-      declarationDir: 'dist/types',
-      paths: {
-        "@/*": ["src/*"],
-        "@utils/*": ["src/utils/*"],
-        "@types/*": ["src/@types/*"]
-      }
-    }
-  })
-    ]
-  }
+    {
+      input: 'src/index.ts',
+      output: {
+        dir: 'dist/types',
+        format: 'es',
+      },
+      external,
+      plugins: [
+        createAliasPlugin(),
+        dts({
+          respectExternal: true,
+          compilerOptions: {
+            paths: {
+              "@/*": ["src/*"],
+              "@utils/*": ["src/utils/*"],
+              "@types/*": ["src/@types/*"],
+            },
+          },
+        }),
+      ],
+    },
+  ];
   
-];
