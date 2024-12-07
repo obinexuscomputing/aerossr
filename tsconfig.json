@@ -5,13 +5,12 @@
     "moduleResolution": "Node",
     "declaration": true,
     "declarationMap": true,
-    "outDir": "./dist", // Unified output directory
-    "rootDir": "./src",
-    "baseUrl": "./src",
+    "rootDir": "./src", // Specify input files
+    "baseUrl": "./",
     "paths": {
-      "@/*": ["*"],
-      "@utils/*": ["utils/*"],
-      "@types/*": ["@types/*"]
+      "@/*": ["src/*"],
+      "@utils/*": ["src/utils/*"],
+      "@types/*": ["src/@types/*"]
     },
     "esModuleInterop": true,
     "skipLibCheck": true,
