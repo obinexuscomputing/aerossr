@@ -17,6 +17,14 @@ import { IncomingMessage, ServerResponse } from 'http';
   };
 }
 
+export interface MetaTags {
+  charset?: string;
+  viewport?: string;
+  description?: string;
+  title?: string;
+  [key: string]: string | undefined;
+}
+
  export interface CacheStore<T> {
   get(key: string): T | undefined;
   set(key: string, value: T): void;
