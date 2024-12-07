@@ -53,7 +53,7 @@ const commonPlugins = [
     tsconfig: './tsconfig.build.json',
     declaration: true,
     declarationMap: true,
-    outDir: 'dist/cjs',
+    outDir: path.join('dist', 'cjs'),
     rootDir: 'src',
     declarationDir: path.join('dist', 'cjs', 'types'),
     incremental: true,
