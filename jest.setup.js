@@ -1,9 +1,8 @@
-import { TextDecoder } from 'util';
 import '@jest/globals';
+import { TextDecoder } from 'util';
 
 global.TextDecoder = TextDecoder;
 
-// Move setTimeout to beforeAll
 beforeAll(() => {
   jest.setTimeout(10000);
 });
