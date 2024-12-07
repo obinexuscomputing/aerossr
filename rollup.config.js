@@ -114,12 +114,10 @@ export default [
   },
   {
     input: 'src/index.ts',
-    output: {
-      format: 'es',
-      preserveModules: true,
-      dir: 'dist/types',
-      format: 'es'
-    },
+  output: {
+    dir: 'dist/types',
+    format: 'es'
+  },
     external,
     plugins: [
       createAliasPlugin(),
@@ -128,7 +126,6 @@ export default [
   }),
   dts({
     respectExternal: true,
-    
     compilerOptions: {
       declarationDir: 'dist/types',
       paths: {
