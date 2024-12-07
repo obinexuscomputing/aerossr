@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import path from 'path';
+import path__default from 'path';
 
 async function resolveDependencies(filePath, deps = new Set()) {
     if (deps.has(filePath))
@@ -11,7 +11,7 @@ async function resolveDependencies(filePath, deps = new Set()) {
         for (const match of importMatches) {
             const depPath = match.match(/['"]([^'"]+)['"]/)?.[1];
             if (depPath) {
-                const fullPath = path.resolve(path.dirname(filePath), depPath);
+                const fullPath = path__default.resolve(path__default.dirname(filePath), depPath);
                 if (fullPath.endsWith('.js') || fullPath.endsWith('.ts')) {
                     await resolveDependencies(fullPath, deps);
                 }
@@ -27,12 +27,12 @@ function minifyBundle(code) {
         .replace(/^\s+|\s+$/gm, ''); // Trim line starts and ends
 }
 async function generateBundle(projectPath, entryPoint) {
-    const entryFilePath = path.join(projectPath, entryPoint);
+    const entryFilePath = path__default.join(projectPath, entryPoint);
     const dependencies = await resolveDependencies(entryFilePath);
     let bundle = '';
     for (const dep of dependencies) {
         const content = await fs.readFile(dep, 'utf-8');
-        bundle += `\n// File: ${path.relative(projectPath, dep)}\n${content}\n`;
+        bundle += `\n// File: ${path__default.relative(projectPath, dep)}\n${content}\n`;
     }
     return minifyBundle(bundle);
 }
