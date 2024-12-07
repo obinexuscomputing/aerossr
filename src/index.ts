@@ -67,6 +67,5 @@ declare namespace AeroSSR {
         }
     }
 }
-
-export { AeroSSR };
-export default AeroSSR.Core;
+export { AeroSSR } from './AeroSSR'
+export default AeroSSR.Core; 
