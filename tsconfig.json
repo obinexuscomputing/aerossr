@@ -5,13 +5,14 @@
     "moduleResolution": "Node",
     "declaration": true,
     "declarationMap": true,
-    "rootDir": "./src", // Specify input files
+    "outDir": "./dist", // General outDir for compatibility
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"],
       "@utils/*": ["src/utils/*"],
       "@types/*": ["src/@types/*"]
     },
+    "rootDir": "./src",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": true

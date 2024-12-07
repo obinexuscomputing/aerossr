@@ -23,17 +23,6 @@ const external = [
   ...Object.keys(pkg.peerDependencies || {})
 ];
 
-const createTypescriptPlugin = (outDir) => typescript({
-  tsconfig: './tsconfig.json',
-  declaration: true,
-  declarationMap: true,
-  outDir,
-  rootDir: 'src',
-  declarationDir: path.join(outDir, 'types'),
-  incremental: true,
-  tsBuildInfoFile: `./buildcache/${outDir.replace('dist/', '')}.tsbuildinfo`,
-  outputToFilesystem: true
-});
 
 const createAliasPlugin = () => alias({
   entries: [
