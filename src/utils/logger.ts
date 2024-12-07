@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { IncomingMessage } from 'http';
-import { LoggerOptions } from '..';
+import { LoggerOptions } from '../types';
 
 export class Logger {
   private logFilePath: string | null;
