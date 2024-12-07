@@ -19,37 +19,35 @@ export type {
     MetaTags
 } from './types/index';
 
-export namespace AeroSSR {
-    export class Core extends AeroSSRBase {}
-    export namespace Middleware {
-        export class StaticFile extends StaticFileMiddleware {}
-    }
-    export namespace Utils {
-        export class LoggerUtil extends Logger {}
-        export const Cache = {
+// Create the base namespace with its implementations
+export const AeroSSR = {
+    Core: AeroSSRBase,
+    Middleware: {
+        StaticFile: StaticFileMiddleware
+    },
+    Utils: {
+        Logger,
+        Cache: {
             create: createCache
-        };
-        export const HTTP = {
+        },
+        HTTP: {
             setCorsHeaders,
             generateETag
-        };
-        export const Error = {
+        },
+        Error: {
             generatePage: generateErrorPage,
             handle: handleError
-        };
-        export const HTML = {
+        },
+        HTML: {
             injectMetaTags
-        };
-        export const Bundle = {
+        },
+        Bundle: {
             generate: generateBundle
-        };
+        }
     }
-}
+} as const;
 
-// Export the base class as AeroSSR for backward compatibility
-export { AeroSSRBase as default };
-
-// Export other utilities
+// Export utilities for direct access
 export {
     StaticFileMiddleware,
     Logger,
@@ -62,7 +60,7 @@ export {
     generateBundle
 };
 
-// Export the base class as default
+// Single default export of the base class
 export default AeroSSRBase;
 
 // Re-export everything from sub-modules
