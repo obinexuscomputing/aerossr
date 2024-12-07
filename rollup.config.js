@@ -108,6 +108,9 @@ export default [
   {
     input: 'src/index.ts',
     output: {
+      dir: 'dist/types',
+      format: 'es',
+      preserveModules: true,
       file: 'dist/types/index.d.ts',
       format: 'es'
     },
@@ -119,8 +122,9 @@ export default [
   }),
   dts({
     respectExternal: true,
+    
     compilerOptions: {
-      declarationDir: 'dist/types'
+      declarationDir: 'dist/types',
       paths: {
         "@/*": ["src/*"],
         "@utils/*": ["src/utils/*"],
