@@ -1,4 +1,4 @@
-interface MetaTags {
+export interface MetaTags {
     charset?: string;
     viewport?: string;
     description?: string;
@@ -6,5 +6,4 @@ interface MetaTags {
     [key: string]: string | undefined;
 }
 export declare function injectMetaTags(html: string, meta?: MetaTags, defaultMeta?: MetaTags): string;
-export {};
 //# sourceMappingURL=html.d.ts.map
