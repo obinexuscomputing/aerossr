@@ -118,7 +118,9 @@ export default [
     tsconfig: './tsconfig.json'
   }),
   dts({
+    respectExternal: true,
     compilerOptions: {
+      declarationDir: 'dist/types'
       paths: {
         "@/*": ["src/*"],
         "@utils/*": ["src/utils/*"],
