@@ -49,7 +49,7 @@ export namespace AeroSSR {
 }
 
 export {
-    AeroSSRBase as AeroSSR,
+    AeroSSRBase,
     StaticFileMiddleware,
     Logger,
     createCache,

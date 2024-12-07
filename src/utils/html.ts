@@ -1,11 +1,4 @@
 
-export interface MetaTags {
-    charset?: string;
-    viewport?: string;
-    description?: string;
-    title?: string;
-    [key: string]: string | undefined;
-  }
   
   export function injectMetaTags(
     html: string,
