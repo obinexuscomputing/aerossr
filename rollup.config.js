@@ -69,7 +69,7 @@ export default [
   {
     input: 'src/index.ts',
     output: {
-      dir: 'dist/esm',
+      dir: 'dist/esm', // Matches TypeScript's `outDir`
       format: 'esm',
       preserveModules: true,
       sourcemap: true,
@@ -77,9 +77,14 @@ export default [
     },
     external,
     plugins: [
-      ...commonPlugins,
-      createTypescriptPlugin('dist/esm')
-    ],
+      typescript({
+        tsconfig: './tsconfig.json',
+        outDir: 'dist/esm' // Explicitly set to align with Rollup
+      }),
+      ...commonPlugins
+    ]
+  
+,  
     watch: {
       clearScreen: false,
       exclude: 'node_modules/**'
@@ -88,17 +93,19 @@ export default [
   {
     input: 'src/index.ts',
     output: {
-      dir: 'dist/cjs',
+      dir: 'dist/cjs', // Matches Rollup's `dir`
       format: 'cjs',
       preserveModules: true,
-      entryFileNames: '[name].cjs',
       sourcemap: true,
       exports: 'named'
     },
     external,
     plugins: [
-      ...commonPlugins,
-      createTypescriptPlugin('dist/cjs')
+      typescript({
+        tsconfig: './tsconfig.json',
+        outDir: 'dist/cjs' // Explicitly set to align with Rollup
+      }),
+      ...commonPlugins
     ],
     watch: {
       clearScreen: false,
