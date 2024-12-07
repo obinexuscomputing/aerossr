@@ -42,14 +42,26 @@ const createAliasPlugin = () => alias({
 });
 const commonPlugins = [
   createAliasPlugin(),
-  resolve({ 
+  resolve({
     preferBuiltins: true,
     browser: false
   }),
   commonjs(),
   json(),
   nodePolyfills(),
+  typescript({
+    tsconfig: './tsconfig.build.json',
+    declaration: true,
+    declarationMap: true,
+    outDir: 'dist/cjs',
+    rootDir: 'src',
+    declarationDir: path.join('dist', 'cjs', 'types'),
+    incremental: true,
+    tsBuildInfoFile: `./buildcache/cjs.tsbuildinfo`,
+    outputToFilesystem: true
+  }),
   isProduction && terser({
+
     compress: {
       drop_console: true,
       pure_funcs: ['console.log'],
