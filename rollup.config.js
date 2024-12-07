@@ -54,6 +54,17 @@ const commonPlugins = [
   })
 ].filter(Boolean);
 
+const createTypescriptPlugin = (outDir) =>
+  typescript({
+    tsconfig: './tsconfig.json',
+    declaration: true,
+    declarationMap: true,
+    declarationDir: `${outDir}/types`, // Use declarationDir matching Rollup output
+    rootDir: 'src',
+    incremental: true,
+    tsBuildInfoFile: `./buildcache/${outDir.replace('dist/', '')}.tsbuildinfo`,
+  });
+  
 export default [
   {
     input: 'src/index.ts',
@@ -66,12 +77,10 @@ export default [
     },
     external,
     plugins: [
-      typescript({
-        tsconfig: './tsconfig.json',
-        outDir: 'dist/esm' // Explicitly set to align with Rollup
-      }),
-      ...commonPlugins
+      ...commonPlugins,
+      createTypescriptPlugin('dist/esm'), // Correct outDir for ES modules
     ]
+    
   
 ,  
     watch: {
@@ -90,11 +99,9 @@ export default [
     },
     external,
     plugins: [
-      typescript({
-        tsconfig: './tsconfig.json',
-        outDir: 'dist/cjs' // Explicitly set to align with Rollup
-      }),
-      ...commonPlugins
+      ...commonPlugins,
+      createTypescriptPlugin('dist/cjs'), // Correct outDir for CJS
+    ],
     ],
     watch: {
       clearScreen: false,
