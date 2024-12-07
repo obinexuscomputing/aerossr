@@ -1,9 +1,9 @@
 import { stat, readFile } from 'fs/promises';
-import path from 'path';
+import * as path from 'path';
 import { promisify } from 'util';
 import { gzip } from 'zlib';
 import { IncomingMessage, ServerResponse } from 'http';
-import { generateETag } from '@/utils';
+import { generateETag } from '@utils';
 import { Stats } from 'fs';
 import { StaticFileOptions, Middleware } from '../types';
 

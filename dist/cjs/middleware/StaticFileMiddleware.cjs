@@ -4,8 +4,26 @@ var fs = require('fs/promises');
 var path = require('path');
 var util = require('util');
 var zlib = require('zlib');
-require('fs');
-var etag = require('../utils/etag.cjs');
+var index = require('@utils/index');
+
+function _interopNamespaceDefault(e) {
+    var n = Object.create(null);
+    if (e) {
+        Object.keys(e).forEach(function (k) {
+            if (k !== 'default') {
+                var d = Object.getOwnPropertyDescriptor(e, k);
+                Object.defineProperty(n, k, d.get ? d : {
+                    enumerable: true,
+                    get: function () { return e[k]; }
+                });
+            }
+        });
+    }
+    n.default = e;
+    return Object.freeze(n);
+}
+
+var path__namespace = /*#__PURE__*/_interopNamespaceDefault(path);
 
 const gzipAsync = util.promisify(zlib.gzip);
 class StaticFileMiddleware {
@@ -18,10 +36,10 @@ class StaticFileMiddleware {
         this.etag = options.etag !== false;
     }
     async serveFile(filepath, stats, req, res) {
-        const ext = path.extname(filepath).toLowerCase();
+        const ext = path__namespace.extname(filepath).toLowerCase();
         const mimeType = this.getMimeType(ext);
-        const etag$1 = this.etag ? etag.generateETag(`${filepath}:${stats.mtime.toISOString()}`) : null;
-        if (etag$1 && req.headers['if-none-match'] === etag$1) {
+        const etag = this.etag ? index.generateETag(`${filepath}:${stats.mtime.toISOString()}`) : null;
+        if (etag && req.headers['if-none-match'] === etag) {
             res.writeHead(304);
             res.end();
             return;
@@ -31,8 +49,8 @@ class StaticFileMiddleware {
             'Cache-Control': `public, max-age=${this.maxAge}`,
             'Last-Modified': stats.mtime.toUTCString()
         };
-        if (etag$1) {
-            headers['ETag'] = etag$1;
+        if (etag) {
+            headers['ETag'] = etag;
         }
         const content = await fs.readFile(filepath);
         if (this.compression && this.isCompressible(mimeType) && content.length > 1024) {
@@ -78,7 +96,7 @@ class StaticFileMiddleware {
                 if (_req.method !== 'GET' && _req.method !== 'HEAD') {
                     return next();
                 }
-                const urlPath = path.normalize(decodeURIComponent(_req.url || '').split('?')[0]);
+                const urlPath = path__namespace.normalize(decodeURIComponent(_req.url || '').split('?')[0]);
                 if (this.dotFiles !== 'allow' && urlPath.split('/').some(p => p.startsWith('.'))) {
                     if (this.dotFiles === 'deny') {
                         res.writeHead(403);
@@ -87,12 +105,12 @@ class StaticFileMiddleware {
                     }
                     return next();
                 }
-                const fullPath = path.join(this.root, urlPath);
+                const fullPath = path__namespace.join(this.root, urlPath);
                 try {
                     const stats = await fs.stat(fullPath);
                     if (stats.isDirectory()) {
                         for (const indexFile of this.index) {
-                            const indexPath = path.join(fullPath, indexFile);
+                            const indexPath = path__namespace.join(fullPath, indexFile);
                             try {
                                 const indexStats = await fs.stat(indexPath);
                                 if (indexStats.isFile()) {

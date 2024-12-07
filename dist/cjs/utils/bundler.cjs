@@ -3,17 +3,37 @@
 var fs = require('fs/promises');
 var path = require('path');
 
+function _interopNamespaceDefault(e) {
+    var n = Object.create(null);
+    if (e) {
+        Object.keys(e).forEach(function (k) {
+            if (k !== 'default') {
+                var d = Object.getOwnPropertyDescriptor(e, k);
+                Object.defineProperty(n, k, d.get ? d : {
+                    enumerable: true,
+                    get: function () { return e[k]; }
+                });
+            }
+        });
+    }
+    n.default = e;
+    return Object.freeze(n);
+}
+
+var fs__namespace = /*#__PURE__*/_interopNamespaceDefault(fs);
+var path__namespace = /*#__PURE__*/_interopNamespaceDefault(path);
+
 async function resolveDependencies(filePath, deps = new Set()) {
     if (deps.has(filePath))
         return deps;
     deps.add(filePath);
-    const content = await fs.readFile(filePath, 'utf-8');
+    const content = await fs__namespace.readFile(filePath, 'utf-8');
     const importMatches = content.match(/(?:require|import)\s*\(['"]([^'"]+)['"]\)/g);
     if (importMatches) {
         for (const match of importMatches) {
             const depPath = match.match(/['"]([^'"]+)['"]/)?.[1];
             if (depPath) {
-                const fullPath = path.resolve(path.dirname(filePath), depPath);
+                const fullPath = path__namespace.resolve(path__namespace.dirname(filePath), depPath);
                 if (fullPath.endsWith('.js') || fullPath.endsWith('.ts')) {
                     await resolveDependencies(fullPath, deps);
                 }
@@ -29,12 +49,12 @@ function minifyBundle(code) {
         .replace(/^\s+|\s+$/gm, ''); // Trim line starts and ends
 }
 async function generateBundle(projectPath, entryPoint) {
-    const entryFilePath = path.join(projectPath, entryPoint);
+    const entryFilePath = path__namespace.join(projectPath, entryPoint);
     const dependencies = await resolveDependencies(entryFilePath);
     let bundle = '';
     for (const dep of dependencies) {
-        const content = await fs.readFile(dep, 'utf-8');
-        bundle += `\n// File: ${path.relative(projectPath, dep)}\n${content}\n`;
+        const content = await fs__namespace.readFile(dep, 'utf-8');
+        bundle += `\n// File: ${path__namespace.relative(projectPath, dep)}\n${content}\n`;
     }
     return minifyBundle(bundle);
 }

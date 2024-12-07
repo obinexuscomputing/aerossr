@@ -1,9 +1,8 @@
 import { readFile, stat } from 'fs/promises';
-import path__default from 'path';
+import * as path from 'path';
 import { promisify } from 'util';
 import { gzip } from 'zlib';
-import 'fs';
-import { generateETag } from '../utils/etag.js';
+import { generateETag } from '@utils/index';
 
 const gzipAsync = promisify(gzip);
 class StaticFileMiddleware {
@@ -16,7 +15,7 @@ class StaticFileMiddleware {
         this.etag = options.etag !== false;
     }
     async serveFile(filepath, stats, req, res) {
-        const ext = path__default.extname(filepath).toLowerCase();
+        const ext = path.extname(filepath).toLowerCase();
         const mimeType = this.getMimeType(ext);
         const etag = this.etag ? generateETag(`${filepath}:${stats.mtime.toISOString()}`) : null;
         if (etag && req.headers['if-none-match'] === etag) {
@@ -76,7 +75,7 @@ class StaticFileMiddleware {
                 if (_req.method !== 'GET' && _req.method !== 'HEAD') {
                     return next();
                 }
-                const urlPath = path__default.normalize(decodeURIComponent(_req.url || '').split('?')[0]);
+                const urlPath = path.normalize(decodeURIComponent(_req.url || '').split('?')[0]);
                 if (this.dotFiles !== 'allow' && urlPath.split('/').some(p => p.startsWith('.'))) {
                     if (this.dotFiles === 'deny') {
                         res.writeHead(403);
@@ -85,12 +84,12 @@ class StaticFileMiddleware {
                     }
                     return next();
                 }
-                const fullPath = path__default.join(this.root, urlPath);
+                const fullPath = path.join(this.root, urlPath);
                 try {
                     const stats = await stat(fullPath);
                     if (stats.isDirectory()) {
                         for (const indexFile of this.index) {
-                            const indexPath = path__default.join(fullPath, indexFile);
+                            const indexPath = path.join(fullPath, indexFile);
                             try {
                                 const indexStats = await stat(indexPath);
                                 if (indexStats.isFile()) {
