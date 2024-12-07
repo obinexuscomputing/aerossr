@@ -1,3 +1,4 @@
+import { MetaTags } from "@/types";
 
   
   export function injectMetaTags(
