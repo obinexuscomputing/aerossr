@@ -1,2 +1,1 @@
-
-export * from "./StaticFileMiddleware";
+export * from './StaticFileMiddleware';
