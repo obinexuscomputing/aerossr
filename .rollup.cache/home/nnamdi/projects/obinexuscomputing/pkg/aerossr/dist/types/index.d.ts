@@ -1,4 +1,3 @@
-/// <reference types="@/types" />
 export * from './types/index.d';
 export * from './middleware/index';
 export * from './utils/';

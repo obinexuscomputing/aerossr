@@ -1,5 +1,5 @@
 
-interface MetaTags {
+export interface MetaTags {
     charset?: string;
     viewport?: string;
     description?: string;

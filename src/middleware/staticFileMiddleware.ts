@@ -3,7 +3,6 @@ import path from 'path';
 import { promisify } from 'util';
 import { gzip } from 'zlib';
 import { IncomingMessage, ServerResponse } from 'http';
-import type { StaticFileOptions, Middleware } from '@/types';
 import { generateETag } from '@/utils';
 import { Stats } from 'fs';
 
