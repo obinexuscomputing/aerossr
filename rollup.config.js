@@ -37,10 +37,12 @@ const createTypescriptPlugin = (outDir) => typescript({
 
 const createAliasPlugin = () => alias({
   entries: [
-    { find: '@', replacement: resolvePath(process.cwd(), 'src') },
-    { find: '@utils', replacement: resolvePath(process.cwd(), 'src/utils') }, // Add this
+    { find: '@', replacement: resolvePath(process.cwd(), 'src') }, // '@' points to 'src'
+    { find: '@utils', replacement: resolvePath(process.cwd(), 'src/utils') }, // '@utils' points to 'src/utils'
+    { find: '@types', replacement: resolvePath(process.cwd(), 'src/@types') }, // '@types' points to 'src/@types'
   ],
 });
+
 
 const commonPlugins = [
   createAliasPlugin(),
@@ -111,13 +113,19 @@ export default [
     },
     external,
     plugins: [
-      dts({
-        compilerOptions: {
-          paths: {
-            "@utils/*": ["src/utils/*"]
-          }
-        }
-      })
+      createAliasPlugin(),
+  typescript({
+    tsconfig: './tsconfig.json'
+  }),
+  dts({
+    compilerOptions: {
+      paths: {
+        "@/*": ["src/*"],
+        "@utils/*": ["src/utils/*"],
+        "@types/*": ["src/@types/*"]
+      }
+    }
+  })
     ]
   }
   

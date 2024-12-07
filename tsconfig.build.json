@@ -7,9 +7,11 @@
     "declarationMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "baseUrl": "./src",
+    "baseUrl": "./src", // Base URL set to the 'src' directory
     "paths": {
-      "@utils/*": ["utils/*"]
+      "@/*": ["*"], // Alias '@' to the 'src' directory
+      "@utils/*": ["utils/*"], // Alias '@utils' to 'src/utils'
+      "@types/*": ["@types/*"] // Alias '@types' to 'src/@types'
     },
     "esModuleInterop": true,
     "skipLibCheck": true,
