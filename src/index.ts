@@ -21,11 +21,9 @@ export type {
 
 export namespace AeroSSR {
     export class Core extends AeroSSRBase {}
-    
     export namespace Middleware {
         export class StaticFile extends StaticFileMiddleware {}
     }
-    
     export namespace Utils {
         export class LoggerUtil extends Logger {}
         export const Cache = {
@@ -48,8 +46,11 @@ export namespace AeroSSR {
     }
 }
 
+// Export the base class as AeroSSR for backward compatibility
+export { AeroSSRBase as default };
+
+// Export other utilities
 export {
-    AeroSSRBase,
     StaticFileMiddleware,
     Logger,
     createCache,
@@ -61,8 +62,9 @@ export {
     generateBundle
 };
 
+// Export the base class as default
 export default AeroSSRBase;
 
-// Re-export everything from sub-modules for convenience
+// Re-export everything from sub-modules
 export * from './middleware/index';
 export * from './utils/index';
