@@ -13,6 +13,8 @@
         }
     },
     "keywords": [
+        "@obinexuscomputing/aerossr",
+        "aerossr",
         "ssr",
         "server-side-rendering",
         "node",
