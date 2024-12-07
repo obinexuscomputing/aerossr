@@ -110,7 +110,7 @@ export default [
     output: {
       format: 'es',
       preserveModules: true,
-      file: 'dist/types/index.d.ts',
+      dir: 'dist/types',
       format: 'es'
     },
     external,
