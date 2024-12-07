@@ -1,7 +1,4 @@
-// src/index.ts
-
-// Import all components and types
-import { AeroSSR as AeroSSRCore } from './AeroSSR';
+import { AeroSSR as AeroSSRBase } from './AeroSSR';
 import { StaticFileMiddleware } from './middleware/StaticFileMiddleware';
 import { Logger } from './utils/logger';
 import { createCache } from './utils/cache';
@@ -11,25 +8,49 @@ import { generateErrorPage, handleError } from './utils/errorHandler';
 import { injectMetaTags } from './utils/html';
 import { generateBundle } from './utils/bundler';
 
-// Export types
 export type {
-  AeroSSRConfig,
-  CacheStore,
-  StaticFileOptions,
-  RouteHandler,
-  Middleware,
-  LoggerOptions,
-  ErrorResponse,
-  MetaTags
+    AeroSSRConfig,
+    CacheStore,
+    StaticFileOptions,
+    RouteHandler,
+    Middleware,
+    LoggerOptions,
+    ErrorResponse,
+    MetaTags
 } from './types/index';
 
-// Create namespace
 export namespace AeroSSR {
-  export const Server = AeroSSRCore;
-  export const Middleware = {
-    StaticFile: StaticFileMiddleware
-  };
-  export const Utils = {
+    export class Core extends AeroSSRBase {}
+    
+    export namespace Middleware {
+        export class StaticFile extends StaticFileMiddleware {}
+    }
+    
+    export namespace Utils {
+        export class LoggerUtil extends Logger {}
+        export const Cache = {
+            create: createCache
+        };
+        export const HTTP = {
+            setCorsHeaders,
+            generateETag
+        };
+        export const Error = {
+            generatePage: generateErrorPage,
+            handle: handleError
+        };
+        export const HTML = {
+            injectMetaTags
+        };
+        export const Bundle = {
+            generate: generateBundle
+        };
+    }
+}
+
+export {
+    AeroSSRBase as AeroSSR,
+    StaticFileMiddleware,
     Logger,
     createCache,
     setCorsHeaders,
@@ -38,22 +59,10 @@ export namespace AeroSSR {
     handleError,
     injectMetaTags,
     generateBundle
-  };
-}
-
-// Export default for convenience
-export default AeroSSRCore;
-
-// Export individual components for those who prefer destructuring
-export {
-  AeroSSRCore as AeroSSR,
-  StaticFileMiddleware,
-  Logger,
-  createCache,
-  setCorsHeaders,
-  generateETag,
-  generateErrorPage,
-  handleError,
-  injectMetaTags,
-  generateBundle
 };
+
+export default AeroSSRBase;
+
+// Re-export everything from sub-modules for convenience
+export * from './middleware/index';
+export * from './utils/index';
