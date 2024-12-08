@@ -9,7 +9,6 @@ describe('Logger', () => {
   const consoleErrorSpy = jest.spyOn(console, 'error');
   const logFilePath = '/test/log/file.log';
 
-  const logFilePath = './test.log';
 
   beforeEach(() => {
     jest.spyOn(fs, 'appendFileSync');
