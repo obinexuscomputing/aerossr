@@ -3,8 +3,8 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Node",
-    "declaration": false,         // Changed: declarations handled by Rollup
-    "declarationMap": false,      // Changed: declaration maps handled by Rollup
+    "declaration": true,
+    "declarationMap": true,
     "baseUrl": ".",
     "rootDir": "src",
     "outDir": "./dist/temp",

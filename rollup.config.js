@@ -11,7 +11,6 @@ import { readFileSync } from 'fs';
 
 const pkg = JSON.parse(readFileSync('./package.json'));
 const isProduction = process.env.NODE_ENV === 'production';
-
 const builtins = [
   'path', 'fs', 'http', 'crypto', 'zlib', 'util', 'url', 'fs/promises'
 ];
@@ -62,6 +61,7 @@ const createTypescriptPlugin = (outDir) => typescript({
   outputToFilesystem: true
 });
 
+
 export default [
   // ESM build
   {
@@ -77,11 +77,7 @@ export default [
     plugins: [
       ...commonPlugins,
       createTypescriptPlugin('dist/esm'),
-    ],
-    watch: {
-      clearScreen: false,
-      exclude: 'node_modules/**',
-    },
+    ]
   },
   // CJS build
   {
@@ -98,27 +94,21 @@ export default [
     plugins: [
       ...commonPlugins,
       createTypescriptPlugin('dist/cjs'),
-    ],
-    watch: {
-      clearScreen: false,
-      exclude: 'node_modules/**',
-    },
+    ]
   },
   // Type definitions
   {
     input: 'src/index.ts',
-    output: {
-      dir: 'dist/types',
-      format: 'es',
-    },
-    external,
+    output: [
+      {
+        file: 'dist/index.d.ts',
+        format: 'es'
+      }
+    ],
     plugins: [
-      createAliasPlugin(),
       dts({
         respectExternal: true,
         compilerOptions: {
-          declaration: true,
-          declarationMap: true,
           baseUrl: '.',
           paths: {
             "@/*": ["src/*"],
