@@ -1,5 +1,6 @@
 import { IncomingMessage, Server, ServerResponse } from 'http';
 import { AeroSSRConfig, StaticFileOptions, LoggerOptions, CacheStore, MetaTags } from './@types';
+export { StaticFileMiddleware  } from './middleware';
 
 export type RouteHandler = (
     req: IncomingMessage,
