@@ -1,4 +1,4 @@
-import { StaticFileOptions, Middleware } from '../types';
+import { StaticFileOptions, Middleware } from '../@types';
 export declare class StaticFileMiddleware {
     readonly root: string;
     readonly maxAge: number;

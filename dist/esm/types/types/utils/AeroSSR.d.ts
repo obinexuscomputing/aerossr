@@ -1,13 +1,12 @@
 /// <reference types="node" />
 import { Server } from 'http';
-import { Logger } from './utils/logger';
-import { AeroSSRConfig, RouteHandler, Middleware } from './@types';
+import { AeroSSRConfig, RouteHandler, Middleware } from '@/@types';
 export declare class AeroSSR {
-    readonly config: Required<AeroSSRConfig>;
-    readonly logger: Logger;
-    server: Server | null;
-    readonly routes: Map<string, RouteHandler>;
-    readonly middlewares: Middleware[];
+    private readonly config;
+    private readonly logger;
+    private server;
+    private readonly routes;
+    private readonly middlewares;
     constructor(config?: AeroSSRConfig);
     use(middleware: Middleware): void;
     route(path: string, handler: RouteHandler): void;

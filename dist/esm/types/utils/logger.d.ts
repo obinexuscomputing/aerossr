@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { IncomingMessage } from 'http';
-import { LoggerOptions } from '../types/index';
+import { LoggerOptions } from '../@types/index';
 export declare class Logger {
     private logFilePath;
     constructor(options?: LoggerOptions);

@@ -2,12 +2,29 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-var StaticFileMiddleware = require('./middleware/StaticFileMiddleware.cjs');
-var AeroSSR$1 = require('./AeroSSR.cjs');
+// Export the core class (main export)
+class AeroSSR {
+    config;
+}
+// Export middleware classes
+class StaticFileMiddleware {
+}
+// Export utility functions
+exports.Utils = void 0;
+(function (Utils) {
+    (function (Cache) {
+    })(Utils.Cache || (Utils.Cache = {}));
+    (function (HTTP) {
+    })(Utils.HTTP || (Utils.HTTP = {}));
+    (function (Error) {
+    })(Utils.Error || (Utils.Error = {}));
+    (function (HTML) {
+    })(Utils.HTML || (Utils.HTML = {}));
+    (function (Bundle) {
+    })(Utils.Bundle || (Utils.Bundle = {}));
+})(exports.Utils || (exports.Utils = {}));
 
-var index = AeroSSR.Core;
-
-exports.StaticFileMiddleware = StaticFileMiddleware.StaticFileMiddleware;
-exports.AeroSSR = AeroSSR$1.AeroSSR;
-exports.default = index;
+exports.AeroSSR = AeroSSR;
+exports.StaticFileMiddleware = StaticFileMiddleware;
+exports.default = AeroSSR;
 //# sourceMappingURL=index.cjs.map
