@@ -9,7 +9,7 @@
     "paths": {
       "@/*": ["src/*"],
       "@utils/*": ["src/utils/*"],
-      "@types/*": ["src/@types/*"]
+      "@types/*": ["src/types/*"]
     },
     "rootDir": "src",
     "esModuleInterop": true,
