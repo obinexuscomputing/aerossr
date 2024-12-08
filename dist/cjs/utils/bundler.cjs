@@ -1,27 +1,27 @@
 'use strict';
 
-var fs = require('fs/promises');
-var path = require('path');
+const fs = require('fs/promises');
+const path = require('path');
 
 function _interopNamespaceDefault(e) {
-    var n = Object.create(null);
+    const n = Object.create(null);
     if (e) {
-        Object.keys(e).forEach(function (k) {
+        for (const k in e) {
             if (k !== 'default') {
-                var d = Object.getOwnPropertyDescriptor(e, k);
+                const d = Object.getOwnPropertyDescriptor(e, k);
                 Object.defineProperty(n, k, d.get ? d : {
                     enumerable: true,
                     get: function () { return e[k]; }
                 });
             }
-        });
+        }
     }
     n.default = e;
     return Object.freeze(n);
 }
 
-var fs__namespace = /*#__PURE__*/_interopNamespaceDefault(fs);
-var path__namespace = /*#__PURE__*/_interopNamespaceDefault(path);
+const fs__namespace = /*#__PURE__*/_interopNamespaceDefault(fs);
+const path__namespace = /*#__PURE__*/_interopNamespaceDefault(path);
 
 async function resolveDependencies(filePath, deps = new Set()) {
     if (deps.has(filePath))

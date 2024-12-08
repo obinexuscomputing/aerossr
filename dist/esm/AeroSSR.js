@@ -1,3 +1,4 @@
+import __dirname from './_virtual/06b84c5f7b08b08d2bc54f21b43742.js';
 import { createServer } from 'http';
 import { promises } from 'fs';
 import { parse } from 'url';

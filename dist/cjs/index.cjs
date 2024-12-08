@@ -2,15 +2,15 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-var logger = require('./utils/logger.cjs');
-var cache = require('./utils/cache.cjs');
-var cors = require('./utils/cors.cjs');
-var etag = require('./utils/etag.cjs');
-var errorHandler = require('./utils/errorHandler.cjs');
-var html = require('./utils/html.cjs');
-var bundler = require('./utils/bundler.cjs');
-var StaticFileMiddleware = require('./middleware/StaticFileMiddleware.cjs');
-var AeroSSR = require('./AeroSSR.cjs');
+const logger = require('./utils/logger.cjs');
+const cache = require('./utils/cache.cjs');
+const cors = require('./utils/cors.cjs');
+const etag = require('./utils/etag.cjs');
+const errorHandler = require('./utils/errorHandler.cjs');
+const html = require('./utils/html.cjs');
+const bundler = require('./utils/bundler.cjs');
+const AeroSSR = require('./AeroSSR.cjs');
+const StaticFileMiddleware = require('./middleware/StaticFileMiddleware.cjs');
 
 
 
@@ -24,7 +24,7 @@ exports.injectMetaTags = html.injectMetaTags;
 exports.generateBundle = bundler.generateBundle;
 exports.minifyBundle = bundler.minifyBundle;
 exports.resolveDependencies = bundler.resolveDependencies;
-exports.StaticFileMiddleware = StaticFileMiddleware.StaticFileMiddleware;
 exports.AeroSSR = AeroSSR.AeroSSR;
 exports.default = AeroSSR.AeroSSR;
+exports.StaticFileMiddleware = StaticFileMiddleware.StaticFileMiddleware;
 //# sourceMappingURL=index.cjs.map

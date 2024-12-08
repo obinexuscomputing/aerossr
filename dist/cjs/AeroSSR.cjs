@@ -2,19 +2,20 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-var http = require('http');
-var fs = require('fs');
-var url = require('url');
-var path = require('path');
-var zlib = require('zlib');
-var util = require('util');
-var logger = require('./utils/logger.cjs');
-var cache = require('./utils/cache.cjs');
-var cors = require('./utils/cors.cjs');
-var etag = require('./utils/etag.cjs');
-var errorHandler = require('./utils/errorHandler.cjs');
-var html = require('./utils/html.cjs');
-var bundler = require('./utils/bundler.cjs');
+const _91a28d350cde3c22494a7c359701cf = require('./_virtual/91a28d350cde3c22494a7c359701cf.cjs');
+const http = require('http');
+const fs = require('fs');
+const url = require('url');
+const path = require('path');
+const zlib = require('zlib');
+const util = require('util');
+const logger = require('./utils/logger.cjs');
+const cache = require('./utils/cache.cjs');
+const cors = require('./utils/cors.cjs');
+const etag = require('./utils/etag.cjs');
+const errorHandler = require('./utils/errorHandler.cjs');
+const html = require('./utils/html.cjs');
+const bundler = require('./utils/bundler.cjs');
 
 const gzipAsync = util.promisify(zlib.gzip);
 class AeroSSR {
@@ -115,7 +116,7 @@ class AeroSSR {
         }
     }
     async handleDefaultRequest(_req, res, pathname) {
-        const htmlPath = path.join(__dirname, 'index.html');
+        const htmlPath = path.join(_91a28d350cde3c22494a7c359701cf.default, 'index.html');
         let html$1 = await fs.promises.readFile(htmlPath, 'utf-8');
         const meta = {
             title: `Page - ${pathname}`,
