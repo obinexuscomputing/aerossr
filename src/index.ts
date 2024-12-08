@@ -17,7 +17,7 @@ export type Middleware = (
 ) => Promise<void>;
 
 declare namespace AeroSSR {
-    class Core {
+    export class Core {
         constructor(config?: AeroSSRConfig);
         start(): Promise<Server>;
         stop(): Promise<void>;
@@ -25,31 +25,31 @@ declare namespace AeroSSR {
         route(path: string, handler: RouteHandler): void;
         readonly config: Required<AeroSSRConfig>;
     }
-
-    namespace Middleware {
+     
+    export namespace Middleware {
         class StaticFile {
             constructor(options: StaticFileOptions);
             middleware(): Middleware;
         }
     }
 
-    namespace Utils {
+    export namespace Utils {
         class Logger {
             constructor(options?: LoggerOptions);
             log(message: string): void;
             logRequest(req: IncomingMessage): void;
         }
 
-        namespace Cache {
+        export namespace Cache {
             function create<T>(): CacheStore<T>;
         }
 
-        namespace HTTP {
+        export namespace HTTP {
             function setCorsHeaders(res: ServerResponse, origins?: string): void;
             function generateETag(content: string | Buffer): string;
         }
 
-        namespace Error {
+        export  namespace Error {
             function generatePage(statusCode: number, message: string): string;
             function handle(
                 error: Error & { statusCode?: number },
@@ -58,7 +58,7 @@ declare namespace AeroSSR {
             ): Promise<void>;
         }
 
-        namespace HTML {
+        export  namespace HTML {
             function injectMetaTags(
                 html: string,
                 meta?: MetaTags,
@@ -66,7 +66,7 @@ declare namespace AeroSSR {
             ): string;
         }
 
-        namespace Bundle {
+        export namespace Bundle {
             function generate(projectPath: string, entryPoint: string): Promise<string>;
         }
     }
