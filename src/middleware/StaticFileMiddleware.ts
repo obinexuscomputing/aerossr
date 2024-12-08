@@ -16,12 +16,12 @@ export interface CachedContent {
 }
 
 export class StaticFileMiddleware {
-  private readonly root: string;
-  private readonly maxAge: number;
-  private readonly index: string[];
-  private readonly dotFiles: 'ignore' | 'allow' | 'deny';
-  private readonly compression: boolean;
-  private readonly etag: boolean;
+  public readonly root: string;
+  public readonly maxAge: number;
+  public readonly index: string[];
+  public readonly dotFiles: 'ignore' | 'allow' | 'deny';
+  public readonly compression: boolean;
+  public readonly etag: boolean;
 
   constructor(options: StaticFileOptions) {
     this.root = options.root;
