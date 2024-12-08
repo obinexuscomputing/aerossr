@@ -1,0 +1,4 @@
+[2024-12-08T12:59:00.174Z] AeroSSR server running on port 3000
+[2024-12-08T12:59:22.216Z] AeroSSR server running on port 3000
+[2024-12-08T12:59:58.655Z] GET /api.hello
+[2024-12-08T13:00:01.910Z] GET /api/hello
