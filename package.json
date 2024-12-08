@@ -1,17 +1,17 @@
 {
     "name": "@obinexuscomputing/aerossr",
     "version": "0.1.0",
-    "main": "./dist/cjs/index.js",
-    "module": "./dist/esm/index.js",
-    "types": "./dist/types/index.d.ts",
-    "type": "module",
-    "exports": {
-        ".": {
-            "import": "./dist/esm/index.js",
-            "require": "./dist/cjs/index.cjs",
-            "types": "./dist/types/index.d.ts"
-        }
-    },
+   "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
     "keywords": [
         "@obinexuscomputing/aerossr",
         "aerossr",
