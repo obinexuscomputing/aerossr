@@ -11,16 +11,31 @@ import { readFileSync } from 'fs';
 
 const pkg = JSON.parse(readFileSync('./package.json'));
 const isProduction = process.env.NODE_ENV === 'production';
+
+// Node.js built-ins and their namespaces
 const builtins = [
-  'path', 'fs', 'http', 'crypto', 'zlib', 'util', 'url', 'fs/promises'
+  'path',
+  'fs', 
+  'fs/promises',
+  'http',
+  'crypto',
+  'zlib',
+  'util',
+  'url',
+  'stream',
+  'events',
+  'os'
 ];
 
+// External dependencies
 const external = [
   ...builtins,
   ...Object.keys(pkg.dependencies || {}),
-  ...Object.keys(pkg.peerDependencies || {})
+  ...Object.keys(pkg.peerDependencies || {}),
+  ...Object.keys(pkg.optionalDependencies || {})
 ];
 
+// Path alias configuration
 const createAliasPlugin = () => alias({
   entries: [
     { find: '@', replacement: resolvePath(process.cwd(), 'src') },
@@ -29,27 +44,38 @@ const createAliasPlugin = () => alias({
   ]
 });
 
+// Common build plugins
 const commonPlugins = [
   createAliasPlugin(),
   resolve({
     preferBuiltins: true,
-    browser: false
+    browser: false,
+    extensions: ['.ts', '.js', '.json']
   }),
-  commonjs(),
+  commonjs({
+    transformMixedEsModules: true,
+    include: /node_modules/
+  }),
   json(),
-  nodePolyfills(),
+  nodePolyfills({
+    include: null
+  }),
   isProduction && terser({
     compress: {
       drop_console: true,
       pure_funcs: ['console.log'],
-      passes: 2
+      passes: 2,
+      drop_debugger: true
     },
     format: {
-      comments: false
-    }
+      comments: false,
+      ecma: 2020
+    },
+    mangle: true
   })
 ].filter(Boolean);
 
+// TypeScript configuration for different build targets
 const createTypescriptPlugin = (outDir) => typescript({
   tsconfig: './tsconfig.json',
   outDir,
@@ -58,9 +84,10 @@ const createTypescriptPlugin = (outDir) => typescript({
   rootDir: 'src',
   incremental: true,
   tsBuildInfoFile: `./buildcache/${outDir.replace('dist/', '')}.tsbuildinfo`,
-  outputToFilesystem: true
+  outputToFilesystem: true,
+  sourceMap: true,
+  inlineSources: true
 });
-
 
 export default [
   // ESM build
@@ -72,12 +99,19 @@ export default [
       preserveModules: true,
       sourcemap: true,
       exports: 'named',
+      generatedCode: {
+        constBindings: true
+      }
     },
     external,
     plugins: [
       ...commonPlugins,
       createTypescriptPlugin('dist/esm'),
-    ]
+    ],
+    treeshake: {
+      moduleSideEffects: false,
+      propertyReadSideEffects: false
+    }
   },
   // CJS build
   {
@@ -89,12 +123,19 @@ export default [
       sourcemap: true,
       entryFileNames: '[name].cjs',
       exports: 'named',
+      generatedCode: {
+        constBindings: true
+      }
     },
     external,
     plugins: [
       ...commonPlugins,
       createTypescriptPlugin('dist/cjs'),
-    ]
+    ],
+    treeshake: {
+      moduleSideEffects: false,
+      propertyReadSideEffects: false
+    }
   },
   // Type definitions
   {
@@ -105,6 +146,7 @@ export default [
         format: 'es'
       }
     ],
+    external,
     plugins: [
       dts({
         respectExternal: true,
