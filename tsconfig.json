@@ -8,8 +8,8 @@
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"],
-      "@utils/*": ["src/utils/*"],
-      "@types/*": ["src/types/*"]
+      "@utils/*": ["src/utils/"],
+      "@types/*": ["src/types/"]
     },
     "rootDir": "src",
     "esModuleInterop": true,
