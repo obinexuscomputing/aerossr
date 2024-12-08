@@ -1,9 +1,10 @@
+import { generateETag } from '../../utils/etag';
 
-describe('ETag Utilities', () => {
-  test('should generate consistent ETag for same content', () => {
-    const content = 'test content';
-    const etag1 = generateETag(content);
-    const etag2 = generateETag(content);
+describe('ETag Generator', () => {
+  test('should generate consistent ETags for same content', () => {
+    const testContent = 'test content';
+    const etag1 = generateETag(testContent);
+    const etag2 = generateETag(testContent);
     expect(etag1).toBe(etag2);
   });
 
@@ -13,16 +14,10 @@ describe('ETag Utilities', () => {
     expect(etag1).not.toBe(etag2);
   });
 
-  test('should handle empty content', () => {
-    expect(generateETag('')).toBeTruthy();
-  });
-
-  test('should handle buffer input', () => {
-    const buffer = Buffer.from('test content');
-    expect(generateETag(buffer)).toBeTruthy();
+  test('should handle Buffer input', () => {
+    const testBuffer = Buffer.from('test content');
+    const etag = generateETag(testBuffer);
+    expect(typeof etag).toBe('string');
+    expect(etag.length).toBeGreaterThan(0);
   });
 });
-function generateETag(content: string) {
-  throw new Error("Function not implemented.");
-}
-

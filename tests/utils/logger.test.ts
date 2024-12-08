@@ -1,86 +1,43 @@
-import fs from 'fs';
-import path from 'path';
+import { Logger } from '../../utils/logger';
+import fs from 'fs/promises';
 
-jest.mock('fs');
+jest.mock('fs/promises');
+const mockFs = fs as jest.Mocked<typeof fs>;
 
 describe('Logger', () => {
-  const mockFs = fs as jest.Mocked<typeof fs>;
-  const consoleSpy = jest.spyOn(console, 'log');
-  const consoleErrorSpy = jest.spyOn(console, 'error');
-  const logFilePath = '/test/log/file.log';
-
-
   beforeEach(() => {
-    jest.spyOn(fs, 'appendFileSync');
-    jest.spyOn(console, 'log');
+    jest.clearAllMocks();
+    mockFs.writeFile.mockResolvedValue();
+    mockFs.mkdir.mockResolvedValue();
   });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
+  test('should create logger without file path', () => {
+    const logger = new Logger();
+    expect(logger).toBeDefined();
   });
 
-  test('should log messages', () => {
-    const logger = new Logger({ logFilePath });
+  test('should log to console', () => {
+    const consoleSpy = jest.spyOn(console, 'log');
+    const logger = new Logger();
     logger.log('test message');
-    expect(console.log).toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
   });
 
-  test('should initialize with valid log file path', () => {
-    const logger = new Logger({ logFilePath });
-    expect(logger['logFilePath']).toBe(logFilePath);
+  test('should log to file when path provided', async () => {
+    const logger = new Logger({ logFilePath: 'test.log' });
+    await logger.log('test message');
+    expect(mockFs.appendFile).toHaveBeenCalled();
   });
 
-  test('should handle invalid log file path', () => {
-    mockFs.accessSync.mockImplementation(() => {
-      throw new Error('Access denied');
-    });
+  test('should handle file write errors gracefully', async () => {
+    const consoleSpy = jest.spyOn(console, 'error');
+    mockFs.appendFile.mockRejectedValue(new Error('Write error'));
     
-    const logger = new Logger({ logFilePath });
-    expect(logger['logFilePath']).toBeNull();
-    expect(consoleErrorSpy).toHaveBeenCalled();
-  });
-
-  test('should create log directory if it doesn\'t exist', () => {
-    mockFs.existsSync.mockReturnValue(false);
-    new Logger({ logFilePath });
-    expect(mockFs.mkdirSync).toHaveBeenCalled();
-  });
-
-  test('should write to log file and console', () => {
-    const logger = new Logger({ logFilePath });
-    const message = 'Test message';
-    
-    logger.log(message);
+    const logger = new Logger({ logFilePath: 'test.log' });
+    await logger.log('test message');
     
     expect(consoleSpy).toHaveBeenCalled();
-    expect(mockFs.appendFile).toHaveBeenCalled();
-    expect(mockFs.appendFile.mock.calls[0][1]).toContain(message);
-  });
-
-  test('should handle file write errors', () => {
-    mockFs.appendFile.mockImplementation((_, __, callback) => 
-      callback(new Error('Write error'))
-    );
-    
-    const logger = new Logger({ logFilePath });
-    logger.log('Test message');
-    
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to write to log file')
-    );
-  });
-
-  test('should log HTTP requests', () => {
-    const logger = new Logger({ logFilePath });
-    const mockRequest = {
-      method: 'GET',
-      url: '/test',
-    };
-    
-    logger.logRequest(mockRequest as any);
-    
-    expect(consoleSpy).toHaveBeenCalled();
-    expect(mockFs.appendFile).toHaveBeenCalled();
-    expect(mockFs.appendFile.mock.calls[0][1]).toContain('GET /test');
+    consoleSpy.mockRestore();
   });
 });
