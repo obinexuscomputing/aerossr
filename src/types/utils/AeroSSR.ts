@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { Server } from 'http';
-import { AeroSSRConfig, RouteHandler, Middleware } from '@/@types';
+import { AeroSSRConfig, Middleware, RouteHandler } from '..';
+
 export declare class AeroSSR {
     private readonly config;
     private readonly logger;
