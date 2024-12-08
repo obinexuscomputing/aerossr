@@ -1,5 +1,12 @@
 import { IncomingMessage, ServerResponse, Server } from 'http';
 
+declare class Logger {
+    private logFilePath;
+    constructor(options?: LoggerOptions);
+    log(message: string): void;
+    logRequest(req: IncomingMessage): void;
+}
+
 interface AeroSSRConfig$1 {
     port?: number;
     cacheMaxAge?: number;
@@ -34,41 +41,16 @@ interface MetaTags$1 {
 type RouteHandler$1 = (req: IncomingMessage, res: ServerResponse) => Promise<void> | void;
 type Middleware$1 = (req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => Promise<void>;
 
-declare class Logger {
-    private logFilePath;
-    constructor(options?: LoggerOptions);
-    log(message: string): void;
-    logRequest(req: IncomingMessage): void;
-}
-
-declare class AeroSSR {
-    readonly config: Required<AeroSSRConfig$1>;
-    readonly logger: Logger;
-    server: Server | null;
-    readonly routes: Map<string, RouteHandler$1>;
-    readonly middlewares: Middleware$1[];
-    constructor(config?: AeroSSRConfig$1);
-    use(middleware: Middleware$1): void;
-    route(path: string, handler: RouteHandler$1): void;
-    clearCache(): void;
-    private executeMiddlewares;
-    private handleRequest;
-    private handleDistRequest;
-    private handleDefaultRequest;
-    start(): Promise<Server>;
-    stop(): Promise<void>;
-}
-
 declare function createCache<T>(): CacheStore$1<T>;
 
 declare function setCorsHeaders(res: ServerResponse, origins?: string): void;
+
+declare function generateETag(content: string | Buffer): string;
 
 declare function generateErrorPage(statusCode: number, message: string): string;
 declare function handleError(error: Error & {
     statusCode?: number;
 }, req: IncomingMessage, res: ServerResponse): Promise<void>;
-
-declare function generateETag(content: string | Buffer): string;
 
 declare function injectMetaTags(html: string, meta?: MetaTags$1, defaultMeta?: MetaTags$1): string;
 
@@ -88,6 +70,24 @@ declare class StaticFileMiddleware {
     private isCompressible;
     private getMimeType;
     middleware(): Middleware$1;
+}
+
+declare class AeroSSR {
+    readonly config: Required<AeroSSRConfig$1>;
+    readonly logger: Logger;
+    server: Server | null;
+    readonly routes: Map<string, RouteHandler$1>;
+    readonly middlewares: Middleware$1[];
+    constructor(config?: AeroSSRConfig$1);
+    use(middleware: Middleware$1): void;
+    route(path: string, handler: RouteHandler$1): void;
+    clearCache(): void;
+    private executeMiddlewares;
+    private handleRequest;
+    private handleDistRequest;
+    private handleDefaultRequest;
+    start(): Promise<Server>;
+    stop(): Promise<void>;
 }
 
 interface AeroSSRConfig {
