@@ -53,12 +53,13 @@ const commonPlugins = [
 
 const createTypescriptPlugin = (outDir) => typescript({
   tsconfig: './tsconfig.json',
-  declaration: false, // We'll generate declarations separately
-  declarationDir: undefined,
-  rootDir: 'src',
   outDir,
+  declaration: false,
+  declarationMap: false,
+  rootDir: 'src',
   incremental: true,
   tsBuildInfoFile: `./buildcache/${outDir.replace('dist/', '')}.tsbuildinfo`,
+  outputToFilesystem: true
 });
 
 export default [
@@ -116,6 +117,8 @@ export default [
       dts({
         respectExternal: true,
         compilerOptions: {
+          declaration: true,
+          declarationMap: true,
           baseUrl: '.',
           paths: {
             "@/*": ["src/*"],

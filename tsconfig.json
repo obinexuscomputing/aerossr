@@ -3,11 +3,11 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Node",
-    "declaration": true,
-    "declarationMap": true,
+    "declaration": false,         // Changed: declarations handled by Rollup
+    "declarationMap": false,      // Changed: declaration maps handled by Rollup
     "baseUrl": ".",
     "rootDir": "src",
-    "outDir": "./dist/temp", // Temporary outDir for TypeScript
+    "outDir": "./dist/temp",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": true,
