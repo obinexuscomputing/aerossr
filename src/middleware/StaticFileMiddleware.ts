@@ -102,13 +102,13 @@ export class StaticFileMiddleware {
   }
 
   middleware(): Middleware {
-    return async (_req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => {
+    return async (req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => {
       try {
-        if (_req.method !== 'GET' && _req.method !== 'HEAD') {
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
           return next();
         }
 
-        const urlPath = path.normalize(decodeURIComponent(_req.url || '').split('?')[0]);
+        const urlPath = path.normalize(decodeURIComponent(req.url || '').split('?')[0]);
 
         if (this.dotFiles !== 'allow' && urlPath.split('/').some(p => p.startsWith('.'))) {
           if (this.dotFiles === 'deny') {
@@ -130,7 +130,7 @@ export class StaticFileMiddleware {
               try {
                 const indexStats = await stat(indexPath);
                 if (indexStats.isFile()) {
-                  await this.serveFile(indexPath, indexStats, _req, res);
+                  await this.serveFile(indexPath, indexStats, req, res);
                   return;
                 }
               } catch {
@@ -141,7 +141,7 @@ export class StaticFileMiddleware {
           }
 
           if (stats.isFile()) {
-            await this.serveFile(fullPath, stats, _req, res);
+            await this.serveFile(fullPath, stats, req, res);
             return;
           }
         } catch {
