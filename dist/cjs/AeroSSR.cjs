@@ -1,7 +1,5 @@
 'use strict';
 
-Object.defineProperty(exports, '__esModule', { value: true });
-
 var http = require('http');
 var fs = require('fs');
 var url = require('url');
@@ -152,5 +150,4 @@ class AeroSSR {
 }
 
 exports.AeroSSR = AeroSSR;
-exports.default = AeroSSR;
 //# sourceMappingURL=AeroSSR.cjs.map

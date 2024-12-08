@@ -9,11 +9,6 @@ import { StaticFileOptions, Middleware } from '../types';
 
 const gzipAsync = promisify(gzip);
 
-export interface CachedContent {
-  content: Buffer;
-  headers: Record<string, string>;
-  encoding?: string;
-}
 
 export class StaticFileMiddleware {
   public readonly root: string;

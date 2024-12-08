@@ -2,10 +2,12 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+var StaticFileMiddleware = require('./middleware/StaticFileMiddleware.cjs');
 var AeroSSR$1 = require('./AeroSSR.cjs');
 
 var index = AeroSSR.Core;
 
+exports.StaticFileMiddleware = StaticFileMiddleware.StaticFileMiddleware;
 exports.AeroSSR = AeroSSR$1.AeroSSR;
 exports.default = index;
 //# sourceMappingURL=index.cjs.map

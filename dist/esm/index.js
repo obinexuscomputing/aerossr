@@ -1,3 +1,4 @@
+export { StaticFileMiddleware } from './middleware/StaticFileMiddleware.js';
 export { AeroSSR } from './AeroSSR.js';
 
 var index = AeroSSR.Core;

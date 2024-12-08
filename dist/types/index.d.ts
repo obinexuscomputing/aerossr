@@ -22,7 +22,7 @@ interface CacheStore$1<T> {
     set(key: string, value: T): void;
     clear(): void;
 }
-interface StaticFileOptions {
+interface StaticFileOptions$1 {
     root: string;
     maxAge?: number;
     index?: string[];
@@ -56,6 +56,15 @@ interface CacheStore<T> {
     set(key: string, value: T): void;
     clear(): void;
 }
+interface StaticFileOptions {
+    root: string;
+    maxAge?: number;
+    index?: string[];
+    dotFiles?: 'ignore' | 'allow' | 'deny';
+    compression?: boolean;
+    etag?: boolean;
+    cacheSize?: number;
+}
 type RouteHandler$1 = (req: IncomingMessage, res: ServerResponse) => Promise<void> | void;
 type Middleware$1 = (req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => Promise<void>;
 interface LoggerOptions {
@@ -68,6 +77,20 @@ interface MetaTags {
     description?: string;
     title?: string;
     [key: string]: string | undefined;
+}
+
+declare class StaticFileMiddleware {
+    readonly root: string;
+    readonly maxAge: number;
+    readonly index: string[];
+    readonly dotFiles: 'ignore' | 'allow' | 'deny';
+    readonly compression: boolean;
+    readonly etag: boolean;
+    constructor(options: StaticFileOptions);
+    private serveFile;
+    private isCompressible;
+    private getMimeType;
+    middleware(): Middleware$1;
 }
 
 declare class Logger {
@@ -108,7 +131,7 @@ declare namespace AeroSSR {
     }
     namespace Middleware {
         class StaticFile {
-            constructor(options: StaticFileOptions);
+            constructor(options: StaticFileOptions$1);
             middleware(): Middleware;
         }
     }
@@ -142,4 +165,4 @@ declare namespace AeroSSR {
 
 declare const _default: typeof AeroSSR.Core;
 
-export { AeroSSR$1 as AeroSSR, Middleware, RouteHandler, _default as default };
+export { AeroSSR$1 as AeroSSR, Middleware, RouteHandler, StaticFileMiddleware, _default as default };
