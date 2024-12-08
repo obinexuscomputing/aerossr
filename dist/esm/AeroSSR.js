@@ -1,4 +1,4 @@
-import __dirname from './_virtual/edd4545df5d587c9c5922dc10ea5a5.js';
+import __dirname from './_virtual/f56ca7fdbb407cfa5a54d86e5fa1b0.js';
 import { createServer } from 'http';
 import { promises } from 'fs';
 import { parse } from 'url';
@@ -19,7 +19,7 @@ class AeroSSR {
     logger;
     server;
     routes;
-    middlewares;
+    middlewares = [];
     constructor(config = {}) {
         this.config = {
             port: config.port || 3000,

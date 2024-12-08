@@ -1,7 +1,6 @@
 'use strict';
 
 const fs = require('fs');
-const path = require('path');
 
 function _interopNamespaceDefault(e) {
     const n = Object.create(null);
@@ -21,7 +20,6 @@ function _interopNamespaceDefault(e) {
 }
 
 const fs__namespace = /*#__PURE__*/_interopNamespaceDefault(fs);
-const path__namespace = /*#__PURE__*/_interopNamespaceDefault(path);
 
 class Logger {
     logFilePath;
@@ -29,7 +27,7 @@ class Logger {
         this.logFilePath = options.logFilePath || null;
         if (this.logFilePath) {
             try {
-                const logDir = path__namespace.dirname(this.logFilePath);
+                const logDir = path.dirname(this.logFilePath);
                 if (!fs__namespace.existsSync(logDir)) {
                     fs__namespace.mkdirSync(logDir, { recursive: true });
                 }
