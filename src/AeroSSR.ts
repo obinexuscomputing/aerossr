@@ -20,7 +20,7 @@ export class AeroSSR {
   public readonly logger: Logger;
   public server: Server | null;
   public readonly routes: Map<string, RouteHandler>;
-  public readonly middlewares: Middleware[];
+  public readonly middlewares: Middleware[] = []
 
   constructor(config: AeroSSRConfig = {}) {
     this.config = {
@@ -62,7 +62,7 @@ export class AeroSSR {
   private async executeMiddlewares(
     req: IncomingMessage,
     res: ServerResponse,
-    index: number = 0
+    index = 0
   ): Promise<void> {
     if (index >= this.middlewares.length) {
       return;

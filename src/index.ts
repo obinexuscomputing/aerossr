@@ -1,4 +1,4 @@
-import { IncomingMessage, Server, ServerResponse } from 'http';
+import type { IncomingMessage, ServerResponse } from 'http';
 
 // Define and export base types
 export interface AeroSSRConfig {
