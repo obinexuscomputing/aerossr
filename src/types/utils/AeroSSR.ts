@@ -20,4 +20,3 @@ export declare class AeroSSR {
     stop(): Promise<void>;
 }
 export default AeroSSR;
-//# sourceMappingURL=AeroSSR.d.ts.map
