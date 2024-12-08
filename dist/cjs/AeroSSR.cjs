@@ -2,7 +2,7 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const _4bb47aec90a71d6bfaa6dbb224654d = require('./_virtual/4bb47aec90a71d6bfaa6dbb224654d.cjs');
+const _71d0fbac36fe6c586670bb0cf5a9ce = require('./_virtual/71d0fbac36fe6c586670bb0cf5a9ce.cjs');
 const http = require('http');
 const fs = require('fs');
 const url = require('url');
@@ -116,7 +116,7 @@ class AeroSSR {
         }
     }
     async handleDefaultRequest(_req, res, pathname) {
-        const htmlPath = path.join(_4bb47aec90a71d6bfaa6dbb224654d.default, 'index.html');
+        const htmlPath = path.join(_71d0fbac36fe6c586670bb0cf5a9ce.default, 'index.html');
         let html$1 = await fs.promises.readFile(htmlPath, 'utf-8');
         const meta = {
             title: `Page - ${pathname}`,

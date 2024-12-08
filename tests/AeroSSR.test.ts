@@ -1,11 +1,9 @@
-import { createServer } from 'http';
 import { AddressInfo } from 'net';
 import fetch from 'node-fetch';
 import fs from 'fs/promises';
 import path from 'path';
 import { IncomingMessage, ServerResponse } from 'http';
-import AeroSSR from '../AeroSSR';
-import { StaticFileMiddleware } from '../utils/staticFileMiddleware';
+import AeroSSR from '..';
 
 jest.mock('fs/promises');
 jest.mock('../utils/logger');
@@ -22,7 +20,7 @@ describe('AeroSSR Core', () => {
     // Mock file system
     mockFs.readFile.mockResolvedValue('<html><head></head><body></body></html>');
     mockFs.writeFile.mockResolvedValue();
-    mockFs.mkdir.mockResolvedValue();
+    mockFs.mkdir.mockResolvedValue(fs);
   });
 
   afterEach(async () => {
