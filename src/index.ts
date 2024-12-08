@@ -1,10 +1,26 @@
-/// <reference path="./types/index.ts"/>
 import { IncomingMessage, Server, ServerResponse } from 'http';
-import { AeroSSRConfig, StaticFileOptions, LoggerOptions, CacheStore, MetaTags } from './@types';
+import { AeroSSRConfig, StaticFileOptions, LoggerOptions, CacheStore, MetaTags } from './types';
 
+// Export the types
 export { AeroSSRConfig, StaticFileOptions, LoggerOptions, CacheStore, MetaTags };
-export *  from './middleware';
 
+// Export the core class (main export)
+export class AeroSSR {
+    constructor(config?: AeroSSRConfig);
+    start(): Promise<Server>;
+    stop(): Promise<void>;
+    use(middleware: Middleware): void;
+    route(path: string, handler: RouteHandler): void;
+    readonly config: Required<AeroSSRConfig>;
+}
+
+// Export middleware classes
+export class StaticFileMiddleware {
+    constructor(options: StaticFileOptions);
+    middleware(): Middleware;
+}
+
+// Export type definitions
 export type RouteHandler = (
     req: IncomingMessage,
     res: ServerResponse
@@ -16,61 +32,30 @@ export type Middleware = (
     next: () => Promise<void>
 ) => Promise<void>;
 
-declare namespace AeroSSR {
-    export class Core {
-        constructor(config?: AeroSSRConfig);
-        start(): Promise<Server>;
-        stop(): Promise<void>;
-        use(middleware: Middleware): void;
-        route(path: string, handler: RouteHandler): void;
-        readonly config: Required<AeroSSRConfig>;
+// Export utility functions
+export namespace Utils {
+    export namespace Cache {
+        export function create<T>(): CacheStore<T>;
     }
-     
-    export namespace Middleware {
-        class StaticFile {
-            constructor(options: StaticFileOptions);
-            middleware(): Middleware;
-        }
+    
+    export namespace HTTP {
+        export function setCorsHeaders(res: ServerResponse, origins?: string): void;
+        export function generateETag(content: string | Buffer): string;
     }
-
-    export namespace Utils {
-        class Logger {
-            constructor(options?: LoggerOptions);
-            log(message: string): void;
-            logRequest(req: IncomingMessage): void;
-        }
-
-        export namespace Cache {
-            function create<T>(): CacheStore<T>;
-        }
-
-        export namespace HTTP {
-            function setCorsHeaders(res: ServerResponse, origins?: string): void;
-            function generateETag(content: string | Buffer): string;
-        }
-
-        export  namespace Error {
-            function generatePage(statusCode: number, message: string): string;
-            function handle(
-                error: Error & { statusCode?: number },
-                req: IncomingMessage,
-                res: ServerResponse
-            ): Promise<void>;
-        }
-
-        export  namespace HTML {
-            function injectMetaTags(
-                html: string,
-                meta?: MetaTags,
-                defaultMeta?: MetaTags
-            ): string;
-        }
-
-        export namespace Bundle {
-            function generate(projectPath: string, entryPoint: string): Promise<string>;
-        }
+    
+    export namespace Error {
+        export function generatePage(statusCode: number, message: string): string;
+        export function handle(error: Error & { statusCode?: number }, req: IncomingMessage, res: ServerResponse): Promise<void>;
+    }
+    
+    export namespace HTML {
+        export function injectMetaTags(html: string, meta?: MetaTags, defaultMeta?: MetaTags): string;
+    }
+    
+    export namespace Bundle {
+        export function generate(projectPath: string, entryPoint: string): Promise<string>;
     }
 }
 
-export { AeroSSR } from './AeroSSR'
-export default AeroSSR.Core; 
+// Make AeroSSR the default export
+export default AeroSSR;

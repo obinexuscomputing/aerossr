@@ -1,9 +1,11 @@
+/// <reference path="types/index.d.ts" />
 /// <reference types="node" />
 /// <reference types="node" />
 /// <reference types="node" />
 import { IncomingMessage, Server, ServerResponse } from 'http';
 import { AeroSSRConfig, StaticFileOptions, LoggerOptions, CacheStore, MetaTags } from './@types';
-export { StaticFileMiddleware } from './middleware';
+export { AeroSSRConfig, StaticFileOptions, LoggerOptions, CacheStore, MetaTags };
+export * from './middleware';
 export type RouteHandler = (req: IncomingMessage, res: ServerResponse) => Promise<void> | void;
 export type Middleware = (req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => Promise<void>;
 declare namespace AeroSSR {

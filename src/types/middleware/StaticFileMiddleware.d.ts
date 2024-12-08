@@ -1,6 +1,6 @@
 /// <reference types="node" />
 /// <reference types="node" />
-import { StaticFileOptions, Middleware } from '@/types';
+import { StaticFileOptions, Middleware } from '@/@types';
 export interface CachedContent {
     content: Buffer;
     headers: Record<string, string>;

@@ -19,8 +19,5 @@ export declare class AeroSSR {
     start(): Promise<Server>;
     stop(): Promise<void>;
 }
-declare const _default: {
-    AeroSSR: typeof AeroSSR;
-};
-export default _default;
+export default AeroSSR;
 //# sourceMappingURL=AeroSSR.d.ts.map

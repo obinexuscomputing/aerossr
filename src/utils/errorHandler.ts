@@ -23,7 +23,7 @@ export function generateErrorPage(statusCode: number, message: string): string {
 
 export async function handleError(
   error: Error & { statusCode?: number },
-  _req: IncomingMessage,
+  req: IncomingMessage,
   res: ServerResponse
 ): Promise<void> {
   console.error('Server error:', error);

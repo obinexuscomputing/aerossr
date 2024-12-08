@@ -1,4 +1,4 @@
-import { MetaTags } from "@/types";
+import { MetaTags } from "@/@types";
 
   
   export function injectMetaTags(

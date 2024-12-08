@@ -165,4 +165,4 @@ declare namespace AeroSSR {
 
 declare const _default: typeof AeroSSR.Core;
 
-export { AeroSSR$1 as AeroSSR, Middleware, RouteHandler, StaticFileMiddleware, _default as default };
+export { AeroSSR$1 as AeroSSR, AeroSSRConfig$1 as AeroSSRConfig, CacheStore$1 as CacheStore, LoggerOptions$1 as LoggerOptions, MetaTags, Middleware, RouteHandler, StaticFileMiddleware, StaticFileOptions$1 as StaticFileOptions, _default as default };

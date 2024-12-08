@@ -1,11 +1,4 @@
-/// <reference types="node" />
-/// <reference types="node" />
 import { StaticFileOptions, Middleware } from '../types';
-export interface CachedContent {
-    content: Buffer;
-    headers: Record<string, string>;
-    encoding?: string;
-}
 export declare class StaticFileMiddleware {
     readonly root: string;
     readonly maxAge: number;

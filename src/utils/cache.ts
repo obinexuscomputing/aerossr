@@ -1,4 +1,4 @@
-import { CacheStore } from "../types/index";
+import { CacheStore } from "../@types/index";
 
 export function createCache<T>(): CacheStore<T> {
   const cache = new Map<string, T>();

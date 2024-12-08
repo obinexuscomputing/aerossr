@@ -147,5 +147,5 @@ class AeroSSR {
     }
 }
 
-export { AeroSSR };
+export { AeroSSR, AeroSSR as default };
 //# sourceMappingURL=AeroSSR.js.map
