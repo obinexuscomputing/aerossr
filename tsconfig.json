@@ -13,8 +13,8 @@
     "strict": true,
     "paths": {
       "@/*": ["src/*"],
-      "@utils/*": ["src/utils/*"],
-      "@types/*": ["src/types/*"]
+      "@utils/*": ["src/utils/"],
+      "@types/*": ["src/types/"]
     }
   },
   "include": ["src/**/*"],
