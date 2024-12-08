@@ -3,6 +3,7 @@ import { AddressInfo } from 'net';
 import fetch from 'node-fetch';
 import fs from 'fs/promises';
 import path from 'path';
+import { IncomingMessage, ServerResponse } from 'http';
 import AeroSSR from '../AeroSSR';
 import { StaticFileMiddleware } from '../utils/staticFileMiddleware';
 
@@ -15,30 +16,15 @@ describe('AeroSSR Core', () => {
   const mockFs = fs as jest.Mocked<typeof fs>;
 
   beforeEach(() => {
-    aero = new AeroSSR({ port: 3000 });
+    testPort = 3000 + Math.floor(Math.random() * 1000);
+    aero = new AeroSSR({ port: testPort });
 
     // Mock file system
     mockFs.readFile.mockResolvedValue('<html><head></head><body></body></html>');
     mockFs.writeFile.mockResolvedValue();
     mockFs.mkdir.mockResolvedValue();
   });
-  test('should start server', async () => {
-    const server = await aero.start();
-    expect(server).toBeDefined();
-    await aero.stop();
-  });
 
-  test('should handle routes', async () => {
-    aero.route('/test', (req: IncomingMessage, res: ServerResponse) => {
-      res.writeHead(200);
-      res.end('test');
-    });
-
-    await aero.start();
-    const server = await aero.start();
-    expect(server).toBeDefined();
-    await aero.stop();
-  });
   afterEach(async () => {
     await aero.stop();
     jest.clearAllMocks();
@@ -65,7 +51,7 @@ describe('AeroSSR Core', () => {
 
   describe('Routing', () => {
     test('should handle basic routes', async () => {
-      aero.route('/test', (req, res) => {
+      aero.route('/test', (req: IncomingMessage, res: ServerResponse) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ message: 'success' }));
       });
@@ -81,7 +67,7 @@ describe('AeroSSR Core', () => {
     });
 
     test('should handle async routes', async () => {
-      aero.route('/async', async (req, res) => {
+      aero.route('/async', async (_req: IncomingMessage, res: ServerResponse) => {
         await new Promise(resolve => setTimeout(resolve, 10));
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ message: 'async success' }));
@@ -110,17 +96,17 @@ describe('AeroSSR Core', () => {
     test('should execute middleware in order', async () => {
       const order: number[] = [];
 
-      aero.use(async (req, res, next) => {
+      aero.use(async (_req, _res, next) => {
         order.push(1);
         await next();
       });
 
-      aero.use(async (req, res, next) => {
+      aero.use(async (_req, _res, next) => {
         order.push(2);
         await next();
       });
 
-      aero.route('/middleware-test', (req, res) => {
+      aero.route('/middleware-test', (_req, res) => {
         order.push(3);
         res.writeHead(200);
         res.end();
@@ -228,11 +214,11 @@ describe('AeroSSR Core', () => {
 
   describe('Caching', () => {
     test('should handle ETag caching', async () => {
-      aero.route('/cached', (req, res) => {
+      aero.route('/cached', (_req: IncomingMessage, res: ServerResponse) => {
         const content = 'cached content';
         const etag = `"${Buffer.from(content).toString('base64')}"`;
         
-        if (req.headers['if-none-match'] === etag) {
+        if (_req.headers['if-none-match'] === etag) {
           res.writeHead(304);
           res.end();
           return;

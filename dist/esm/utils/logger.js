@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import path__default from 'path';
 
 class Logger {
     logFilePath;
@@ -6,7 +7,7 @@ class Logger {
         this.logFilePath = options.logFilePath || null;
         if (this.logFilePath) {
             try {
-                const logDir = path.dirname(this.logFilePath);
+                const logDir = path__default.dirname(this.logFilePath);
                 if (!fs.existsSync(logDir)) {
                     fs.mkdirSync(logDir, { recursive: true });
                 }
