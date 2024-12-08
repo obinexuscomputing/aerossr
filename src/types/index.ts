@@ -1,4 +1,4 @@
-import { Server, IncomingMessage, ServerResponse } from 'http';
+import type {  IncomingMessage, ServerResponse } from 'http';
 
 export interface AeroSSRConfig {
     port?: number;
