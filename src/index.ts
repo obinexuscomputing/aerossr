@@ -1,16 +1,6 @@
 import { IncomingMessage, Server, ServerResponse } from 'http';
 
-// Import and re-export all types
-export * from './types';
-// Export the AeroSSR class implementation
-export * from './AeroSSR';
-// Export utilities
-export * from './utils';
-
-// Export middleware
-export * from './middleware';
-
-// Import and re-export types
+// Define and export base types
 export interface AeroSSRConfig {
     port?: number;
     cacheMaxAge?: number;
@@ -66,9 +56,6 @@ export type Middleware = (
     next: () => Promise<void>
 ) => Promise<void>;
 
-// Export main AeroSSR class
-export { AeroSSR } from './AeroSSR';
-
 // Export utilities
 export * from './utils/logger';
 export * from './utils/cache';
@@ -81,7 +68,8 @@ export * from './utils/bundler';
 // Export middleware
 export * from './middleware';
 
-// Export default
+// Export AeroSSR class
+export { AeroSSR } from './AeroSSR';
 
-// Default export should be the AeroSSR class itself, not AeroSSR.Core
+// Set default export to AeroSSR class
 export { AeroSSR as default } from './AeroSSR';
