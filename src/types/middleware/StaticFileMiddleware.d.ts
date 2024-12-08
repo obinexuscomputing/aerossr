@@ -1,4 +1,5 @@
 /// <reference types="node" />
+
 export interface CachedContent {
     content: Buffer;
     headers: Record<string, string>;

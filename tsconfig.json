@@ -5,12 +5,17 @@
     "moduleResolution": "Node",
     "declaration": true,
     "declarationMap": true,
-    "baseUrl": "./",
-    "outDir": "dist",
+    "baseUrl": ".",
     "rootDir": "src",
+    "outDir": "./dist/temp", // Temporary outDir for TypeScript
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "paths": {
+      "@/*": ["src/*"],
+      "@utils/*": ["src/utils/*"],
+      "@types/*": ["src/types/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
