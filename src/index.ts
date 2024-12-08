@@ -2,6 +2,7 @@
 import { IncomingMessage, Server, ServerResponse } from 'http';
 import { AeroSSRConfig, StaticFileOptions, LoggerOptions, CacheStore, MetaTags } from './@types';
 
+export { AeroSSRConfig, StaticFileOptions, LoggerOptions, CacheStore, MetaTags };
 export *  from './middleware';
 
 export type RouteHandler = (
