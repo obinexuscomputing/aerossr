@@ -188,4 +188,4 @@ export class AeroSSR {
   }
 }
 
-export default {AeroSSR}
+export default AeroSSR
