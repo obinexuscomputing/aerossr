@@ -1,5 +1,15 @@
 import { IncomingMessage, Server, ServerResponse } from 'http';
 
+// Import and re-export all types
+export * from './types';
+// Export the AeroSSR class implementation
+export * from './AeroSSR';
+// Export utilities
+export * from './utils';
+
+// Export middleware
+export * from './middleware';
+
 // Import and re-export types
 export interface AeroSSRConfig {
     port?: number;
@@ -72,4 +82,6 @@ export * from './utils/bundler';
 export * from './middleware';
 
 // Export default
-export { default } from './AeroSSR';
+
+// Default export should be the AeroSSR class itself, not AeroSSR.Core
+export { AeroSSR as default } from './AeroSSR';
