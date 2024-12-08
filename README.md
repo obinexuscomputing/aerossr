@@ -188,9 +188,14 @@ import type {
 ```
 
 ## Contributing
-
-Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on contributing to AeroSSR.
+Please see [./docs/CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on contributing to AeroSSR.
+See the github repo and support me with buy me a coffee.
 
 ## License
+
+## Support and Community
+- [Buy Me a Coffee](https://buymeacoffee.com/obinexuscomputing)
+- [GitLab](https://gitlab.com/obinexuscomputng)
+- [GitHub](https://github.com/obinexuscomputing)
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
