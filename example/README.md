@@ -1,27 +1,36 @@
 # AeroSSR Example Project
 
-This example demonstrates how to set up and use the AeroSSR server framework for building server-side rendered applications.
+This example demonstrates how to set up and use the AeroSSR server framework, a lightweight Node.js server-side rendering solution with built-in support for static file serving, middleware, routing, caching, and compression.
+
+## Features Demonstrated
+
+- Static file serving with caching and compression
+- API route handling with TypeScript
+- Logging configuration
+- Error handling
+- Graceful server shutdown
+- Middleware implementation
+- CORS and ETag support
 
 ## Project Setup
 
-1. Create a new project directory:
+1. Create a new project:
 ```bash
 mkdir aerossr-example
 cd aerossr-example
-```
-
-2. Initialize the project:
-```bash
 npm init -y
 ```
 
-3. Install dependencies:
+2. Install dependencies:
 ```bash
+# Install AeroSSR and its peer dependencies
 npm install @obinexuscomputing/aerossr
+
+# Install development dependencies
 npm install -D typescript @types/node
 ```
 
-4. Configure TypeScript by creating `tsconfig.json`:
+3. Configure TypeScript (`tsconfig.json`):
 ```json
 {
   "compilerOptions": {
@@ -42,21 +51,20 @@ npm install -D typescript @types/node
 
 ## Project Structure
 
-Create the following directory structure:
 ```
 aerossr-example/
-├── public/
-│   └── index.html
-├── src/
-│   └── index.ts
-├── logs/
-├── package.json
-└── tsconfig.json
+├── public/                # Static files
+│   └── index.html        # Default HTML template
+├── src/                  # Source code
+│   └── index.ts          # Server entry point
+├── logs/                 # Log files
+├── package.json          # Project configuration
+└── tsconfig.json         # TypeScript configuration
 ```
 
-## Configuration Files
+## Implementation
 
-1. Create `public/index.html`:
+1. Create default HTML template (`public/index.html`):
 ```html
 <!DOCTYPE html>
 <html>
@@ -66,13 +74,13 @@ aerossr-example/
     <title>AeroSSR Demo</title>
 </head>
 <body>
-    <h1>Welcome to AeroSSR Demo</h1>
+    <h1>Welcome to AeroSSR</h1>
     <div id="app"></div>
 </body>
 </html>
 ```
 
-2. Update `package.json` scripts:
+2. Configure package scripts (`package.json`):
 ```json
 {
   "type": "module",
@@ -86,9 +94,7 @@ aerossr-example/
 }
 ```
 
-## Server Implementation
-
-Create `src/index.ts`:
+3. Implement server (`src/index.ts`):
 ```typescript
 import { fileURLToPath } from 'url';
 import { IncomingMessage, Server, ServerResponse } from 'http';
@@ -135,7 +141,7 @@ async function createServer(): Promise<AeroSSR> {
 async function setupRoutes(app: AeroSSR): Promise<void> {
     const staticMiddleware = new StaticFileMiddleware({
         root: path.join(projectRoot, 'public'),
-        maxAge: 86400,
+        maxAge: 86400, // 24 hours
         compression: true,
         etag: true,
         index: ['index.html']
@@ -143,6 +149,7 @@ async function setupRoutes(app: AeroSSR): Promise<void> {
     
     app.use(staticMiddleware.middleware());
 
+    // Example API route
     app.route('/api/hello', async (req: IncomingMessage, res: ServerResponse) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
@@ -177,7 +184,7 @@ if (process.env.NODE_ENV !== 'test') {
 export { main };
 ```
 
-## Running the Project
+## Running the Example
 
 1. Build the project:
 ```bash
@@ -191,7 +198,7 @@ npm start
 
 ## Testing the Server
 
-1. Access the static HTML page:
+1. View the HTML page:
 ```
 http://localhost:3000
 ```
@@ -201,22 +208,65 @@ http://localhost:3000
 http://localhost:3000/api/hello
 ```
 
-## Features Demonstrated
+## Available Features
 
-- Static file serving with caching and compression
-- API route handling
-- Logging configuration
+### Static File Serving
+- Automatic compression for text files
+- ETags for caching
+- Index file support
+- Custom MIME type handling
+
+### API Routes
+- Async route handlers
+- JSON response handling
 - Error handling
-- TypeScript integration
-- ES Modules support
-- Graceful shutdown handling
+- CORS support
+
+### Logging
+- File-based logging
+- Request logging
+- Error logging
+- Custom log paths
+
+### Caching
+- Static file caching
+- ETag support
+- Custom cache duration
+- Memory caching
 
 ## Next Steps
 
-1. Add more routes and middleware
-2. Implement custom error pages
-3. Add database integration
-4. Set up development hot reloading
-5. Configure production deployment
+1. Add custom middleware:
+```typescript
+app.use(async (req, res, next) => {
+    const start = Date.now();
+    await next();
+    console.log(`${req.method} ${req.url} - ${Date.now() - start}ms`);
+});
+```
 
-For more detailed information about AeroSSR features and configuration options, please refer to the main AeroSSR documentation.
+2. Implement error handling:
+```typescript
+app.use(async (req, res, next) => {
+    try {
+        await next();
+    } catch (error) {
+        console.error(error);
+        res.writeHead(500);
+        res.end('Internal Server Error');
+    }
+});
+```
+
+3. Add CORS configuration:
+```typescript
+const app = new AeroSSR({
+    corsOrigins: 'http://localhost:3000'
+});
+```
+
+For more advanced features and configuration options, refer to the main [AeroSSR documentation](https://github.com/yourusername/aerossr).
+
+## License
+
+This example project is licensed under the MIT License.
