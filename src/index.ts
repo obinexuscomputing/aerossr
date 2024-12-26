@@ -66,7 +66,7 @@ export * from './utils/html';
 export * from './utils/bundler';
 
 // Export middleware
-export * from './middleware';
+export * from './middlewares';
 
 // Export AeroSSR class
 export { AeroSSR } from './AeroSSR';
