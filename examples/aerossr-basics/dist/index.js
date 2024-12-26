@@ -2,7 +2,7 @@ import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import path from 'path';
 import { mkdir, access, constants, writeFile } from 'fs/promises';
-import { AeroSSR, StaticFileMiddleware } from '../../../dist/esm/';
+import { AeroSSR, StaticFileMiddleware } from '../../../dist/';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
