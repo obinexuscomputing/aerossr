@@ -28,6 +28,13 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "prepublishOnly": "npm run build"
   },
+  "files": [
+    "dist",
+    "src",
+    "examples",
+    "docs"
+  ],
+
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.0",
     "@rollup/plugin-json": "^6.0.0",
