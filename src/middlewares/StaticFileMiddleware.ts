@@ -9,7 +9,6 @@ import { StaticFileOptions, Middleware } from '../types';
 
 const gzipAsync = promisify(gzip);
 
-
 export class StaticFileMiddleware {
   public readonly root: string;
   public readonly maxAge: number;
@@ -33,8 +32,7 @@ export class StaticFileMiddleware {
     req: IncomingMessage,
     res: ServerResponse
   ): Promise<void> {
-    const ext = path.extname(filepath).toLowerCase();
-    const mimeType = this.getMimeType(ext);
+    const mimeType = this.getMimeType(path.extname(filepath).toLowerCase());
 
     const etag = this.etag ? generateETag(`${filepath}:${stats.mtime.toISOString()}`) : null;
     if (etag && req.headers['if-none-match'] === etag) {
@@ -46,7 +44,7 @@ export class StaticFileMiddleware {
     const headers: Record<string, string> = {
       'Content-Type': mimeType,
       'Cache-Control': `public, max-age=${this.maxAge}`,
-      'Last-Modified': stats.mtime.toUTCString()
+      'Last-Modified': stats.mtime.toUTCString(),
     };
 
     if (etag) {
@@ -91,7 +89,7 @@ export class StaticFileMiddleware {
       '.ttf': 'application/font-ttf',
       '.eot': 'application/vnd.ms-fontobject',
       '.otf': 'application/font-otf',
-      '.wasm': 'application/wasm'
+      '.wasm': 'application/wasm',
     };
     return mimeTypes[ext] || 'application/octet-stream';
   }
@@ -105,7 +103,7 @@ export class StaticFileMiddleware {
 
         const urlPath = path.normalize(decodeURIComponent(req.url || '').split('?')[0]);
 
-        if (this.dotFiles !== 'allow' && urlPath.split('/').some(p => p.startsWith('.'))) {
+        if (this.dotFiles !== 'allow' && urlPath.split('/').some((p) => p.startsWith('.'))) {
           if (this.dotFiles === 'deny') {
             res.writeHead(403);
             res.end('Forbidden');
@@ -118,7 +116,7 @@ export class StaticFileMiddleware {
 
         try {
           const stats = await stat(fullPath);
-          
+
           if (stats.isDirectory()) {
             for (const indexFile of this.index) {
               const indexPath = path.join(fullPath, indexFile);
