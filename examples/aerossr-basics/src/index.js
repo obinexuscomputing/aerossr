@@ -1,8 +1,8 @@
 import { fileURLToPath } from 'url';
-import { IncomingMessage, Server, ServerResponse } from 'http';
+import { createServer } from 'http';
 import path from 'path';
 import { mkdir, access, constants, writeFile } from 'fs/promises';
-import { AeroSSR, StaticFileMiddleware } from '../../../dist/esm/index.js';
+import { AeroSSR, StaticFileMiddleware } from '../../../dist/esm/';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,7 +11,7 @@ const projectRoot = path.resolve(__dirname, '..');
 /**
  * Ensures the log directory and file exist and are writable
  */
-async function ensureLogDirectory(logPath: string): Promise<void> {
+async function ensureLogDirectory(logPath) {
     const logDir = path.dirname(logPath);
 
     try {
@@ -28,14 +28,14 @@ async function ensureLogDirectory(logPath: string): Promise<void> {
         // Verify write permissions
         await access(logPath, constants.W_OK);
     } catch (error) {
-        console.error(`Failed to set up logging: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error(`Failed to set up logging: ${error.message || 'Unknown error'}`);
     }
 }
 
 /**
  * Creates and configures a new AeroSSR server instance
  */
-async function createServer(): Promise<AeroSSR> {
+async function createServerInstance() {
     const logPath = path.join(projectRoot, 'logs', 'server.log');
     await ensureLogDirectory(logPath);
 
@@ -55,7 +55,7 @@ async function createServer(): Promise<AeroSSR> {
 /**
  * Sets up routes and middleware for the server
  */
-async function setupRoutes(app: AeroSSR): Promise<void> {
+async function setupRoutes(app) {
     const staticMiddleware = new StaticFileMiddleware({
         root: path.join(projectRoot, 'public'),
         maxAge: 86400,
@@ -68,7 +68,7 @@ async function setupRoutes(app: AeroSSR): Promise<void> {
     app.use(staticMiddleware.middleware());
 
     // Example API route
-    app.route('/api/hello', async (req: IncomingMessage, res: ServerResponse) => {
+    app.route('/api/hello', async (req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(
             JSON.stringify({
@@ -79,13 +79,13 @@ async function setupRoutes(app: AeroSSR): Promise<void> {
     });
 
     // Default route handler
-    app.route('/', async (req: IncomingMessage, res: ServerResponse) => {
+    app.route('/', async (req, res) => {
         staticMiddleware
             .middleware()(req, res, () => {
                 res.writeHead(404, { 'Content-Type': 'text/plain' });
                 res.end('Not Found');
             })
-            .catch((error: any) => {
+            .catch((error) => {
                 console.error('Error serving default route:', error);
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
                 res.end('Internal Server Error');
@@ -96,8 +96,8 @@ async function setupRoutes(app: AeroSSR): Promise<void> {
 /**
  * Sets up graceful shutdown handling
  */
-function setupShutdown(app: AeroSSR): void {
-    const shutdown = async (signal: string) => {
+function setupShutdown(app) {
+    const shutdown = async (signal) => {
         console.log(`\nReceived ${signal}. Gracefully shutting down server...`);
         try {
             await app.stop();
@@ -116,9 +116,9 @@ function setupShutdown(app: AeroSSR): void {
 /**
  * Main application entry point
  */
-async function main(): Promise<Server> {
+async function main() {
     try {
-        const app = await createServer();
+        const app = await createServerInstance();
         await setupRoutes(app);
         setupShutdown(app);
 
