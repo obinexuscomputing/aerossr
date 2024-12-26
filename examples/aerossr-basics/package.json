@@ -2,16 +2,13 @@
   "name": "examples",
   "version": "1.0.0",
   "type": "module",
-  
-
-    "scripts": {
-      "prepare": "mkdir -p logs && touch logs/server.log",
-      "prebuild": "npm run prepare",
-      "build": "tsc",
-      "start": "node --experimental-specifier-resolution=node dist/index.js",
-      "dev": "tsc -w"
-    },
-  
+  "scripts": {
+    "prepare": "mkdir -p logs && touch logs/server.log",
+    "prebuild": "npm run prepare",
+    "build": "tsc",
+    "start": "node --experimental-specifier-resolution=node dist/index.js",
+    "dev": "tsc -w"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -20,5 +17,8 @@
     "@obinexuscomputing/aerossr": "github:obinexuscomputing/aerossr",
     "@types/node": "^22.10.1",
     "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1"
   }
 }
