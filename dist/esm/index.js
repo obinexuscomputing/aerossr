@@ -6,5 +6,6 @@ export { generateErrorPage, handleError } from './utils/errorHandler.js';
 export { injectMetaTags } from './utils/html.js';
 export { generateBundle, minifyBundle, resolveDependencies } from './utils/bundler.js';
 export { AeroSSR, AeroSSR as default } from './AeroSSR.js';
-export { StaticFileMiddleware } from './middleware/StaticFileMiddleware.js';
+export { StaticFileMiddleware } from './middlewares/StaticFileMiddleware.js';
+export { SecurityMiddleware } from './middlewares/SecurityMiddleware.js';
 //# sourceMappingURL=index.js.map

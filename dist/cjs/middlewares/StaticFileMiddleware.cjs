@@ -1,10 +1,31 @@
-import { readFile, stat } from 'fs/promises';
-import * as path from 'path';
-import { promisify } from 'util';
-import { gzip } from 'zlib';
-import { generateETag } from '../utils/etag.js';
+'use strict';
 
-const gzipAsync = promisify(gzip);
+const fs = require('fs/promises');
+const path = require('path');
+const util = require('util');
+const zlib = require('zlib');
+const etag = require('../utils/etag.cjs');
+
+function _interopNamespaceDefault(e) {
+    const n = Object.create(null);
+    if (e) {
+        for (const k in e) {
+            if (k !== 'default') {
+                const d = Object.getOwnPropertyDescriptor(e, k);
+                Object.defineProperty(n, k, d.get ? d : {
+                    enumerable: true,
+                    get: function () { return e[k]; }
+                });
+            }
+        }
+    }
+    n.default = e;
+    return Object.freeze(n);
+}
+
+const path__namespace = /*#__PURE__*/_interopNamespaceDefault(path);
+
+const gzipAsync = util.promisify(zlib.gzip);
 class StaticFileMiddleware {
     root;
     maxAge;
@@ -21,10 +42,9 @@ class StaticFileMiddleware {
         this.etag = options.etag !== false;
     }
     async serveFile(filepath, stats, req, res) {
-        const ext = path.extname(filepath).toLowerCase();
-        const mimeType = this.getMimeType(ext);
-        const etag = this.etag ? generateETag(`${filepath}:${stats.mtime.toISOString()}`) : null;
-        if (etag && req.headers['if-none-match'] === etag) {
+        const mimeType = this.getMimeType(path__namespace.extname(filepath).toLowerCase());
+        const etag$1 = this.etag ? etag.generateETag(`${filepath}:${stats.mtime.toISOString()}`) : null;
+        if (etag$1 && req.headers['if-none-match'] === etag$1) {
             res.writeHead(304);
             res.end();
             return;
@@ -32,12 +52,12 @@ class StaticFileMiddleware {
         const headers = {
             'Content-Type': mimeType,
             'Cache-Control': `public, max-age=${this.maxAge}`,
-            'Last-Modified': stats.mtime.toUTCString()
+            'Last-Modified': stats.mtime.toUTCString(),
         };
-        if (etag) {
-            headers['ETag'] = etag;
+        if (etag$1) {
+            headers['ETag'] = etag$1;
         }
-        const content = await readFile(filepath);
+        const content = await fs.readFile(filepath);
         if (this.compression && this.isCompressible(mimeType) && content.length > 1024) {
             const acceptEncoding = req.headers['accept-encoding'] || '';
             if (acceptEncoding.includes('gzip')) {
@@ -71,7 +91,7 @@ class StaticFileMiddleware {
             '.ttf': 'application/font-ttf',
             '.eot': 'application/vnd.ms-fontobject',
             '.otf': 'application/font-otf',
-            '.wasm': 'application/wasm'
+            '.wasm': 'application/wasm',
         };
         return mimeTypes[ext] || 'application/octet-stream';
     }
@@ -81,8 +101,8 @@ class StaticFileMiddleware {
                 if (req.method !== 'GET' && req.method !== 'HEAD') {
                     return next();
                 }
-                const urlPath = path.normalize(decodeURIComponent(req.url || '').split('?')[0]);
-                if (this.dotFiles !== 'allow' && urlPath.split('/').some(p => p.startsWith('.'))) {
+                const urlPath = path__namespace.normalize(decodeURIComponent(req.url || '').split('?')[0]);
+                if (this.dotFiles !== 'allow' && urlPath.split('/').some((p) => p.startsWith('.'))) {
                     if (this.dotFiles === 'deny') {
                         res.writeHead(403);
                         res.end('Forbidden');
@@ -90,14 +110,14 @@ class StaticFileMiddleware {
                     }
                     return next();
                 }
-                const fullPath = path.join(this.root, urlPath);
+                const fullPath = path__namespace.join(this.root, urlPath);
                 try {
-                    const stats = await stat(fullPath);
+                    const stats = await fs.stat(fullPath);
                     if (stats.isDirectory()) {
                         for (const indexFile of this.index) {
-                            const indexPath = path.join(fullPath, indexFile);
+                            const indexPath = path__namespace.join(fullPath, indexFile);
                             try {
-                                const indexStats = await stat(indexPath);
+                                const indexStats = await fs.stat(indexPath);
                                 if (indexStats.isFile()) {
                                     await this.serveFile(indexPath, indexStats, req, res);
                                     return;
@@ -125,5 +145,5 @@ class StaticFileMiddleware {
     }
 }
 
-export { StaticFileMiddleware };
-//# sourceMappingURL=StaticFileMiddleware.js.map
+exports.StaticFileMiddleware = StaticFileMiddleware;
+//# sourceMappingURL=StaticFileMiddleware.cjs.map

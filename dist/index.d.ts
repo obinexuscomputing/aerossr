@@ -72,6 +72,13 @@ declare class StaticFileMiddleware {
     middleware(): Middleware$1;
 }
 
+declare class SecurityMiddleware {
+    static csrfProtection(req: IncomingMessage, res: ServerResponse, next: () => void): void;
+    static rateLimit(limit: number, windowMs: number): (req: IncomingMessage, res: ServerResponse, next: () => void) => void;
+    static securityHeaders(req: IncomingMessage, res: ServerResponse, next: () => void): void;
+    static sanitizeInput(req: IncomingMessage, res: ServerResponse, next: () => void): void;
+}
+
 declare class AeroSSR {
     readonly config: Required<AeroSSRConfig$1>;
     readonly logger: Logger;
@@ -132,4 +139,4 @@ interface MetaTags {
 type RouteHandler = (req: IncomingMessage, res: ServerResponse) => Promise<void> | void;
 type Middleware = (req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => Promise<void>;
 
-export { AeroSSR, AeroSSRConfig, CacheStore, Logger, LoggerOptions, MetaTags, Middleware, RouteHandler, StaticFileMiddleware, StaticFileOptions, createCache, AeroSSR as default, generateBundle, generateETag, generateErrorPage, handleError, injectMetaTags, minifyBundle, resolveDependencies, setCorsHeaders };
+export { AeroSSR, AeroSSRConfig, CacheStore, Logger, LoggerOptions, MetaTags, Middleware, RouteHandler, SecurityMiddleware, StaticFileMiddleware, StaticFileOptions, createCache, AeroSSR as default, generateBundle, generateETag, generateErrorPage, handleError, injectMetaTags, minifyBundle, resolveDependencies, setCorsHeaders };

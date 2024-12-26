@@ -10,7 +10,8 @@ const errorHandler = require('./utils/errorHandler.cjs');
 const html = require('./utils/html.cjs');
 const bundler = require('./utils/bundler.cjs');
 const AeroSSR = require('./AeroSSR.cjs');
-const StaticFileMiddleware = require('./middleware/StaticFileMiddleware.cjs');
+const StaticFileMiddleware = require('./middlewares/StaticFileMiddleware.cjs');
+const SecurityMiddleware = require('./middlewares/SecurityMiddleware.cjs');
 
 
 
@@ -27,4 +28,5 @@ exports.resolveDependencies = bundler.resolveDependencies;
 exports.AeroSSR = AeroSSR.AeroSSR;
 exports.default = AeroSSR.AeroSSR;
 exports.StaticFileMiddleware = StaticFileMiddleware.StaticFileMiddleware;
+exports.SecurityMiddleware = SecurityMiddleware.SecurityMiddleware;
 //# sourceMappingURL=index.cjs.map
