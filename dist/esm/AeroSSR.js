@@ -1,4 +1,4 @@
-import __dirname from './_virtual/cc59e506447c6bee1d9e12145f6ef0.js';
+import __dirname from './_virtual/f10eb0067b0fd41701e1773058a1fa.js';
 import { createServer } from 'http';
 import { promises } from 'fs';
 import { parse } from 'url';

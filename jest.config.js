@@ -2,7 +2,9 @@
 export default {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/src'],
+  testMatch: [
+    "**/__tests__/**/*.test.ts"
+  ],
   transform: {
     '^.+\\.tsx?$': [
       'ts-jest',
@@ -17,11 +19,9 @@ export default {
   },
   extensionsToTreatAsEsm: ['.ts'],
   moduleDirectories: ['node_modules', 'src'],
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
-    '!src/**/*.test.ts',
   ],
   coverageThreshold: {
     global: {
