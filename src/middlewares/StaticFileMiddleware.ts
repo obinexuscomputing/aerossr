@@ -32,10 +32,7 @@ export class StaticFileMiddleware {
   }
 
   private async handleDotFile(
-    req: IncomingMessage,
-    res: ServerResponse,
-    next: () => Promise<void>
-  ): Promise<boolean> {
+_req: IncomingMessage, res: ServerResponse, next: () => Promise<void>  ): Promise<boolean> {
     if (this.dotFiles === 'allow') {
       return false; // Continue processing
     }
