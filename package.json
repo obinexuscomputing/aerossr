@@ -2,6 +2,7 @@
   "name": "@obinexuscomputing/aerossr",
   "version": "0.1.0",
   "type": "module",
+  "description": "A Node.js library for server-side rendering (SSR) with TypeScript.",
   "exports": {
     ".": {
       "import": "./dist/esm/index.js",
@@ -9,6 +10,10 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "bin": {
+    "aerossr": "./dist/cjs/cli/index.cjs"
+  },
+  
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/index.d.ts",
@@ -17,14 +22,16 @@
     "ssr",
     "server-side-rendering",
     "node",
-    "typescript"
+    "typescript",
+    "rendering",
+    "frontend"
   ],
   "author": "OBINexusComputing <Nnamdi Michael Okpala>",
   "license": "MIT",
   "scripts": {
     "build": "npm run clean && rollup -c",
     "clean": "rimraf dist",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\"",
     "prepublishOnly": "npm run build",
     "test": "jest --coverage"
