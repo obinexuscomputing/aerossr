@@ -36,7 +36,7 @@ export async function initializeSSR(directory: string): Promise<void> {
     console.log(`Initialized a new AeroSSR project in ${projectRoot}`);
 }
 
-export function configureMiddleware(app: AeroSSR, path: any): void {
+export function configureMiddleware(app: AeroSSR): void {
     // Add static file middleware
     app.use(new StaticFileMiddleware({
         root: 'public',
@@ -48,7 +48,7 @@ export function configureMiddleware(app: AeroSSR, path: any): void {
     }).middleware());
 
     // Add logging middleware
-    app.use(async (req, res, next) => {
+    app.use(async (req, next) => {
         const start = Date.now();
         await next();
         console.log(`${req.method} ${req.url} - ${Date.now() - start}ms`);
