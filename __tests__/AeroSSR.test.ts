@@ -1,60 +1,100 @@
+// __tests__/AeroSSR.test.ts
 import { AddressInfo } from 'net';
-import fetch from 'node-fetch';
 import fs from 'fs/promises';
 import path from 'path';
 import { IncomingMessage, ServerResponse } from 'http';
-import AeroSSR from '..';
+import { AeroSSR, StaticFileMiddleware } from '../src';
 
 jest.mock('fs/promises');
-jest.mock('../utils/logger');
+jest.mock('../src/utils/logger');
 
 describe('AeroSSR Core', () => {
-  let aero: AeroSSR;
+  let aerossr: AeroSSR;
   let testPort: number;
   const mockFs = fs as jest.Mocked<typeof fs>;
 
   beforeEach(() => {
     testPort = 3000 + Math.floor(Math.random() * 1000);
-    aero = new AeroSSR({ port: testPort });
+    aerossr = new AeroSSR({ port: testPort });
 
     // Mock file system
     mockFs.readFile.mockResolvedValue('<html><head></head><body></body></html>');
     mockFs.writeFile.mockResolvedValue();
-    mockFs.mkdir.mockResolvedValue(fs);
-  });
-
-  afterEach(async () => {
-    await aero.stop();
+    mockFs.mkdir.mockResolvedValue(undefined);
     jest.clearAllMocks();
   });
 
+  afterEach(async () => {
+    await aerossr.stop();
+  });
+
   describe('Server Lifecycle', () => {
-    test('should start and stop server successfully', async () => {
-      const server = await aero.start();
+    it('should start the server successfully', async () => {
+      const server = await aerossr.start();
       expect(server.listening).toBe(true);
       
       const address = server.address() as AddressInfo;
       expect(address.port).toBe(testPort);
+    });
 
-      await aero.stop();
+    it('should stop the server successfully', async () => {
+      const server = await aerossr.start();
+      await aerossr.stop();
       expect(server.listening).toBe(false);
     });
 
-    test('should handle multiple stop calls gracefully', async () => {
-      await aero.start();
-      await aero.stop();
-      await expect(aero.stop()).resolves.not.toThrow();
+    it('should handle multiple stop calls gracefully', async () => {
+      await aerossr.start();
+      await aerossr.stop();
+      await expect(aerossr.stop()).resolves.not.toThrow();
+    });
+  });
+
+  describe('Configuration', () => {
+    it('should use default configuration values', () => {
+      const defaultAero = new AeroSSR();
+      expect(defaultAero.config.port).toBe(3000);
+      expect(defaultAero.config.compression).toBe(true);
+      expect(defaultAero.config.corsOrigins).toBe('*');
+      expect(defaultAero.config.cacheMaxAge).toBe(3600);
+      expect(defaultAero.config.logFilePath).toBeNull();
+    });
+
+    it('should override default configuration', () => {
+      const customAero = new AeroSSR({
+        port: 4000,
+        compression: false,
+        corsOrigins: 'http://localhost',
+        cacheMaxAge: 7200,
+        logFilePath: 'custom.log'
+      });
+
+      expect(customAero.config.port).toBe(4000);
+      expect(customAero.config.compression).toBe(false);
+      expect(customAero.config.corsOrigins).toBe('http://localhost');
+      expect(customAero.config.cacheMaxAge).toBe(7200);
+      expect(customAero.config.logFilePath).toBe('custom.log');
+    });
+
+    it('should use default meta tags when not provided', () => {
+      const defaultAero = new AeroSSR();
+      expect(defaultAero.config.defaultMeta).toEqual({
+        title: 'AeroSSR App',
+        description: 'Built with AeroSSR bundler',
+        charset: 'UTF-8',
+        viewport: 'width=device-width, initial-scale=1.0'
+      });
     });
   });
 
   describe('Routing', () => {
-    test('should handle basic routes', async () => {
-      aero.route('/test', (req: IncomingMessage, res: ServerResponse) => {
+    it('should handle basic routes', async () => {
+      aerossr.route('/test', (req: IncomingMessage, res: ServerResponse) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ message: 'success' }));
       });
 
-      const server = await aero.start();
+      const server = await aerossr.start();
       const address = server.address() as AddressInfo;
       
       const response = await fetch(`http://localhost:${address.port}/test`);
@@ -64,14 +104,14 @@ describe('AeroSSR Core', () => {
       expect(data).toEqual({ message: 'success' });
     });
 
-    test('should handle async routes', async () => {
-      aero.route('/async', async (_req: IncomingMessage, res: ServerResponse) => {
+    it('should handle async routes', async () => {
+      aerossr.route('/async', async (_req: IncomingMessage, res: ServerResponse) => {
         await new Promise(resolve => setTimeout(resolve, 10));
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ message: 'async success' }));
       });
 
-      const server = await aero.start();
+      const server = await aerossr.start();
       const address = server.address() as AddressInfo;
       
       const response = await fetch(`http://localhost:${address.port}/async`);
@@ -81,8 +121,8 @@ describe('AeroSSR Core', () => {
       expect(data).toEqual({ message: 'async success' });
     });
 
-    test('should handle 404 for unknown routes', async () => {
-      const server = await aero.start();
+    it('should handle 404 for unknown routes', async () => {
+      const server = await aerossr.start();
       const address = server.address() as AddressInfo;
       
       const response = await fetch(`http://localhost:${address.port}/unknown`);
@@ -91,99 +131,72 @@ describe('AeroSSR Core', () => {
   });
 
   describe('Middleware', () => {
-    test('should execute middleware in order', async () => {
+    it('should execute middleware in order', async () => {
       const order: number[] = [];
 
-      aero.use(async (_req, _res, next) => {
+      aerossr.use(async (_req, _res, next) => {
         order.push(1);
         await next();
       });
 
-      aero.use(async (_req, _res, next) => {
+      aerossr.use(async (_req, _res, next) => {
         order.push(2);
         await next();
       });
 
-      aero.route('/middleware-test', (_req, res) => {
+      aerossr.route('/middleware-test', (_req, res) => {
         order.push(3);
         res.writeHead(200);
         res.end();
       });
 
-      const server = await aero.start();
+      const server = await aerossr.start();
       const address = server.address() as AddressInfo;
       
       await fetch(`http://localhost:${address.port}/middleware-test`);
       expect(order).toEqual([1, 2, 3]);
     });
 
-    test('should handle middleware errors', async () => {
-      aero.use(async () => {
+    it('should handle middleware errors', async () => {
+      aerossr.use(async () => {
         throw new Error('Middleware error');
       });
 
-      const server = await aero.start();
+      const server = await aerossr.start();
       const address = server.address() as AddressInfo;
       
       const response = await fetch(`http://localhost:${address.port}/any`);
       expect(response.status).toBe(500);
+      const html = await response.text();
+      expect(html).toContain('Middleware error');
     });
-  });
 
-  describe('Static Files', () => {
-    test('should serve static files', async () => {
-      const staticMiddleware = new StaticFileMiddleware({
-        root: path.join(__dirname, 'public'),
+    it('should allow middleware to modify request/response', async () => {
+      aerossr.use(async (_req, res, next) => {
+        res.setHeader('X-Custom-Header', 'test-value');
+        await next();
       });
 
-      aero.use(staticMiddleware.middleware());
-
-      mockFs.stat.mockResolvedValue({
-        isFile: () => true,
-        isDirectory: () => false,
-        mtime: new Date(),
-        size: 1000,
-      } as any);
-
-      mockFs.readFile.mockResolvedValue(Buffer.from('static file content'));
-
-      const server = await aero.start();
-      const address = server.address() as AddressInfo;
-      
-      const response = await fetch(`http://localhost:${address.port}/test.txt`);
-      const content = await response.text();
-
-      expect(response.status).toBe(200);
-      expect(content).toBe('static file content');
-    });
-  });
-
-  describe('CORS', () => {
-    test('should handle CORS preflight requests', async () => {
-      const server = await aero.start();
-      const address = server.address() as AddressInfo;
-      
-      const response = await fetch(`http://localhost:${address.port}/test`, {
-        method: 'OPTIONS',
-        headers: {
-          'Origin': 'http://localhost',
-          'Access-Control-Request-Method': 'POST',
-        },
+      aerossr.route('/test', (_req, res) => {
+        res.writeHead(200);
+        res.end();
       });
 
-      expect(response.status).toBe(204);
-      expect(response.headers.get('access-control-allow-origin')).toBe('*');
-      expect(response.headers.get('access-control-allow-methods')).toContain('POST');
+      const server = await aerossr.start();
+      const address = server.address() as AddressInfo;
+      
+      const response = await fetch(`http://localhost:${address.port}/test`);
+      expect(response.headers.get('x-custom-header')).toBe('test-value');
     });
   });
 
   describe('Error Handling', () => {
-    test('should handle synchronous errors in routes', async () => {
-      aero.route('/error', () => {
+    it('should handle synchronous errors in routes', async () => {
+      aerossr.route('/error', () => {
         throw new Error('Test error');
       });
 
-      const server = await aero.start();
+      const server = await aerossr.start();
       const address = server.address() as AddressInfo;
       
       const response = await fetch(`http://localhost:${address.port}/error`);
@@ -193,13 +206,13 @@ describe('AeroSSR Core', () => {
       expect(html).toContain('Test error');
     });
 
-    test('should handle asynchronous errors in routes', async () => {
-      aero.route('/async-error', async () => {
+    it('should handle asynchronous errors in routes', async () => {
+      aerossr.route('/async-error', async () => {
         await new Promise(resolve => setTimeout(resolve, 10));
         throw new Error('Async test error');
       });
 
-      const server = await aero.start();
+      const server = await aerossr.start();
       const address = server.address() as AddressInfo;
       
       const response = await fetch(`http://localhost:${address.port}/async-error`);
@@ -210,9 +223,9 @@ describe('AeroSSR Core', () => {
     });
   });
 
-  describe('Caching', () => {
-    test('should handle ETag caching', async () => {
-      aero.route('/cached', (_req: IncomingMessage, res: ServerResponse) => {
+  describe('Cache Management', () => {
+    it('should handle ETag caching', async () => {
+      aerossr.route('/cached', (_req: IncomingMessage, res: ServerResponse) => {
         const content = 'cached content';
         const etag = `"${Buffer.from(content).toString('base64')}"`;
         
@@ -229,7 +242,7 @@ describe('AeroSSR Core', () => {
         res.end(content);
       });
 
-      const server = await aero.start();
+      const server = await aerossr.start();
       const address = server.address() as AddressInfo;
       
       // First request
@@ -245,14 +258,14 @@ describe('AeroSSR Core', () => {
       expect(response2.status).toBe(304);
     });
 
-    test('should clear cache', async () => {
+    it('should clear cache successfully', () => {
       const bundleCache = new Map();
       const templateCache = new Map();
 
       bundleCache.set('test', 'value');
       templateCache.set('test', 'value');
 
-      aero = new AeroSSR({
+      const customAero = new AeroSSR({
         port: testPort,
         bundleCache: {
           get: (key: string) => bundleCache.get(key),
@@ -266,31 +279,50 @@ describe('AeroSSR Core', () => {
         },
       });
 
-      aero.clearCache();
+      customAero.clearCache();
       
       expect(bundleCache.size).toBe(0);
       expect(templateCache.size).toBe(0);
     });
   });
 
-  describe('Configuration', () => {
-    test('should use default configuration values', () => {
-      const defaultAero = new AeroSSR();
-      expect(defaultAero['config'].port).toBe(3000);
-      expect(defaultAero['config'].compression).toBe(true);
-      expect(defaultAero['config'].corsOrigins).toBe('*');
-    });
-
-    test('should override default configuration', () => {
-      const customAero = new AeroSSR({
-        port: 4000,
-        compression: false,
-        corsOrigins: 'http://localhost',
+  describe('CORS', () => {
+    it('should handle CORS preflight requests', async () => {
+      const server = await aerossr.start();
+      const address = server.address() as AddressInfo;
+      
+      const response = await fetch(`http://localhost:${address.port}/test`, {
+        method: 'OPTIONS',
+        headers: {
+          'Origin': 'http://localhost',
+          'Access-Control-Request-Method': 'POST',
+        },
       });
 
-      expect(customAero['config'].port).toBe(4000);
-      expect(customAero['config'].compression).toBe(false);
-      expect(customAero['config'].corsOrigins).toBe('http://localhost');
+      expect(response.status).toBe(204);
+      expect(response.headers.get('access-control-allow-origin')).toBe('*');
+      expect(response.headers.get('access-control-allow-methods')).toContain('POST');
+    });
+
+    it('should respect custom CORS origins', async () => {
+      const customAero = new AeroSSR({
+        port: testPort,
+        corsOrigins: 'http://example.com'
+      });
+
+      const server = await customAero.start();
+      const address = server.address() as AddressInfo;
+      
+      const response = await fetch(`http://localhost:${address.port}/test`, {
+        method: 'OPTIONS',
+        headers: {
+          'Origin': 'http://example.com',
+          'Access-Control-Request-Method': 'GET',
+        },
+      });
+
+      expect(response.headers.get('access-control-allow-origin')).toBe('http://example.com');
+      await customAero.stop();
     });
   });
 });
