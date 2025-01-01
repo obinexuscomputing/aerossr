@@ -83,7 +83,6 @@ async function resolveFilePath(
   importPath: string,
   fromPath: string,
   extensions: string[],
-  baseDir: string
 ): Promise<string | null> {
   // Handle package imports
   if (!importPath.startsWith('.') && !importPath.startsWith('/')) {
