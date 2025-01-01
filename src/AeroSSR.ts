@@ -23,7 +23,7 @@ export class AeroSSR {
   public readonly middlewares: Middleware[] = [];
 
   constructor(config: AeroSSRConfig = {}) {
-    const corsOptions: CorsOptions = typeof config.corsOrigins === 'string' 
+    const corsOptions: CorsOptions = typeof config.corsOrigins === 'string'
       ? { origins: config.corsOrigins }
       : config.corsOrigins || { origins: '*' };
 
@@ -88,7 +88,7 @@ export class AeroSSR {
       const pathname = parsedUrl.pathname || '/';
 
       if (_req.method === 'OPTIONS') {
-        setCorsHeaders(res, this.config.corsOrigins);
+        setCorsHeaders(res, this.config.corsOrigins as CorsOptions);
         res.writeHead(204);
         res.end();
         return;
@@ -128,7 +128,7 @@ export class AeroSSR {
       return;
     }
 
-    setCorsHeaders(res, this.config.corsOrigins);
+    setCorsHeaders(res, this.config.corsOrigins as CorsOptions);
     res.writeHead(200, {
       'Content-Type': 'application/javascript',
       'Cache-Control': `public, max-age=${this.config.cacheMaxAge}`,

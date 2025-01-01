@@ -33,3 +33,24 @@ export function setCorsHeaders(res: ServerResponse, options: CorsOptions = {}): 
   
   res.setHeader('Access-Control-Max-Age', maxAge.toString());
 }
+
+// Helper functions
+export function normalizeCorsOptions(options: string | CorsOptions | undefined): CorsOptions {
+  if (typeof options === 'string') {
+    return { origins: options };
+  }
+  return options || { origins: '*' };
+}
+
+export function isPromise(value: any): value is Promise<unknown> {
+  return value instanceof Promise || (!!value && typeof value.then === 'function');
+}
+
+export function ensureAsync<T extends (...args: any[]) => any>(
+  fn: T
+): (...args: Parameters<T>) => Promise<ReturnType<T>> {
+  return async (...args) => {
+    const result = fn(...args);
+    return isPromise(result) ? result : Promise.resolve(result);
+  };
+}

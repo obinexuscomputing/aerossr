@@ -1,10 +1,23 @@
 import { IncomingMessage, ServerResponse, Server } from 'http';
 
+interface LoggerOptions$1 {
+    logFilePath?: string | null;
+    logLevel?: 'debug' | 'info' | 'warn' | 'error';
+    maxFileSize?: number;
+    maxFiles?: number;
+    format?: 'json' | 'text';
+}
 declare class Logger {
     private logFilePath;
-    constructor(options?: LoggerOptions);
-    log(message: string): void;
+    private readonly options;
+    private static readonly DEFAULT_OPTIONS;
+    constructor(options?: LoggerOptions$1);
+    private initializeLogFile;
+    getLogPath(): string | null;
+    private formatMessage;
+    log(message: string): Promise<void>;
     logRequest(req: IncomingMessage): void;
+    clear(): Promise<void>;
 }
 
 interface CacheStore$2<T> {
@@ -69,6 +82,7 @@ declare function injectMetaTags(html: string, meta?: MetaTags$2, defaultMeta?: M
 interface DependencyOptions {
     extensions?: string[];
     maxDepth?: number;
+    ignorePatterns?: string[];
 }
 /**
  * Resolves all dependencies for a given file

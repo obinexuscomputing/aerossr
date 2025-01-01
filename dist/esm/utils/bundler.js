@@ -1,14 +1,16 @@
+import browser$1 from '../_virtual/_polyfill-node.process.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-// src/utils/bundler.ts
 /**
  * Resolves all dependencies for a given file
  */
 async function resolveDependencies(filePath, deps = new Set(), options = {}, depth = 0) {
-    const { extensions = ['.js', '.ts'], maxDepth = 100 } = options;
-    // Prevent infinite recursion
-    if (depth > maxDepth || deps.has(filePath)) {
+    const { extensions = ['.js', '.ts'], maxDepth = 100, ignorePatterns = [] } = options;
+    // Prevent infinite recursion and check ignore patterns
+    if (depth > maxDepth ||
+        deps.has(filePath) ||
+        ignorePatterns.some(pattern => filePath.includes(pattern))) {
         return deps;
     }
     try {
@@ -21,26 +23,15 @@ async function resolveDependencies(filePath, deps = new Set(), options = {}, dep
             if (!depPath)
                 continue;
             try {
-                let fullPath = path.resolve(path.dirname(filePath), depPath);
-                // Add extension if needed
-                if (!extensions.some(ext => depPath.endsWith(ext))) {
-                    for (const ext of extensions) {
-                        try {
-                            await fs.access(fullPath + ext);
-                            fullPath += ext;
-                            break;
-                        }
-                        catch {
-                            continue;
-                        }
-                    }
-                }
-                if (extensions.some(ext => fullPath.endsWith(ext))) {
+                const fullPath = await resolveFilePath(depPath, filePath, extensions);
+                if (fullPath) {
                     await resolveDependencies(fullPath, deps, options, depth + 1);
                 }
             }
             catch (err) {
-                console.warn(`Warning: Could not resolve dependency ${depPath} in ${filePath}`);
+                if (browser$1.env.NODE_ENV !== 'test') {
+                    console.warn(`Warning: Could not resolve dependency ${depPath} in ${filePath}`);
+                }
             }
         }
     }
@@ -49,24 +40,85 @@ async function resolveDependencies(filePath, deps = new Set(), options = {}, dep
     }
     return deps;
 }
+async function resolveFilePath(importPath, fromPath, extensions) {
+    const basePath = path.resolve(path.dirname(fromPath), importPath);
+    // Check if path already has a valid extension
+    if (extensions.some(ext => importPath.endsWith(ext))) {
+        try {
+            await fs.access(basePath);
+            return basePath;
+        }
+        catch {
+            return null;
+        }
+    }
+    // Try adding extensions
+    for (const ext of extensions) {
+        const fullPath = basePath + ext;
+        try {
+            await fs.access(fullPath);
+            return fullPath;
+        }
+        catch {
+            continue;
+        }
+    }
+    return null;
+}
 /**
  * Minifies JavaScript code while preserving string contents
  */
 function minifyBundle(code) {
     if (!code.trim())
         return '';
-    return code
-        // Remove multi-line comments
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        // Remove single-line comments (but not URLs in strings)
-        .replace(/([^:]|^)\/\/[^\n]*/g, '$1')
-        // Replace multiple spaces with single space (preserve string contents)
-        .split(/"[^"]*"|'[^']*'/)
-        .map((part, i) => i % 2 === 0 ? part.replace(/\s+/g, ' ').trim() : part)
-        .join('')
-        // Remove spaces around operators and brackets (outside strings)
-        .replace(/\s*([+\-*/%=<>!&|^~?:,;{}[\]()])\s*/g, '$1')
-        .trim();
+    let inString = false;
+    let stringChar = '';
+    let result = '';
+    let i = 0;
+    while (i < code.length) {
+        if (!inString) {
+            // Handle comments
+            if (code[i] === '/' && code[i + 1] === '*') {
+                i = code.indexOf('*/', i + 2) + 2;
+                if (i === 1)
+                    i = code.length;
+                continue;
+            }
+            if (code[i] === '/' && code[i + 1] === '/') {
+                i = code.indexOf('\n', i) + 1;
+                if (i === 0)
+                    i = code.length;
+                continue;
+            }
+            // Handle strings
+            if (code[i] === '"' || code[i] === "'") {
+                inString = true;
+                stringChar = code[i];
+                result += code[i];
+                i++;
+                continue;
+            }
+            // Handle whitespace
+            if (/\s/.test(code[i])) {
+                result += ' ';
+                while (i < code.length && /\s/.test(code[i]))
+                    i++;
+                continue;
+            }
+        }
+        else {
+            // Handle string ending
+            if (code[i] === stringChar && code[i - 1] !== '\\') {
+                inString = false;
+                stringChar = '';
+            }
+        }
+        if (i < code.length) {
+            result += code[i];
+            i++;
+        }
+    }
+    return result.trim().replace(/\s+/g, ' ');
 }
 /**
  * Generates a bundled JavaScript file from an entry point
