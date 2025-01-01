@@ -1,64 +1,94 @@
+// __tests__/utils/bundler.test.ts
 import { generateBundle, resolveDependencies, minifyBundle } from '../../src/utils/bundler';
-import fs from 'fs/promises';
+import fs, { PathLike } from 'fs/promises';
+import path from 'path';
 
 jest.mock('fs/promises');
-
-const mockIndexPath = './test/index.js';
-const mockDependencyPath = './test/dependency.js';
-const mockFs = fs as jest.Mocked<typeof fs>;
-const mockProjectPath = './test';
+jest.mock('path');
 
 describe('Bundler', () => {
-  test('should generate bundle', async () => {
-    mockFs.readFile.mockResolvedValue('const test = true;');
-    const bundle = await generateBundle('./test', 'index.js');
-    expect(bundle).toBeDefined();
-  });
+  const mockFs = fs as jest.Mocked<typeof fs>;
+  const mockPath = path as jest.Mocked<typeof path>;
+  
+  // Setup mock paths
+  const mockProjectPath = '/test/project';
+  const mockIndexPath = '/test/project/index.js';
+  const mockDependencyPath = '/test/project/dependency.js';
+  
   beforeEach(() => {
-    mockFs.readFile.mockImplementation(async (path) => {
-      path = path.toString();
-      if (path === mockIndexPath) {
+    // Reset all mocks
+    jest.clearAllMocks();
+    
+    // Setup path.resolve mock
+    mockPath.resolve.mockImplementation((dir, file) => {
+      if (file.includes('dependency')) return mockDependencyPath;
+      return mockIndexPath;
+    });
+    
+    // Setup path.dirname mock
+    mockPath.dirname.mockImplementation(() => mockProjectPath);
+    
+    // Setup path.join mock
+    mockPath.join.mockImplementation((dir, file) => {
+      if (file === 'index.js') return mockIndexPath;
+      if (file === 'dependency.js') return mockDependencyPath;
+      return path.join(dir, file);
+    });
+    
+    // Setup path.relative mock
+    mockPath.relative.mockImplementation((from, to) => {
+      if (to === mockDependencyPath) return 'dependency.js';
+      if (to === mockIndexPath) return 'index.js';
+      return to;
+    });
+
+    // Setup default file mock responses
+    mockFs.readFile.mockImplementation(async (path: PathLike) => {
+      const pathStr = path.toString();
+      if (pathStr === mockIndexPath) {
         return `const dep = require('./dependency');\nconsole.log(dep);`;
       }
-      if (path === mockDependencyPath) {
+      if (pathStr === mockDependencyPath) {
         return `module.exports = 'Hello from dependency';`;
       }
       throw new Error('File not found');
     });
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
   describe('resolveDependencies', () => {
-    test('should resolve direct dependencies', async () => {
+    it('should resolve direct dependencies', async () => {
       const dependencies = await resolveDependencies(mockIndexPath);
-      expect(dependencies.has(mockDependencyPath)).toBe(true);
-      expect(dependencies.size).toBe(2); // index.js and dependency.js
+      expect(Array.from(dependencies)).toEqual(
+        expect.arrayContaining([mockIndexPath, mockDependencyPath])
+      );
+      expect(dependencies.size).toBe(2);
     });
 
-    test('should handle circular dependencies', async () => {
+    it('should handle circular dependencies', async () => {
       mockFs.readFile.mockImplementation(async (path) => {
-        path = path.toString();
-        if (path.includes('index.js')) {
+        const pathStr = path.toString();
+        if (pathStr === mockIndexPath) {
           return `require('./circular')`;
         }
-        return `require('./index')`;
+        if (pathStr.includes('circular')) {
+          return `require('./index')`;
+        }
+        throw new Error('File not found');
       });
 
       const dependencies = await resolveDependencies(mockIndexPath);
       expect(dependencies.size).toBe(2);
     });
 
-    test('should handle invalid imports', async () => {
+    it('should handle invalid imports gracefully', async () => {
       mockFs.readFile.mockResolvedValue(`import { something } from "invalid"`);
-      await expect(resolveDependencies(mockIndexPath)).resolves.toBeDefined();
+      const dependencies = await resolveDependencies(mockIndexPath);
+      expect(dependencies.size).toBe(1); // Should only include the entry file
     });
   });
 
   describe('minifyBundle', () => {
-    test('should remove comments and whitespace', () => {
+    it('should remove comments and whitespace', () => {
       const code = `
         // Single line comment
         function test() {
@@ -68,37 +98,37 @@ describe('Bundler', () => {
         }
       `;
       const minified = minifyBundle(code);
-      expect(minified).not.toContain('//');
-      expect(minified).not.toContain('/*');
       expect(minified).toBe('function test() { return true; }');
     });
 
-    test('should handle empty input', () => {
-      expect(minifyBundle('')).toBe('');
-    });
-
-    test('should preserve string contents', () => {
-      const code = `const str = "  preserved  spaces  ";`;
+    it('should preserve string contents', () => {
+      const code = 'const str = "  preserved  spaces  ";';
       const minified = minifyBundle(code);
       expect(minified).toBe('const str = "  preserved  spaces  ";');
+    });
+
+    it('should handle empty input', () => {
+      expect(minifyBundle('')).toBe('');
     });
   });
 
   describe('generateBundle', () => {
-    test('should generate bundle with dependencies', async () => {
+    it('should generate bundle with dependencies', async () => {
       const bundle = await generateBundle(mockProjectPath, 'index.js');
       expect(bundle).toContain('Hello from dependency');
       expect(bundle).toContain('console.log');
-    });
-
-    test('should handle missing dependencies', async () => {
-      mockFs.readFile.mockRejectedValueOnce(new Error('File not found'));
-      await expect(generateBundle(mockProjectPath, 'missing.js')).rejects.toThrow();
-    });
-
-    test('should include relative paths in comments', async () => {
-      const bundle = await generateBundle(mockProjectPath, 'index.js');
       expect(bundle).toContain('// File: dependency.js');
+    });
+
+    it('should handle missing dependencies', async () => {
+      mockFs.readFile.mockRejectedValueOnce(new Error('File not found'));
+      await expect(generateBundle(mockProjectPath, 'missing.js'))
+        .rejects.toThrow('File not found');
+    });
+
+    it('should include relative paths in comments', async () => {
+      const bundle = await generateBundle(mockProjectPath, 'index.js');
+      expect(bundle).toMatch(/\/\/ File: [^\/\\]+\.js/);
     });
   });
 });
