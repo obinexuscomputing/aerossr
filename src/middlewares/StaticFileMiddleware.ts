@@ -147,7 +147,7 @@ export class StaticFileMiddleware {
           return;
         }
 
-        const urlPath = path.normalize(decodeURIComponent(req.url || '').split('?')[0]);
+        const urlPath = path.normalize(decodeURIComponent((req.url ?? '').split('?')[0]));
         
         // Security check for dotfiles
         if (this.isDotFile(urlPath)) {
