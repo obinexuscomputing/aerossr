@@ -1,7 +1,12 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { AeroSSR, StaticFileMiddleware } from '../';
+import type { IncomingMessage, ServerResponse } from 'http';
+import type { Middleware } from '../types';
 
+/**
+ * Initialize a new AeroSSR project in the specified directory
+ */
 export async function initializeSSR(directory: string): Promise<void> {
     const projectRoot = path.resolve(directory);
     const publicDir = path.join(projectRoot, 'public');
@@ -18,52 +23,77 @@ export async function initializeSSR(directory: string): Promise<void> {
 <!DOCTYPE html>
 <html>
 <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>AeroSSR App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroSSR App</title>
 </head>
 <body>
-        <h1>Welcome to AeroSSR</h1>
-        <div id="app"></div>
+    <h1>Welcome to AeroSSR</h1>
+    <div id="app"></div>
 </body>
 </html>
-    `;
-    await fs.writeFile(indexHtmlPath, defaultHtmlContent, 'utf-8');
+`;
 
-    // Create an empty log file
+    await fs.writeFile(indexHtmlPath, defaultHtmlContent, 'utf-8');
     await fs.writeFile(logFilePath, '', 'utf-8');
 
     console.log(`Initialized a new AeroSSR project in ${projectRoot}`);
 }
 
+/**
+ * Create a logging middleware
+ */
+function createLoggingMiddleware(): Middleware {
+    return async (_req: IncomingMessage, _res: ServerResponse, next: () => Promise<void>) => {
+        const start = Date.now();
+        try {
+            await next();
+        } finally {
+            const duration = Date.now() - start;
+            console.log(`${_req.method} ${_req.url} - ${duration}ms`);
+        }
+    };
+}
+
+/**
+ * Create an error handling middleware
+ */
+function createErrorMiddleware(): Middleware {
+    return async (_req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => {
+        try {
+            await next();
+        } catch (error) {
+            console.error('Server error:', error);
+            
+            if (!res.headersSent) {
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('Internal Server Error');
+            }
+        }
+    };
+}
+
+/**
+ * Configure middleware for an AeroSSR application
+ */
 export function configureMiddleware(app: AeroSSR): void {
     // Add static file middleware
-    app.use(new StaticFileMiddleware({
+    const staticMiddleware = new StaticFileMiddleware({
         root: 'public',
         maxAge: 86400, // Cache for 1 day
         index: ['index.html'],
         dotFiles: 'ignore',
         compression: true,
         etag: true,
-    }).middleware());
+    });
+    
+    app.use(staticMiddleware.middleware());
 
     // Add logging middleware
-    app.use(async (req, next) => {
-        const start = Date.now();
-        await next();
-        console.log(`${req.method} ${req.url} - ${Date.now() - start}ms`);
-    });
+    app.use(createLoggingMiddleware());
 
     // Add error handling middleware
-    app.use(async (req, res) => {
-        try {
-            await next();
-        } catch (error) {
-            console.error(error);
-            res.writeHead(500);
-            res.end('Internal Server Error');
-        }
-    });
+    app.use(createErrorMiddleware());
 }
 
 
