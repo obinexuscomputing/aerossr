@@ -10,7 +10,7 @@ jest.mock('fs/promises');
 jest.mock('path');
 jest.mock('zlib');
 
-const gzipAsync = promisify(gzip) as jest.MockedFunction<typeof promisify>;
+const gzipAsync = promisify(gzip) as unknown as jest.MockedFunction<typeof promisify>;
 
 describe('StaticFileMiddleware', () => {
   let middleware: StaticFileMiddleware;
