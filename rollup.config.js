@@ -15,7 +15,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Node.js built-ins and their namespaces
 const builtins = [
   'path',
-  'fs', 
+  'fs',
   'fs/promises',
   'http',
   'crypto',
@@ -92,7 +92,7 @@ const createTypescriptPlugin = (outDir) => typescript({
 export default [
   // ESM build
   {
-    input: 'src/index.ts',
+    input: ['src/index.ts', 'src/cli/index.ts', 'src/AeroSSR.ts'],
     output: {
       dir: 'dist/esm',
       format: 'esm',
@@ -115,7 +115,7 @@ export default [
   },
   // CJS build
   {
-    input: 'src/index.ts',
+    input: ['src/index.ts', 'src/cli/index.ts', 'src/AeroSSR.ts'],
     output: {
       dir: 'dist/cjs',
       format: 'cjs',
@@ -139,11 +139,12 @@ export default [
   },
   // Type definitions
   {
-    input: 'src/index.ts',
+    input: ['src/index.ts', 'src/cli/index.ts', 'src/AeroSSR.ts'],
     output: [
       {
-        file: 'dist/index.d.ts',
-        format: 'es'
+        dir: 'dist/types',
+        format: 'es',
+        preserveModules: true
       }
     ],
     external,
