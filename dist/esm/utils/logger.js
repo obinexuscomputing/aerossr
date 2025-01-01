@@ -1,6 +1,6 @@
 import * as fs from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
-import path from 'path';
+import path__default from 'path';
 
 // src/utils/logger.ts
 class Logger {
@@ -27,7 +27,7 @@ class Logger {
         }
     }
     initializeLogFile() {
-        const logDir = path.dirname(this.logFilePath);
+        const logDir = path__default.dirname(this.logFilePath);
         if (!existsSync(logDir)) {
             try {
                 mkdirSync(logDir, { recursive: true });

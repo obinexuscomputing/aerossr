@@ -1,4 +1,4 @@
-ype AnyFunction = (...args: any[]) => any;
+import { AnyFunction } from "..";
 
 export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
   return Boolean(
