@@ -108,6 +108,10 @@ declare function minifyBundle(code: string): string;
 declare function generateBundle(projectPath: string, entryPoint: string, options?: BundleOptions): Promise<string>;
 
 /**
+ * Type guard to check if a value is a Promise
+ */
+declare function isPromise<T = unknown>(value: unknown): value is Promise<T>;
+/**
  * Ensures a function returns a Promise
  */
 declare function ensureAsync<T extends AnyFunction>(fn: T): (...args: Parameters<T>) => Promise<ReturnType<T>>;
@@ -186,7 +190,6 @@ interface AsyncResult<T> {
     error?: Error;
 }
 type AsyncHandler<T> = (...args: any[]) => Promise<AsyncResult<T>>;
-declare function isError(error: unknown): error is Error;
 
 type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'TRACE' | 'CONNECT';
 type RequiredConfig = Required<AeroSSRConfig> & {
@@ -248,4 +251,4 @@ declare class SecurityMiddleware {
     static sanitizeInput(req: IncomingMessage, res: ServerResponse): Promise<void>;
 }
 
-export { AeroSSR, AeroSSRConfig, AnyFunction, AsyncHandler, AsyncOptions, AsyncResult, BundleHandler, BundleOptions, CacheStoreBase as CacheStore, CacheStoreBase, CorsOptionsBase as CorsOptions, CorsOptionsBase, CustomError, DependencyOptions, ETagOptions, ErrorHandler, ErrorPageOptions, HTTPMethod, Logger, LoggerOptionsBase as LoggerOptions, LoggerOptionsBase, MetaTagsBase as MetaTags, MetaTagsBase, Middleware, RequiredConfig, RouteHandler, SecurityMiddleware, StaticFileHandler, StaticFileMiddleware, StaticFileOptions, TemplateHandler, createCache, deleteCookie, ensureAsync, generateBundle, generateETag, generateErrorPage, getCookie, handleError, injectMetaTags, isError, minifyBundle, normalizeCorsOptions, resolveDependencies, setCookie, setCorsHeaders };
+export { AeroSSR, AeroSSRConfig, AnyFunction, AsyncHandler, AsyncOptions, AsyncResult, BundleHandler, BundleOptions, CacheStoreBase as CacheStore, CacheStoreBase, CorsOptionsBase as CorsOptions, CorsOptionsBase, CustomError, DependencyOptions, ETagOptions, ErrorHandler, ErrorPageOptions, HTTPMethod, Logger, LoggerOptionsBase as LoggerOptions, LoggerOptionsBase, MetaTagsBase as MetaTags, MetaTagsBase, Middleware, RequiredConfig, RouteHandler, SecurityMiddleware, StaticFileHandler, StaticFileMiddleware, StaticFileOptions, TemplateHandler, createCache, deleteCookie, ensureAsync, generateBundle, generateETag, generateErrorPage, getCookie, handleError, injectMetaTags, isPromise, minifyBundle, normalizeCorsOptions, resolveDependencies, setCookie, setCorsHeaders };

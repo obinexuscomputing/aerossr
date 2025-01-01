@@ -122,19 +122,6 @@ export interface AsyncResult<T> {
 
 export type AsyncHandler<T> = (...args: any[]) => Promise<AsyncResult<T>>;
 
-// Type Guards
-export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
-  return Boolean(
-    value && 
-    typeof value === 'object' && 
-    'then' in value && 
-    typeof value.then === 'function'
-  );
-}
-
-export function isError(error: unknown): error is Error {
-  return error instanceof Error;
-}
 
 // Re-export utility types
 export type { ServerResponse, IncomingMessage } from 'http';

@@ -36,7 +36,7 @@ export async function initializeSSR(directory: string): Promise<void> {
     console.log(`Initialized a new AeroSSR project in ${projectRoot}`);
 }
 
-export function configureMiddleware(app: AeroSSR): void {
+export function configureMiddleware(app: AeroSSR, path: any): void {
     // Add static file middleware
     app.use(new StaticFileMiddleware({
         root: 'public',
@@ -66,7 +66,3 @@ export function configureMiddleware(app: AeroSSR): void {
     });
 }
 
-// Example usage of the imported functions
-initializeSSR('./my-aerossr-project');
-const app = new AeroSSR();
-configureMiddleware(app);
