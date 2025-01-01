@@ -1,7 +1,7 @@
 import { _ as _polyfillNode_util, d as browser$1 } from './AeroSSR-78d66d5f.js';
 import path__default from 'path';
 import require$$3, { promises } from 'fs';
-import { S as StaticFileMiddleware } from './StaticFileMiddleware-d624499c.js';
+import { S as StaticFileMiddleware } from './StaticFileMiddleware-646950c2.js';
 import 'fs/promises';
 import 'crypto';
 import 'http';

@@ -8,14 +8,6 @@ import { generateETag } from '../utils';
 
 const gzipAsync = promisify(gzip);
 
-export interface StaticFileOptions {
-  root: string;
-  maxAge?: number;
-  index?: string[];
-  dotFiles?: 'ignore' | 'allow' | 'deny';
-  compression?: boolean;
-  etag?: boolean;
-}
 
 export class StaticFileMiddleware {
   private readonly root: string;

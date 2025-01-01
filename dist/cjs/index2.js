@@ -3,7 +3,7 @@
 var AeroSSR = require('./AeroSSR-7fe0f7ff.js');
 var path = require('path');
 var require$$3 = require('fs');
-var StaticFileMiddleware = require('./StaticFileMiddleware-91108ebb.js');
+var StaticFileMiddleware = require('./StaticFileMiddleware-531e8867.js');
 require('fs/promises');
 require('crypto');
 require('http');

@@ -56,7 +56,6 @@ export interface StaticFileOptions {
   dotFiles?: 'ignore' | 'allow' | 'deny';
   compression?: boolean;
   etag?: boolean;
-  cacheSize?: number;
 }
 
 export type StaticFileHandler = (
