@@ -114,4 +114,4 @@ declare class AeroSSR {
     stop(): Promise<void>;
 }
 
-export { AnyFunction as A, BundleHandler as B, CacheStoreBase as C, ErrorHandler as E, HTTPMethod as H, LoggerOptionsBase as L, MetaTagsBase as M, RouteHandler as R, StaticFileOptions as S, TemplateHandler as T, AeroSSR as a, CorsOptionsBase as b, Middleware as c, StaticFileHandler as d, AsyncResult as e, AsyncOptions as f, AeroSSRConfig as g, AsyncHandler as h, RequiredConfig as i, Logger as j };
+export { AnyFunction as A, BundleHandler as B, CacheStoreBase as C, ErrorHandler as E, HTTPMethod as H, LoggerOptionsBase as L, Middleware as M, RouteHandler as R, StaticFileOptions as S, TemplateHandler as T, AeroSSR as a, CorsOptionsBase as b, MetaTagsBase as c, StaticFileHandler as d, AsyncResult as e, AsyncOptions as f, AeroSSRConfig as g, AsyncHandler as h, RequiredConfig as i, Logger as j };

@@ -1,5 +1,5 @@
 export { A as AeroSSR, L as Logger, c as createCache, b as generateBundle, a as generateETag, g as generateErrorPage, h as handleError, i as injectMetaTags, m as minifyBundle, n as normalizeCorsOptions, r as resolveDependencies, s as setCorsHeaders } from './AeroSSR-78d66d5f.js';
-export { S as StaticFileMiddleware } from './StaticFileMiddleware-3a909d94.js';
+export { S as StaticFileMiddleware } from './StaticFileMiddleware-d624499c.js';
 import 'http';
 import 'fs';
 import 'url';

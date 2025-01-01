@@ -1,8 +1,8 @@
-import { A as AnyFunction, S as StaticFileOptions } from '../AeroSSR-39b73498.js';
-export { a as AeroSSR, g as AeroSSRConfig, h as AsyncHandler, f as AsyncOptions, e as AsyncResult, B as BundleHandler, C as CacheStore, C as CacheStoreBase, b as CorsOptions, b as CorsOptionsBase, E as ErrorHandler, H as HTTPMethod, j as Logger, L as LoggerOptions, L as LoggerOptionsBase, M as MetaTags, M as MetaTagsBase, c as Middleware, i as RequiredConfig, R as RouteHandler, d as StaticFileHandler, T as TemplateHandler } from '../AeroSSR-39b73498.js';
+import { A as AnyFunction, S as StaticFileOptions, M as Middleware } from '../AeroSSR-bdf4f9b2.js';
+export { a as AeroSSR, g as AeroSSRConfig, h as AsyncHandler, f as AsyncOptions, e as AsyncResult, B as BundleHandler, C as CacheStore, C as CacheStoreBase, b as CorsOptions, b as CorsOptionsBase, E as ErrorHandler, H as HTTPMethod, j as Logger, L as LoggerOptions, L as LoggerOptionsBase, c as MetaTags, c as MetaTagsBase, i as RequiredConfig, R as RouteHandler, d as StaticFileHandler, T as TemplateHandler } from '../AeroSSR-bdf4f9b2.js';
+import { CorsOptionsBase } from '@/types';
 import { ServerResponse, IncomingMessage } from 'http';
 export { IncomingMessage, ServerResponse } from 'http';
-import { CorsOptionsBase } from '@/types';
 
 interface CacheStore<T> {
     get(key: string): T | undefined;
@@ -110,15 +110,13 @@ declare class StaticFileMiddleware {
     readonly dotFiles: 'ignore' | 'allow' | 'deny';
     readonly compression: boolean;
     readonly etag: boolean;
-    options: any;
     constructor(options: StaticFileOptions);
-    private serveFile;
     private isDotFile;
     private handleDotFile;
     private isCompressible;
     private getMimeType;
-    private statFile;
-    middleware(): (req: IncomingMessage, res: ServerResponse, next: () => void) => Promise<void>;
+    private serveFile;
+    middleware(): Middleware;
 }
 
 declare class SecurityMiddleware {
@@ -140,4 +138,4 @@ declare class SecurityMiddleware {
     static sanitizeInput(req: IncomingMessage, res: ServerResponse): Promise<void>;
 }
 
-export { AnyFunction, BundleOptions, CacheOptions, CustomError, DependencyOptions, ETagOptions, ErrorPageOptions, SecurityMiddleware, StaticFileMiddleware, StaticFileOptions, createCache, deleteCookie, ensureAsync, generateBundle, generateETag, generateErrorPage, getCookie, handleError, injectMetaTags, isPromise, minifyBundle, normalizeCorsOptions, resolveDependencies, setCookie, setCorsHeaders };
+export { AnyFunction, BundleOptions, CacheOptions, CustomError, DependencyOptions, ETagOptions, ErrorPageOptions, Middleware, SecurityMiddleware, StaticFileMiddleware, StaticFileOptions, createCache, deleteCookie, ensureAsync, generateBundle, generateETag, generateErrorPage, getCookie, handleError, injectMetaTags, isPromise, minifyBundle, normalizeCorsOptions, resolveDependencies, setCookie, setCorsHeaders };

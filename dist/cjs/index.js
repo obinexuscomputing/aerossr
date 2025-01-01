@@ -1,7 +1,7 @@
 'use strict';
 
 var AeroSSR = require('./AeroSSR-7fe0f7ff.js');
-var StaticFileMiddleware = require('./StaticFileMiddleware-304bd024.js');
+var StaticFileMiddleware = require('./StaticFileMiddleware-91108ebb.js');
 require('http');
 require('fs');
 require('url');

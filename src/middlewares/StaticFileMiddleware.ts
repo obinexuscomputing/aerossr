@@ -1,24 +1,33 @@
+import { createReadStream, Stats } from 'fs';
 import { stat, readFile } from 'fs/promises';
 import * as path from 'path';
 import { promisify } from 'util';
-import { gzip } from 'zlib';
+import { gzip, createGzip } from 'zlib';
 import { IncomingMessage, ServerResponse } from 'http';
 import { generateETag } from '../utils';
-import { StaticFileOptions, Middleware } from '../types';
 
 const gzipAsync = promisify(gzip);
 
+export interface StaticFileOptions {
+  root: string;
+  maxAge?: number;
+  index?: string[];
+  dotFiles?: 'ignore' | 'allow' | 'deny';
+  compression?: boolean;
+  etag?: boolean;
+}
+
 export class StaticFileMiddleware {
-  public readonly root: string;
-  public readonly maxAge: number;
-  public readonly index: string[];
-  public readonly dotFiles: 'ignore' | 'allow' | 'deny';
-  public readonly compression: boolean;
-  public readonly etag: boolean;
+  private readonly root: string;
+  private readonly maxAge: number;
+  private readonly index: string[];
+  private readonly dotFiles: 'ignore' | 'allow' | 'deny';
+  private readonly compression: boolean;
+  private readonly etag: boolean;
 
   constructor(options: StaticFileOptions) {
     this.root = options.root;
-    this.maxAge = options.maxAge || 86400;
+    this.maxAge = options.maxAge || 86400; // Default 24 hours
     this.index = options.index || ['index.html'];
     this.dotFiles = options.dotFiles || 'ignore';
     this.compression = options.compression !== false;
@@ -74,14 +83,20 @@ export class StaticFileMiddleware {
 
   private async serveFile(
     filepath: string,
-    stats: any,
+    stats: Stats,
     req: IncomingMessage,
     res: ServerResponse
   ): Promise<void> {
-    const mimeType = this.getMimeType(path.extname(filepath));
+    const mimeType = this.getMimeType(path.extname(filepath).toLowerCase());
+    const lastModified = stats.mtime.toUTCString();
 
+    // Handle conditional requests
+    const ifModifiedSince = req.headers['if-modified-since'];
+    const ifNoneMatch = req.headers['if-none-match'];
     const etag = this.etag ? generateETag(`${filepath}:${stats.mtime.toISOString()}`) : null;
-    if (etag && req.headers['if-none-match'] === etag) {
+
+    if (etag && ifNoneMatch === etag || 
+        (ifModifiedSince && new Date(ifModifiedSince).getTime() >= stats.mtime.getTime())) {
       res.writeHead(304);
       res.end();
       return;
@@ -90,32 +105,47 @@ export class StaticFileMiddleware {
     const headers: Record<string, string> = {
       'Content-Type': mimeType,
       'Cache-Control': `public, max-age=${this.maxAge}`,
-      'Last-Modified': stats.mtime.toUTCString(),
+      'Last-Modified': lastModified,
     };
 
     if (etag) {
       headers['ETag'] = etag;
     }
 
-    const content = await readFile(filepath);
-
-    if (this.compression && this.isCompressible(mimeType) && content.length > 1024) {
+    // Handle compression for suitable files
+    if (this.compression && this.isCompressible(mimeType) && stats.size > 1024) {
       const acceptEncoding = req.headers['accept-encoding'] || '';
       if (acceptEncoding.includes('gzip')) {
-        const compressed = await gzipAsync(content);
         headers['Content-Encoding'] = 'gzip';
         headers['Vary'] = 'Accept-Encoding';
         res.writeHead(200, headers);
-        res.end(compressed);
-        return;
+
+        // Use streaming for large files
+        if (stats.size > 1024 * 1024) { // 1MB threshold
+          const stream = createReadStream(filepath).pipe(createGzip());
+          stream.pipe(res);
+          return;
+        } else {
+          // Use buffer compression for smaller files
+          const content = await readFile(filepath);
+          const compressed = await gzipAsync(content);
+          res.end(compressed);
+          return;
+        }
       }
     }
 
+    // Serve uncompressed
     res.writeHead(200, headers);
-    res.end(content);
+    if (stats.size > 1024 * 1024) { // 1MB threshold
+      createReadStream(filepath).pipe(res);
+    } else {
+      const content = await readFile(filepath);
+      res.end(content);
+    }
   }
 
-  middleware(): Middleware {
+  middleware() {
     return async (req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => {
       try {
         // Only handle GET and HEAD requests
@@ -126,13 +156,19 @@ export class StaticFileMiddleware {
 
         const urlPath = path.normalize(decodeURIComponent(req.url || '').split('?')[0]);
         
-        // Check for dotfiles
+        // Security check for dotfiles
         if (this.isDotFile(urlPath)) {
           const handled = await this.handleDotFile(req, res, next);
           if (handled) return;
         }
 
+        // Prevent directory traversal
         const fullPath = path.join(this.root, urlPath);
+        if (!fullPath.startsWith(this.root)) {
+          res.writeHead(403);
+          res.end('Forbidden');
+          return;
+        }
 
         try {
           const stats = await stat(fullPath);
@@ -159,12 +195,18 @@ export class StaticFileMiddleware {
             await this.serveFile(fullPath, stats, req, res);
             return;
           }
-        } catch {
+
           await next();
-          return;
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            await next();
+          } else {
+            throw error;
+          }
         }
       } catch (error) {
-        await next();
+        res.writeHead(500);
+        res.end('Internal Server Error');
       }
     };
   }
