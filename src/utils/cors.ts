@@ -46,15 +46,3 @@ export function normalizeCorsOptions(options: string | CorsOptions | undefined):
   return options || { origins: '*' };
 }
 
-export function isPromise(value: any): value is Promise<unknown> {
-  return value instanceof Promise || (!!value && typeof value.then === 'function');
-}
-
-export function ensureAsync<T extends (...args: any[]) => any>(
-  fn: T
-): (...args: Parameters<T>) => Promise<ReturnType<T>> {
-  return async (...args) => {
-    const result = fn(...args);
-    return isPromise(result) ? result : Promise.resolve(result);
-  };
-}

@@ -7,3 +7,4 @@ export * from './html';
 export * from './bundler';
 export * from './etag';
 export * from './cookie';
+export * from './async';

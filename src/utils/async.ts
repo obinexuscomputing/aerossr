@@ -1,5 +1,4 @@
-type AnyFunction = (...args: any[]) => any;
-
+export  type AnyFunction = (...args: any[]) => any;
 export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
   return Boolean(
     value && typeof value === 'object' && 'then' in value && typeof value.then === 'function'
@@ -14,3 +13,4 @@ export function ensureAsync<T extends AnyFunction>(
     return result as ReturnType<T>;
   };
 }
+
