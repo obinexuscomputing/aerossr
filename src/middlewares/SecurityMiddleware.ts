@@ -56,7 +56,7 @@ export class SecurityMiddleware {
   /**
    * Security Headers Middleware
    */
-  static async securityHeaders(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  static async securityHeaders(_req: IncomingMessage, res: ServerResponse): Promise<void> {
     return new Promise((resolve) => {
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('X-Frame-Options', 'DENY');

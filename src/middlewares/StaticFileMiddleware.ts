@@ -137,21 +137,25 @@ export class StaticFileMiddleware {
       res.end(content);
     }
   }
-
   middleware() {
-    return async (req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => {
+    return async (_req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => {
       try {
-        // Only handle GET and HEAD requests
-        if (req.method !== 'GET' && req.method !== 'HEAD') {
+        // Check request method
+        if (_req.method !== 'GET' && _req.method !== 'HEAD') {
           await next();
           return;
         }
 
-        const urlPath = path.normalize(decodeURIComponent((req.url ?? '').split('?')[0]));
-        
+        // Safely handle URL parsing
+        const rawUrl = _req.url ?? '';
+        const queryIndex = rawUrl.indexOf('?');
+        const urlWithoutQuery = queryIndex >= 0 ? rawUrl.slice(0, queryIndex) : rawUrl;
+        const decodedUrl = decodeURIComponent(urlWithoutQuery);
+        const urlPath = path.normalize(decodedUrl);
+
         // Security check for dotfiles
         if (this.isDotFile(urlPath)) {
-          const handled = await this.handleDotFile(req, res, next);
+          const handled = await this.handleDotFile(_req, res, next);
           if (handled) return;
         }
 
@@ -167,13 +171,12 @@ export class StaticFileMiddleware {
           const stats = await stat(fullPath);
 
           if (stats.isDirectory()) {
-            // Try each index file
             for (const indexFile of this.index) {
               const indexPath = path.join(fullPath, indexFile);
               try {
                 const indexStats = await stat(indexPath);
                 if (indexStats.isFile()) {
-                  await this.serveFile(indexPath, indexStats, req, res);
+                  await this.serveFile(indexPath, indexStats, _req, res);
                   return;
                 }
               } catch {
@@ -185,7 +188,7 @@ export class StaticFileMiddleware {
           }
 
           if (stats.isFile()) {
-            await this.serveFile(fullPath, stats, req, res);
+            await this.serveFile(fullPath, stats, _req, res);
             return;
           }
 
