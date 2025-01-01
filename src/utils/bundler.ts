@@ -25,8 +25,7 @@ export async function resolveDependencies(
   const {
     extensions = ['.js', '.ts', '.jsx', '.tsx'],
     maxDepth = 100,
-    ignorePatterns = ['node_modules'],
-    baseDir = process.cwd()
+    ignorePatterns = ['node_modules']
   } = options;
 
   async function resolve(currentPath: string, depth = 0): Promise<void> {
@@ -56,7 +55,7 @@ export async function resolveDependencies(
           if (!importPath) continue;
 
           try {
-            const fullPath = await resolveFilePath(importPath, currentPath, extensions, baseDir);
+            const fullPath = await resolveFilePath(importPath, currentPath, extensions);
             if (fullPath && !deps.has(fullPath)) {
               await resolve(fullPath, depth + 1);
             }
