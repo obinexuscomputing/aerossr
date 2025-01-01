@@ -27,44 +27,61 @@ const path__namespace = /*#__PURE__*/_interopNamespaceDefault(path);
 /**
  * Resolves all dependencies for a given file
  */
-async function resolveDependencies(filePath, deps = new Set(), options = {}, depth = 0) {
-    const { extensions = ['.js', '.ts'], maxDepth = 100, ignorePatterns = [] } = options;
-    // Prevent infinite recursion and check ignore patterns
-    if (depth > maxDepth ||
-        deps.has(filePath) ||
-        ignorePatterns.some(pattern => filePath.includes(pattern))) {
-        return deps;
-    }
-    try {
-        deps.add(filePath);
-        const content = await fs__namespace.readFile(filePath, 'utf-8');
-        // Match both require() and import statements
-        const importMatches = content.match(/(?:require\s*\(['"]([^'"]+)['"]\)|import\s+.*?from\s+['"]([^'"]+)['"])/g) || [];
-        for (const match of importMatches) {
-            const depPath = match.match(/['"]([^'"]+)['"]/)?.[1];
-            if (!depPath)
-                continue;
-            try {
-                const fullPath = await resolveFilePath(depPath, filePath, extensions);
-                if (fullPath) {
-                    await resolveDependencies(fullPath, deps, options, depth + 1);
-                }
-            }
-            catch (err) {
-                if (_polyfillNode_process.default.env.NODE_ENV !== 'test') {
-                    console.warn(`Warning: Could not resolve dependency ${depPath} in ${filePath}`);
+async function resolveDependencies(filePath, deps = new Set(), options = {}) {
+    const { extensions = ['.js', '.ts', '.jsx', '.tsx'], maxDepth = 100, ignorePatterns = ['node_modules'], baseDir = _polyfillNode_process.default.cwd() } = options;
+    async function resolve(currentPath, depth = 0) {
+        if (depth > maxDepth || ignorePatterns.some(pattern => currentPath.includes(pattern))) {
+            return;
+        }
+        // Add the file to dependencies before processing to handle circular dependencies
+        deps.add(currentPath);
+        try {
+            const content = await fs__namespace.readFile(currentPath, 'utf-8');
+            // Match different import patterns
+            const importPatterns = [
+                /require\s*\(['"]([^'"]+)['"]\)/g,
+                /import\s+.*?from\s+['"]([^'"]+)['"]/g,
+                /import\s*['"]([^'"]+)['"]/g,
+                /import\s*\(.*?['"]([^'"]+)['"]\s*\)/g,
+                /export\s+.*?from\s+['"]([^'"]+)['"]/g // export ... from '...'
+            ];
+            for (const pattern of importPatterns) {
+                let match;
+                while ((match = pattern.exec(content)) !== null) {
+                    const importPath = match[1];
+                    if (!importPath)
+                        continue;
+                    try {
+                        const fullPath = await resolveFilePath(importPath, currentPath, extensions, baseDir);
+                        if (fullPath && !deps.has(fullPath)) {
+                            await resolve(fullPath, depth + 1);
+                        }
+                    }
+                    catch (err) {
+                        if (_polyfillNode_process.default.env.NODE_ENV !== 'test') {
+                            console.warn(`Warning: Could not resolve dependency ${importPath} in ${currentPath}`);
+                        }
+                    }
                 }
             }
         }
+        catch (err) {
+            throw new Error(`Error processing ${currentPath}: ${err instanceof Error ? err.message : String(err)}`);
+        }
     }
-    catch (err) {
-        throw new Error(`Error processing ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
-    }
+    await resolve(filePath);
     return deps;
 }
-async function resolveFilePath(importPath, fromPath, extensions) {
+/**
+ * Resolves the full path of an import
+ */
+async function resolveFilePath(importPath, fromPath, extensions, baseDir) {
+    // Handle package imports
+    if (!importPath.startsWith('.') && !importPath.startsWith('/')) {
+        return null;
+    }
     const basePath = path__namespace.resolve(path__namespace.dirname(fromPath), importPath);
-    // Check if path already has a valid extension
+    // Check if path has extension
     if (extensions.some(ext => importPath.endsWith(ext))) {
         try {
             await fs__namespace.access(basePath);
@@ -85,77 +102,92 @@ async function resolveFilePath(importPath, fromPath, extensions) {
             continue;
         }
     }
+    // Try index files
+    for (const ext of extensions) {
+        const indexPath = path__namespace.join(basePath, `index${ext}`);
+        try {
+            await fs__namespace.access(indexPath);
+            return indexPath;
+        }
+        catch {
+            continue;
+        }
+    }
     return null;
 }
 /**
- * Minifies JavaScript code while preserving string contents
+ * Minifies JavaScript code while preserving important structures
  */
 function minifyBundle(code) {
     if (!code.trim())
         return '';
+    // Replace all line comments
+    code = code.replace(/\/\/[^\n]*/g, '');
+    // Replace all multiline comments
+    code = code.replace(/\/\*[\s\S]*?\*\//g, '');
+    // Handle string literals and operators
+    let result = '';
     let inString = false;
     let stringChar = '';
-    let result = '';
-    let i = 0;
-    while (i < code.length) {
-        if (!inString) {
-            // Handle comments
-            if (code[i] === '/' && code[i + 1] === '*') {
-                i = code.indexOf('*/', i + 2) + 2;
-                if (i === 1)
-                    i = code.length;
-                continue;
+    let lastChar = '';
+    for (let i = 0; i < code.length; i++) {
+        const char = code[i];
+        if (inString) {
+            result += char;
+            if (char === stringChar && lastChar !== '\\') {
+                inString = false;
             }
-            if (code[i] === '/' && code[i + 1] === '/') {
-                i = code.indexOf('\n', i) + 1;
-                if (i === 0)
-                    i = code.length;
-                continue;
-            }
-            // Handle strings
-            if (code[i] === '"' || code[i] === "'") {
-                inString = true;
-                stringChar = code[i];
-                result += code[i];
-                i++;
-                continue;
-            }
-            // Handle whitespace
-            if (/\s/.test(code[i])) {
+        }
+        else if (char === '"' || char === "'") {
+            inString = true;
+            stringChar = char;
+            result += char;
+        }
+        else if (/\s/.test(char)) {
+            const prevChar = result[result.length - 1];
+            const nextChar = code[i + 1];
+            // Keep space only if needed for syntax
+            if (prevChar && nextChar &&
+                /[a-zA-Z0-9_$]/.test(prevChar) &&
+                /[a-zA-Z0-9_$]/.test(nextChar)) {
                 result += ' ';
-                while (i < code.length && /\s/.test(code[i]))
-                    i++;
-                continue;
             }
         }
         else {
-            // Handle string ending
-            if (code[i] === stringChar && code[i - 1] !== '\\') {
-                inString = false;
-                stringChar = '';
-            }
+            result += char;
         }
-        if (i < code.length) {
-            result += code[i];
-            i++;
-        }
+        lastChar = char;
     }
-    return result.trim().replace(/\s+/g, ' ');
+    // Clean up operators and punctuation
+    return result
+        .replace(/\s*([+\-*/%=<>!&|^~?:,;{}[\]()])\s*/g, '$1')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 /**
  * Generates a bundled JavaScript file from an entry point
  */
-async function generateBundle(projectPath, entryPoint) {
-    const entryFilePath = path__namespace.join(projectPath, entryPoint);
-    let bundle = '';
+async function generateBundle(projectPath, entryPoint, options = {}) {
+    const { minify = true, comments = true, ...dependencyOptions } = options;
     try {
-        const dependencies = await resolveDependencies(entryFilePath);
+        const entryFilePath = path__namespace.resolve(projectPath, entryPoint);
+        const dependencies = await resolveDependencies(entryFilePath, new Set(), {
+            ...dependencyOptions,
+            baseDir: projectPath
+        });
+        if (dependencies.size === 0) {
+            throw new Error(`No dependencies found for ${entryPoint}`);
+        }
+        let bundle = '';
         for (const dep of dependencies) {
             const content = await fs__namespace.readFile(dep, 'utf-8');
             const relativePath = path__namespace.relative(projectPath, dep);
-            bundle += `\n// File: ${relativePath}\n${content}\n`;
+            if (comments) {
+                bundle += `\n// File: ${relativePath}\n`;
+            }
+            bundle += `${content}\n`;
         }
-        return minifyBundle(bundle);
+        return minify ? minifyBundle(bundle) : bundle;
     }
     catch (err) {
         throw new Error(`Failed to generate bundle from ${entryPoint}: ${err instanceof Error ? err.message : String(err)}`);

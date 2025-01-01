@@ -29,24 +29,16 @@ export async function resolveDependencies(
     baseDir = process.cwd()
   } = options;
 
-  const visited = new Set<string>();
-  const resolved = new Set<string>();
-
   async function resolve(currentPath: string, depth = 0): Promise<void> {
-    if (depth > maxDepth || visited.has(currentPath)) {
+    if (depth > maxDepth || ignorePatterns.some(pattern => currentPath.includes(pattern))) {
       return;
     }
 
-    // Check ignore patterns
-    if (ignorePatterns.some(pattern => currentPath.includes(pattern))) {
-      return;
-    }
-
-    visited.add(currentPath);
+    // Add the file to dependencies before processing to handle circular dependencies
+    deps.add(currentPath);
 
     try {
       const content = await fs.readFile(currentPath, 'utf-8');
-      deps.add(currentPath);
 
       // Match different import patterns
       const importPatterns = [
@@ -61,18 +53,22 @@ export async function resolveDependencies(
         let match;
         while ((match = pattern.exec(content)) !== null) {
           const importPath = match[1];
-          const fullPath = await resolveFilePath(importPath, currentPath, extensions, baseDir);
-          
-          if (fullPath && !resolved.has(fullPath)) {
-            resolved.add(fullPath);
-            await resolve(fullPath, depth + 1);
+          if (!importPath) continue;
+
+          try {
+            const fullPath = await resolveFilePath(importPath, currentPath, extensions, baseDir);
+            if (fullPath && !deps.has(fullPath)) {
+              await resolve(fullPath, depth + 1);
+            }
+          } catch (err) {
+            if (process.env.NODE_ENV !== 'test') {
+              console.warn(`Warning: Could not resolve dependency ${importPath} in ${currentPath}`);
+            }
           }
         }
       }
     } catch (err) {
-      if (process.env.NODE_ENV !== 'test') {
-        console.warn(`Warning: Could not process ${currentPath}: ${err instanceof Error ? err.message : String(err)}`);
-      }
+      throw new Error(`Error processing ${currentPath}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -91,11 +87,10 @@ async function resolveFilePath(
 ): Promise<string | null> {
   // Handle package imports
   if (!importPath.startsWith('.') && !importPath.startsWith('/')) {
-    return null; // Skip external package imports
+    return null;
   }
 
   const basePath = path.resolve(path.dirname(fromPath), importPath);
-  const relativePath = path.relative(baseDir, basePath);
 
   // Check if path has extension
   if (extensions.some(ext => importPath.endsWith(ext))) {
@@ -138,62 +133,51 @@ async function resolveFilePath(
 export function minifyBundle(code: string): string {
   if (!code.trim()) return '';
 
+  // Replace all line comments
+  code = code.replace(/\/\/[^\n]*/g, '');
+  
+  // Replace all multiline comments
+  code = code.replace(/\/\*[\s\S]*?\*\//g, '');
+
+  // Handle string literals and operators
+  let result = '';
   let inString = false;
   let stringChar = '';
-  let inComment = false;
-  let inMultilineComment = false;
-  let result = '';
   let lastChar = '';
-  
+
   for (let i = 0; i < code.length; i++) {
     const char = code[i];
-    const nextChar = code[i + 1];
 
     if (inString) {
       result += char;
       if (char === stringChar && lastChar !== '\\') {
         inString = false;
       }
-    } else if (inComment) {
-      if (char === '\n') {
-        inComment = false;
-        result += ' ';
-      }
-    } else if (inMultilineComment) {
-      if (char === '*' && nextChar === '/') {
-        inMultilineComment = false;
-        i++;
+    } else if (char === '"' || char === "'") {
+      inString = true;
+      stringChar = char;
+      result += char;
+    } else if (/\s/.test(char)) {
+      const prevChar = result[result.length - 1];
+      const nextChar = code[i + 1];
+      
+      // Keep space only if needed for syntax
+      if (prevChar && nextChar && 
+          /[a-zA-Z0-9_$]/.test(prevChar) && 
+          /[a-zA-Z0-9_$]/.test(nextChar)) {
         result += ' ';
       }
     } else {
-      if (char === '"' || char === "'") {
-        inString = true;
-        stringChar = char;
-        result += char;
-      } else if (char === '/' && nextChar === '/') {
-        inComment = true;
-        i++;
-      } else if (char === '/' && nextChar === '*') {
-        inMultilineComment = true;
-        i++;
-      } else if (/\s/.test(char)) {
-        // Preserve necessary whitespace
-        const prevChar = result[result.length - 1];
-        const nextNonSpaceChar = code.slice(i + 1).match(/\S/);
-        
-        if (prevChar && nextNonSpaceChar && 
-            /[^\s\{\(\[\+\-\*\/\%\<\>\&\|\,\;\:\?]/.test(prevChar) && 
-            /[^\s\}\)\]\+\-\*\/\%\<\>\&\|\,\;\:\?]/.test(nextNonSpaceChar[0])) {
-          result += ' ';
-        }
-      } else {
-        result += char;
-      }
+      result += char;
     }
     lastChar = char;
   }
 
-  return result.trim();
+  // Clean up operators and punctuation
+  return result
+    .replace(/\s*([+\-*/%=<>!&|^~?:,;{}[\]()])\s*/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /**
@@ -210,14 +194,18 @@ export async function generateBundle(
     ...dependencyOptions
   } = options;
 
-  const entryFilePath = path.resolve(projectPath, entryPoint);
-  let bundle = '';
-
   try {
+    const entryFilePath = path.resolve(projectPath, entryPoint);
     const dependencies = await resolveDependencies(entryFilePath, new Set(), {
       ...dependencyOptions,
       baseDir: projectPath
     });
+
+    if (dependencies.size === 0) {
+      throw new Error(`No dependencies found for ${entryPoint}`);
+    }
+
+    let bundle = '';
     
     for (const dep of dependencies) {
       const content = await fs.readFile(dep, 'utf-8');
