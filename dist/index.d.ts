@@ -66,8 +66,21 @@ interface MetaTags$2 {
 }
 declare function injectMetaTags(html: string, meta?: MetaTags$2, defaultMeta?: MetaTags$2): string;
 
-declare function resolveDependencies(filePath: string, deps?: Set<string>): Promise<Set<string>>;
+interface DependencyOptions {
+    extensions?: string[];
+    maxDepth?: number;
+}
+/**
+ * Resolves all dependencies for a given file
+ */
+declare function resolveDependencies(filePath: string, deps?: Set<string>, options?: DependencyOptions, depth?: number): Promise<Set<string>>;
+/**
+ * Minifies JavaScript code while preserving string contents
+ */
 declare function minifyBundle(code: string): string;
+/**
+ * Generates a bundled JavaScript file from an entry point
+ */
 declare function generateBundle(projectPath: string, entryPoint: string): Promise<string>;
 
 interface AeroSSRConfig$1 {
