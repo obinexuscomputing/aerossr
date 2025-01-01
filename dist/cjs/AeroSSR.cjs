@@ -2,7 +2,7 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const _204361a70bb1b522b226afef7f84ce = require('./_virtual/204361a70bb1b522b226afef7f84ce.cjs');
+const _62d196db54c3a84bddc32ee0f9abf5 = require('./_virtual/62d196db54c3a84bddc32ee0f9abf5.cjs');
 const http = require('http');
 const fs = require('fs');
 const url = require('url');
@@ -25,10 +25,13 @@ class AeroSSR {
     routes;
     middlewares = [];
     constructor(config = {}) {
+        const corsOptions = typeof config.corsOrigins === 'string'
+            ? { origins: config.corsOrigins }
+            : config.corsOrigins || { origins: '*' };
         this.config = {
             port: config.port || 3000,
             cacheMaxAge: config.cacheMaxAge || 3600,
-            corsOrigins: typeof config.corsOrigins === 'string' ? { origins: [config.corsOrigins] } : config.corsOrigins || { origins: '*' },
+            corsOrigins: corsOptions,
             compression: config.compression !== false,
             logFilePath: config.logFilePath || null,
             bundleCache: config.bundleCache || cache.createCache(),
@@ -105,8 +108,7 @@ class AeroSSR {
             'Cache-Control': `public, max-age=${this.config.cacheMaxAge}`,
             'ETag': etag$1,
         });
-        const acceptEncoding = _req.headers['accept-encoding'] || '';
-        if (this.config.compression && acceptEncoding.includes('gzip')) {
+        if (this.config.compression && _req.headers['accept-encoding']?.includes('gzip')) {
             const compressed = await gzipAsync(bundle);
             res.setHeader('Content-Encoding', 'gzip');
             res.end(compressed);
@@ -116,7 +118,7 @@ class AeroSSR {
         }
     }
     async handleDefaultRequest(_req, res, pathname) {
-        const htmlPath = path.join(_204361a70bb1b522b226afef7f84ce.default, 'index.html');
+        const htmlPath = path.join(_62d196db54c3a84bddc32ee0f9abf5.default, 'index.html');
         let html$1 = await fs.promises.readFile(htmlPath, 'utf-8');
         const meta = {
             title: `Page - ${pathname}`,

@@ -1,4 +1,4 @@
-import __dirname from './_virtual/dfaf624ed881b14010886bf02002ee.js';
+import __dirname from './_virtual/f9166ab0649fd054a1a953db5fe32e.js';
 import { createServer } from 'http';
 import { promises } from 'fs';
 import { parse } from 'url';
@@ -21,10 +21,13 @@ class AeroSSR {
     routes;
     middlewares = [];
     constructor(config = {}) {
+        const corsOptions = typeof config.corsOrigins === 'string'
+            ? { origins: config.corsOrigins }
+            : config.corsOrigins || { origins: '*' };
         this.config = {
             port: config.port || 3000,
             cacheMaxAge: config.cacheMaxAge || 3600,
-            corsOrigins: typeof config.corsOrigins === 'string' ? { origins: [config.corsOrigins] } : config.corsOrigins || { origins: '*' },
+            corsOrigins: corsOptions,
             compression: config.compression !== false,
             logFilePath: config.logFilePath || null,
             bundleCache: config.bundleCache || createCache(),
@@ -101,8 +104,7 @@ class AeroSSR {
             'Cache-Control': `public, max-age=${this.config.cacheMaxAge}`,
             'ETag': etag,
         });
-        const acceptEncoding = _req.headers['accept-encoding'] || '';
-        if (this.config.compression && acceptEncoding.includes('gzip')) {
+        if (this.config.compression && _req.headers['accept-encoding']?.includes('gzip')) {
             const compressed = await gzipAsync(bundle);
             res.setHeader('Content-Encoding', 'gzip');
             res.end(compressed);

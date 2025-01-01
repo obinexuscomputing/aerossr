@@ -11,22 +11,26 @@ import { generateETag } from './utils/etag';
 import { handleError } from './utils/errorHandler';
 import { injectMetaTags } from './utils/html';
 import { generateBundle } from './utils/bundler';
-import { AeroSSRConfig, Middleware, RouteHandler } from './types';
+import { AeroSSRConfig, Middleware, RouteHandler, CorsOptions } from './types';
 
-const gzipAsync = promisify(gzip)
+const gzipAsync = promisify(gzip);
 
 export class AeroSSR {
   public readonly config: Required<AeroSSRConfig>;
   public readonly logger: Logger;
   public server: Server | null;
   public readonly routes: Map<string, RouteHandler>;
-  public readonly middlewares: Middleware[] = []
+  public readonly middlewares: Middleware[] = [];
 
   constructor(config: AeroSSRConfig = {}) {
+    const corsOptions: CorsOptions = typeof config.corsOrigins === 'string' 
+      ? { origins: config.corsOrigins }
+      : config.corsOrigins || { origins: '*' };
+
     this.config = {
       port: config.port || 3000,
       cacheMaxAge: config.cacheMaxAge || 3600,
-      corsOrigins: typeof config.corsOrigins === 'string' ? { origins: [config.corsOrigins] } : config.corsOrigins || { origins: '*' },
+      corsOrigins: corsOptions,
       compression: config.compression !== false,
       logFilePath: config.logFilePath || null,
       bundleCache: config.bundleCache || createCache<string>(),
@@ -106,6 +110,7 @@ export class AeroSSR {
       await handleError(error instanceof Error ? error : new Error('Unknown error'), _req, res);
     }
   }
+
   private async handleDistRequest(
     _req: IncomingMessage,
     res: ServerResponse,
@@ -130,8 +135,7 @@ export class AeroSSR {
       'ETag': etag,
     });
 
-    const acceptEncoding = _req.headers['accept-encoding'] || '';
-    if (this.config.compression && acceptEncoding.includes('gzip')) {
+    if (this.config.compression && _req.headers['accept-encoding']?.includes('gzip')) {
       const compressed = await gzipAsync(bundle);
       res.setHeader('Content-Encoding', 'gzip');
       res.end(compressed);
@@ -139,7 +143,6 @@ export class AeroSSR {
       res.end(bundle);
     }
   }
-
 
   private async handleDefaultRequest(
     _req: IncomingMessage,
@@ -188,4 +191,4 @@ export class AeroSSR {
   }
 }
 
-export default AeroSSR
+export default AeroSSR;
