@@ -2,7 +2,6 @@ import * as fs from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
 import path__default from 'path';
 
-// src/utils/logger.ts
 class Logger {
     logFilePath;
     options;
@@ -17,24 +16,19 @@ class Logger {
         this.options = { ...Logger.DEFAULT_OPTIONS, ...options };
         this.logFilePath = this.options.logFilePath;
         if (this.logFilePath) {
-            try {
-                this.initializeLogFile();
-            }
-            catch (error) {
-                console.error(`Logger initialization failed for path: ${this.logFilePath} - ${error.message}`);
-                this.logFilePath = null;
-            }
+            this.initializeLogFile();
         }
     }
     initializeLogFile() {
-        const logDir = path__default.dirname(this.logFilePath);
-        if (!existsSync(logDir)) {
-            try {
+        try {
+            const logDir = path__default.dirname(this.logFilePath);
+            if (!existsSync(logDir)) {
                 mkdirSync(logDir, { recursive: true });
             }
-            catch (error) {
-                throw new Error(`Failed to create log directory: ${error.message}`);
-            }
+        }
+        catch (error) {
+            console.error(`Logger initialization failed for path: ${this.logFilePath} - ${error.message}`);
+            this.logFilePath = null;
         }
     }
     getLogPath() {

@@ -69,6 +69,25 @@ export class StaticFileMiddleware {
     res.end(content);
   }
 
+  private isDotFile(urlPath: string): boolean {
+    return urlPath.split('/').some(part => part.startsWith('.'));
+  }
+
+  private handleDotFile(req: IncomingMessage, res: ServerResponse, next: () => Promise<void>): Promise<void> | false {
+    if (this.dotFiles === 'allow') {
+      return false; // Continue processing
+    }
+
+    if (this.dotFiles === 'deny') {
+      res.writeHead(403, { 'Content-Type': 'text/plain' });
+      res.end('Forbidden');
+      return Promise.resolve();
+    }
+
+    // ignore - pass to next middleware
+    return next();
+  }
+
   private isCompressible(mimeType: string): boolean {
     return /^(text|application)\/(javascript|json|html|xml|css|plain)/.test(mimeType);
   }
@@ -95,21 +114,17 @@ export class StaticFileMiddleware {
   }
 
   middleware(): Middleware {
-    return async (req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => {
+    return async (req: IncomingMessage, res: ServerResponse, next: () => Promise<void>): Promise<void> => {
       try {
         if (req.method !== 'GET' && req.method !== 'HEAD') {
           return next();
         }
 
         const urlPath = path.normalize(decodeURIComponent(req.url || '').split('?')[0]);
-
-        if (this.dotFiles !== 'allow' && urlPath.split('/').some((p) => p.startsWith('.'))) {
-          if (this.dotFiles === 'deny') {
-            res.writeHead(403);
-            res.end('Forbidden');
-            return;
-          }
-          return next();
+        
+        if (this.isDotFile(urlPath)) {
+          const dotFileResult = this.handleDotFile(req, res, next);
+          if (dotFileResult) return dotFileResult;
         }
 
         const fullPath = path.join(this.root, urlPath);

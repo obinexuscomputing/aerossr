@@ -1,5 +1,25 @@
-import { ServerResponse, IncomingMessage } from 'http';
+import { IncomingMessage, ServerResponse, Server } from 'http';
 export { IncomingMessage, ServerResponse } from 'http';
+
+interface LoggerOptions {
+    logFilePath?: string | null;
+    logLevel?: 'debug' | 'info' | 'warn' | 'error';
+    maxFileSize?: number;
+    maxFiles?: number;
+    format?: 'json' | 'text';
+}
+declare class Logger {
+    private logFilePath;
+    private readonly options;
+    private static readonly DEFAULT_OPTIONS;
+    constructor(options?: LoggerOptions);
+    private initializeLogFile;
+    getLogPath(): string | null;
+    private formatMessage;
+    log(message: string): Promise<void>;
+    logRequest(req: IncomingMessage): void;
+    clear(): Promise<void>;
+}
 
 interface CacheStore<T> {
     get(key: string): T | undefined;
@@ -8,11 +28,11 @@ interface CacheStore<T> {
     has(key: string): boolean;
     delete(key: string): boolean;
 }
-interface CacheOptions$1 {
+interface CacheOptions {
     ttl?: number;
     maxSize?: number;
 }
-declare function createCache<T>(options?: CacheOptions$1): CacheStore<T>;
+declare function createCache<T>(options?: CacheOptions): CacheStore<T>;
 
 interface CorsOptions$1 {
     origins?: string | string[];
@@ -44,26 +64,6 @@ interface MetaTags$1 {
     [key: string]: string | undefined;
 }
 declare function injectMetaTags(html: string, meta?: MetaTags$1, defaultMeta?: MetaTags$1): string;
-
-interface LoggerOptions {
-    logFilePath?: string | null;
-    logLevel?: 'debug' | 'info' | 'warn' | 'error';
-    maxFileSize?: number;
-    maxFiles?: number;
-    format?: 'json' | 'text';
-}
-declare class Logger {
-    private logFilePath;
-    private readonly options;
-    private static readonly DEFAULT_OPTIONS;
-    constructor(options?: LoggerOptions);
-    private initializeLogFile;
-    getLogPath(): string | null;
-    private formatMessage;
-    log(message: string): Promise<void>;
-    logRequest(req: IncomingMessage): void;
-    clear(): Promise<void>;
-}
 
 interface CustomError extends Error {
     statusCode?: number;
@@ -101,10 +101,6 @@ declare function minifyBundle(code: string): string;
  */
 declare function generateBundle(projectPath: string, entryPoint: string): Promise<string>;
 
-/**
- * Type guard to check if a value is a Promise
- */
-declare function isPromise<T = unknown>(value: unknown): value is Promise<T>;
 /**
  * Ensures a function returns a Promise
  */
@@ -153,10 +149,6 @@ interface StaticFileOptions {
 type StaticFileHandler = (req: IncomingMessage, res: ServerResponse, options: StaticFileOptions) => Promise<void>;
 type BundleHandler = (req: IncomingMessage, res: ServerResponse, bundlePath: string) => Promise<void>;
 type TemplateHandler = (req: IncomingMessage, res: ServerResponse, templatePath: string) => Promise<void>;
-interface CacheOptions {
-    maxSize?: number;
-    ttl?: number;
-}
 type AnyFunction = (...args: any[]) => any;
 interface AsyncOptions {
     timeout?: number;
@@ -195,4 +187,55 @@ type RequiredConfig = Required<AeroSSRConfig> & {
     corsOrigins: Required<CorsOptions>;
 };
 
-export { AeroSSRConfig, AnyFunction, AsyncHandler, AsyncOptions, AsyncResult, BundleHandler, CacheOptions, CacheStoreBase as CacheStore, CacheStoreBase, CorsOptionsBase as CorsOptions, CorsOptionsBase, CustomError, ETagOptions, ErrorHandler, ErrorPageOptions, HTTPMethod, Logger, LoggerOptionsBase as LoggerOptions, LoggerOptionsBase, MetaTagsBase as MetaTags, MetaTagsBase, Middleware, RequiredConfig, RouteHandler, StaticFileHandler, StaticFileOptions, TemplateHandler, createCache, deleteCookie, ensureAsync, generateBundle, generateETag, generateErrorPage, getCookie, handleError, injectMetaTags, isError, isPromise, minifyBundle, normalizeCorsOptions, resolveDependencies, setCookie, setCorsHeaders };
+declare class AeroSSR {
+    readonly config: Required<AeroSSRConfig>;
+    readonly logger: Logger;
+    server: Server | null;
+    readonly routes: Map<string, RouteHandler>;
+    readonly middlewares: Middleware[];
+    constructor(config?: AeroSSRConfig);
+    use(middleware: Middleware): void;
+    route(path: string, handler: RouteHandler): void;
+    clearCache(): void;
+    private executeMiddlewares;
+    private handleRequest;
+    private handleDistRequest;
+    private handleDefaultRequest;
+    start(): Promise<Server>;
+    stop(): Promise<void>;
+}
+
+declare class StaticFileMiddleware {
+    readonly root: string;
+    readonly maxAge: number;
+    readonly index: string[];
+    readonly dotFiles: 'ignore' | 'allow' | 'deny';
+    readonly compression: boolean;
+    readonly etag: boolean;
+    constructor(options: StaticFileOptions);
+    private serveFile;
+    private isCompressible;
+    private getMimeType;
+    middleware(): Middleware;
+}
+
+declare class SecurityMiddleware {
+    /**
+     * CSRF Protection Middleware
+     */
+    static csrfProtection(req: IncomingMessage, res: ServerResponse): Promise<void>;
+    /**
+     * Rate Limiting Middleware
+     */
+    static rateLimit(limit: number, windowMs: number): (req: IncomingMessage, res: ServerResponse) => Promise<void>;
+    /**
+     * Security Headers Middleware
+     */
+    static securityHeaders(req: IncomingMessage, res: ServerResponse): Promise<void>;
+    /**
+     * Input Sanitization Middleware
+     */
+    static sanitizeInput(req: IncomingMessage, res: ServerResponse): Promise<void>;
+}
+
+export { AeroSSR, AeroSSRConfig, AnyFunction, AsyncHandler, AsyncOptions, AsyncResult, BundleHandler, CacheStoreBase as CacheStore, CacheStoreBase, CorsOptionsBase as CorsOptions, CorsOptionsBase, CustomError, ETagOptions, ErrorHandler, ErrorPageOptions, HTTPMethod, Logger, LoggerOptionsBase as LoggerOptions, LoggerOptionsBase, MetaTagsBase as MetaTags, MetaTagsBase, Middleware, RequiredConfig, RouteHandler, SecurityMiddleware, StaticFileHandler, StaticFileMiddleware, StaticFileOptions, TemplateHandler, createCache, deleteCookie, ensureAsync, generateBundle, generateETag, generateErrorPage, getCookie, handleError, injectMetaTags, isError, minifyBundle, normalizeCorsOptions, resolveDependencies, setCookie, setCorsHeaders };

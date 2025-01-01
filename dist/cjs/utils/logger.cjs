@@ -23,7 +23,6 @@ function _interopNamespaceDefault(e) {
 
 const fs__namespace = /*#__PURE__*/_interopNamespaceDefault(fs$1);
 
-// src/utils/logger.ts
 class Logger {
     logFilePath;
     options;
@@ -38,24 +37,19 @@ class Logger {
         this.options = { ...Logger.DEFAULT_OPTIONS, ...options };
         this.logFilePath = this.options.logFilePath;
         if (this.logFilePath) {
-            try {
-                this.initializeLogFile();
-            }
-            catch (error) {
-                console.error(`Logger initialization failed for path: ${this.logFilePath} - ${error.message}`);
-                this.logFilePath = null;
-            }
+            this.initializeLogFile();
         }
     }
     initializeLogFile() {
-        const logDir = path.dirname(this.logFilePath);
-        if (!fs.existsSync(logDir)) {
-            try {
+        try {
+            const logDir = path.dirname(this.logFilePath);
+            if (!fs.existsSync(logDir)) {
                 fs.mkdirSync(logDir, { recursive: true });
             }
-            catch (error) {
-                throw new Error(`Failed to create log directory: ${error.message}`);
-            }
+        }
+        catch (error) {
+            console.error(`Logger initialization failed for path: ${this.logFilePath} - ${error.message}`);
+            this.logFilePath = null;
         }
     }
     getLogPath() {
