@@ -3,7 +3,7 @@
     // Language and Environment
     "target": "ESNext",
     "module": "ESNext",
-    "lib": ["dom", "es2015"],
+    "lib": ["ESNext", "DOM"],
     "moduleResolution": "Node",
     "skipLibCheck": true,
 
