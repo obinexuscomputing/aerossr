@@ -143,7 +143,7 @@ export function minifyBundle(code: string): string {
   let result = '';
   let inString = false;
   let stringChar = '';
-  let lastChar = '';
+  let lastChar: string | undefined = '';
 
   for (let i = 0; i < code.length; i++) {
     const char = code[i];
@@ -157,7 +157,7 @@ export function minifyBundle(code: string): string {
       inString = true;
       stringChar = char;
       result += char;
-    } else if (/\s/.test(char)) {
+    } else if (char && /\s/.test(char)) {
       const prevChar = result[result.length - 1];
       const nextChar = code[i + 1];
       
