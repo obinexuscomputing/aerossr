@@ -1,4 +1,4 @@
-import { readFile, stat } from 'fs/promises';
+import { promises, createReadStream } from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
 import { gzip } from 'zlib';
@@ -12,6 +12,7 @@ class StaticFileMiddleware {
     dotFiles;
     compression;
     etag;
+    options;
     constructor(options) {
         this.root = options.root;
         this.maxAge = options.maxAge || 86400;
@@ -36,7 +37,7 @@ class StaticFileMiddleware {
         if (etag) {
             headers['ETag'] = etag;
         }
-        const content = await readFile(filepath);
+        const content = await promises.readFile(filepath);
         if (this.compression && this.isCompressible(mimeType) && content.length > 1024) {
             const acceptEncoding = req.headers['accept-encoding'] || '';
             if (acceptEncoding.includes('gzip')) {
@@ -69,68 +70,79 @@ class StaticFileMiddleware {
     isCompressible(mimeType) {
         return /^(text|application)\/(javascript|json|html|xml|css|plain)/.test(mimeType);
     }
-    getMimeType(ext) {
-        const mimeTypes = {
-            '.html': 'text/html',
-            '.js': 'application/javascript',
-            '.css': 'text/css',
-            '.json': 'application/json',
-            '.png': 'image/png',
-            '.jpg': 'image/jpeg',
-            '.gif': 'image/gif',
-            '.svg': 'image/svg+xml',
-            '.wav': 'audio/wav',
-            '.mp4': 'video/mp4',
-            '.woff': 'application/font-woff',
-            '.ttf': 'application/font-ttf',
-            '.eot': 'application/vnd.ms-fontobject',
-            '.otf': 'application/font-otf',
-            '.wasm': 'application/wasm',
-        };
-        return mimeTypes[ext] || 'application/octet-stream';
+    getMimeType(filePath) {
+        const ext = path.extname(filePath).toLowerCase();
+        switch (ext) {
+            case '.html':
+                return 'text/html';
+            case '.js':
+                return 'application/javascript';
+            case '.css':
+                return 'text/css';
+            case '.png':
+                return 'image/png';
+            case '.jpg':
+            case '.jpeg':
+                return 'image/jpeg';
+            case '.svg':
+                return 'image/svg+xml';
+            case '.json':
+                return 'application/json';
+            default:
+                return 'application/octet-stream';
+        }
+    }
+    async statFile(filePath) {
+        try {
+            return await promises.stat(filePath);
+        }
+        catch {
+            return null;
+        }
     }
     middleware() {
         return async (req, res, next) => {
             try {
-                if (req.method !== 'GET' && req.method !== 'HEAD') {
-                    return next();
+                const requestedPath = path.join(this.options.root, decodeURIComponent(req.url || '/'));
+                let resolvedPath = path.resolve(requestedPath);
+                if (!resolvedPath.startsWith(this.options.root)) {
+                    res.writeHead(403);
+                    res.end('Forbidden');
+                    return;
                 }
-                const urlPath = path.normalize(decodeURIComponent(req.url || '').split('?')[0]);
-                if (this.isDotFile(urlPath)) {
-                    const dotFileResult = this.handleDotFile(req, res, next);
-                    if (dotFileResult)
-                        return dotFileResult;
+                if (!this.options.allowDotfiles && path.basename(resolvedPath).startsWith('.')) {
+                    res.writeHead(403);
+                    res.end('Forbidden');
+                    return;
                 }
-                const fullPath = path.join(this.root, urlPath);
-                try {
-                    const stats = await stat(fullPath);
-                    if (stats.isDirectory()) {
-                        for (const indexFile of this.index) {
-                            const indexPath = path.join(fullPath, indexFile);
-                            try {
-                                const indexStats = await stat(indexPath);
-                                if (indexStats.isFile()) {
-                                    await this.serveFile(indexPath, indexStats, req, res);
-                                    return;
-                                }
-                            }
-                            catch {
-                                continue;
-                            }
-                        }
-                        return next();
+                let stat = await this.statFile(resolvedPath);
+                if (!stat) {
+                    const indexFile = path.join(resolvedPath, this.options.defaultFile || 'index.html');
+                    stat = await this.statFile(indexFile);
+                    if (stat) {
+                        resolvedPath = indexFile;
                     }
-                    if (stats.isFile()) {
-                        await this.serveFile(fullPath, stats, req, res);
+                    else {
+                        next();
                         return;
                     }
                 }
-                catch {
-                    return next();
+                if (stat.isDirectory()) {
+                    next();
+                    return;
                 }
+                res.writeHead(200, {
+                    'Content-Type': this.getMimeType(resolvedPath),
+                    'Cache-Control': this.options.cacheControl,
+                    'Last-Modified': stat.mtime.toUTCString(),
+                });
+                const stream = createReadStream(resolvedPath);
+                stream.pipe(res);
             }
             catch (error) {
-                return next();
+                console.error('StaticFileMiddleware error:', error);
+                res.writeHead(500);
+                res.end('Internal Server Error');
             }
         };
     }

@@ -1,13 +1,18 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-interface DependencyOptions {
+export interface DependencyOptions {
   extensions?: string[];
   maxDepth?: number;
   ignorePatterns?: string[];
+  baseDir?: string;
 }
 
-type FileContent = string | Buffer;
+export interface BundleOptions extends DependencyOptions {
+  minify?: boolean;
+  sourceMap?: boolean;
+  comments?: boolean;
+}
 
 /**
  * Resolves all dependencies for a given file
@@ -15,61 +20,84 @@ type FileContent = string | Buffer;
 export async function resolveDependencies(
   filePath: string,
   deps: Set<string> = new Set(),
-  options: DependencyOptions = {},
-  depth = 0
+  options: DependencyOptions = {}
 ): Promise<Set<string>> {
   const {
-    extensions = ['.js', '.ts'],
+    extensions = ['.js', '.ts', '.jsx', '.tsx'],
     maxDepth = 100,
-    ignorePatterns = []
+    ignorePatterns = ['node_modules'],
+    baseDir = process.cwd()
   } = options;
 
-  // Prevent infinite recursion and check ignore patterns
-  if (depth > maxDepth || 
-      deps.has(filePath) || 
-      ignorePatterns.some(pattern => filePath.includes(pattern))) {
-    return deps;
-  }
+  const visited = new Set<string>();
+  const resolved = new Set<string>();
 
-  try {
-    deps.add(filePath);
-    const content = await fs.readFile(filePath, 'utf-8');
+  async function resolve(currentPath: string, depth = 0): Promise<void> {
+    if (depth > maxDepth || visited.has(currentPath)) {
+      return;
+    }
 
-    // Match both require() and import statements
-    const importMatches = content.match(
-      /(?:require\s*\(['"]([^'"]+)['"]\)|import\s+.*?from\s+['"]([^'"]+)['"])/g
-    ) || [];
+    // Check ignore patterns
+    if (ignorePatterns.some(pattern => currentPath.includes(pattern))) {
+      return;
+    }
 
-    for (const match of importMatches) {
-      const depPath = match.match(/['"]([^'"]+)['"]/)?.[1];
-      if (!depPath) continue;
+    visited.add(currentPath);
 
-      try {
-        const fullPath = await resolveFilePath(depPath, filePath, extensions);
-        if (fullPath) {
-          await resolveDependencies(fullPath, deps, options, depth + 1);
-        }
-      } catch (err) {
-        if (process.env.NODE_ENV !== 'test') {
-          console.warn(`Warning: Could not resolve dependency ${depPath} in ${filePath}`);
+    try {
+      const content = await fs.readFile(currentPath, 'utf-8');
+      deps.add(currentPath);
+
+      // Match different import patterns
+      const importPatterns = [
+        /require\s*\(['"]([^'"]+)['"]\)/g,                    // require('...')
+        /import\s+.*?from\s+['"]([^'"]+)['"]/g,              // import ... from '...'
+        /import\s*['"]([^'"]+)['"]/g,                        // import '...'
+        /import\s*\(.*?['"]([^'"]+)['"]\s*\)/g,              // import('...')
+        /export\s+.*?from\s+['"]([^'"]+)['"]/g               // export ... from '...'
+      ];
+
+      for (const pattern of importPatterns) {
+        let match;
+        while ((match = pattern.exec(content)) !== null) {
+          const importPath = match[1];
+          const fullPath = await resolveFilePath(importPath, currentPath, extensions, baseDir);
+          
+          if (fullPath && !resolved.has(fullPath)) {
+            resolved.add(fullPath);
+            await resolve(fullPath, depth + 1);
+          }
         }
       }
+    } catch (err) {
+      if (process.env.NODE_ENV !== 'test') {
+        console.warn(`Warning: Could not process ${currentPath}: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
-  } catch (err) {
-    throw new Error(`Error processing ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
   }
 
+  await resolve(filePath);
   return deps;
 }
 
+/**
+ * Resolves the full path of an import
+ */
 async function resolveFilePath(
   importPath: string,
   fromPath: string,
-  extensions: string[]
+  extensions: string[],
+  baseDir: string
 ): Promise<string | null> {
-  const basePath = path.resolve(path.dirname(fromPath), importPath);
+  // Handle package imports
+  if (!importPath.startsWith('.') && !importPath.startsWith('/')) {
+    return null; // Skip external package imports
+  }
 
-  // Check if path already has a valid extension
+  const basePath = path.resolve(path.dirname(fromPath), importPath);
+  const relativePath = path.relative(baseDir, basePath);
+
+  // Check if path has extension
   if (extensions.some(ext => importPath.endsWith(ext))) {
     try {
       await fs.access(basePath);
@@ -90,83 +118,119 @@ async function resolveFilePath(
     }
   }
 
+  // Try index files
+  for (const ext of extensions) {
+    const indexPath = path.join(basePath, `index${ext}`);
+    try {
+      await fs.access(indexPath);
+      return indexPath;
+    } catch {
+      continue;
+    }
+  }
+
   return null;
 }
 
 /**
- * Minifies JavaScript code while preserving string contents
+ * Minifies JavaScript code while preserving important structures
  */
 export function minifyBundle(code: string): string {
   if (!code.trim()) return '';
 
   let inString = false;
   let stringChar = '';
+  let inComment = false;
+  let inMultilineComment = false;
   let result = '';
-  let i = 0;
+  let lastChar = '';
+  
+  for (let i = 0; i < code.length; i++) {
+    const char = code[i];
+    const nextChar = code[i + 1];
 
-  while (i < code.length) {
-    if (!inString) {
-      // Handle comments
-      if (code[i] === '/' && code[i + 1] === '*') {
-        i = code.indexOf('*/', i + 2) + 2;
-        if (i === 1) i = code.length;
-        continue;
+    if (inString) {
+      result += char;
+      if (char === stringChar && lastChar !== '\\') {
+        inString = false;
       }
-      if (code[i] === '/' && code[i + 1] === '/') {
-        i = code.indexOf('\n', i) + 1;
-        if (i === 0) i = code.length;
-        continue;
-      }
-
-      // Handle strings
-      if (code[i] === '"' || code[i] === "'") {
-        inString = true;
-        stringChar = code[i];
-        result += code[i];
-        i++;
-        continue;
-      }
-
-      // Handle whitespace
-      if (/\s/.test(code[i])) {
+    } else if (inComment) {
+      if (char === '\n') {
+        inComment = false;
         result += ' ';
-        while (i < code.length && /\s/.test(code[i])) i++;
-        continue;
+      }
+    } else if (inMultilineComment) {
+      if (char === '*' && nextChar === '/') {
+        inMultilineComment = false;
+        i++;
+        result += ' ';
       }
     } else {
-      // Handle string ending
-      if (code[i] === stringChar && code[i - 1] !== '\\') {
-        inString = false;
-        stringChar = '';
+      if (char === '"' || char === "'") {
+        inString = true;
+        stringChar = char;
+        result += char;
+      } else if (char === '/' && nextChar === '/') {
+        inComment = true;
+        i++;
+      } else if (char === '/' && nextChar === '*') {
+        inMultilineComment = true;
+        i++;
+      } else if (/\s/.test(char)) {
+        // Preserve necessary whitespace
+        const prevChar = result[result.length - 1];
+        const nextNonSpaceChar = code.slice(i + 1).match(/\S/);
+        
+        if (prevChar && nextNonSpaceChar && 
+            /[^\s\{\(\[\+\-\*\/\%\<\>\&\|\,\;\:\?]/.test(prevChar) && 
+            /[^\s\}\)\]\+\-\*\/\%\<\>\&\|\,\;\:\?]/.test(nextNonSpaceChar[0])) {
+          result += ' ';
+        }
+      } else {
+        result += char;
       }
     }
-
-    if (i < code.length) {
-      result += code[i];
-      i++;
-    }
+    lastChar = char;
   }
 
-  return result.trim().replace(/\s+/g, ' ');
+  return result.trim();
 }
 
 /**
  * Generates a bundled JavaScript file from an entry point
  */
-export async function generateBundle(projectPath: string, entryPoint: string): Promise<string> {
-  const entryFilePath = path.join(projectPath, entryPoint);
+export async function generateBundle(
+  projectPath: string, 
+  entryPoint: string,
+  options: BundleOptions = {}
+): Promise<string> {
+  const {
+    minify = true,
+    comments = true,
+    ...dependencyOptions
+  } = options;
+
+  const entryFilePath = path.resolve(projectPath, entryPoint);
   let bundle = '';
 
   try {
-    const dependencies = await resolveDependencies(entryFilePath);
+    const dependencies = await resolveDependencies(entryFilePath, new Set(), {
+      ...dependencyOptions,
+      baseDir: projectPath
+    });
     
     for (const dep of dependencies) {
       const content = await fs.readFile(dep, 'utf-8');
       const relativePath = path.relative(projectPath, dep);
-      bundle += `\n// File: ${relativePath}\n${content}\n`;
+      
+      if (comments) {
+        bundle += `\n// File: ${relativePath}\n`;
+      }
+      
+      bundle += `${content}\n`;
     }
 
-    return minifyBundle(bundle);
+    return minify ? minifyBundle(bundle) : bundle;
   } catch (err) {
     throw new Error(
       `Failed to generate bundle from ${entryPoint}: ${err instanceof Error ? err.message : String(err)}`

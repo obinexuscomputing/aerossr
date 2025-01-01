@@ -212,13 +212,15 @@ declare class StaticFileMiddleware {
     readonly dotFiles: 'ignore' | 'allow' | 'deny';
     readonly compression: boolean;
     readonly etag: boolean;
+    options: any;
     constructor(options: StaticFileOptions);
     private serveFile;
     private isDotFile;
     private handleDotFile;
     private isCompressible;
     private getMimeType;
-    middleware(): Middleware;
+    private statFile;
+    middleware(): (req: IncomingMessage, res: ServerResponse, next: () => void) => Promise<void>;
 }
 
 declare class SecurityMiddleware {
