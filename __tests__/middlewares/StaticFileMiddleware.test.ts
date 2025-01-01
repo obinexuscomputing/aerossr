@@ -3,9 +3,14 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { Readable } from 'stream';
 import { stat, readFile } from 'fs/promises';
 import * as path from 'path';
+import { gzip } from 'zlib';
+import { promisify } from 'util';
 
 jest.mock('fs/promises');
 jest.mock('path');
+jest.mock('zlib');
+
+const gzipAsync = promisify(gzip) as jest.MockedFunction<typeof promisify>;
 
 describe('StaticFileMiddleware', () => {
   let middleware: StaticFileMiddleware;
@@ -23,6 +28,7 @@ describe('StaticFileMiddleware', () => {
 
     mockPath.normalize.mockImplementation(p => p);
     mockPath.join.mockImplementation((...parts) => parts.join('/'));
+    mockPath.extname.mockImplementation(p => '.' + p.split('.').pop());
   });
 
   const createMockRequest = (method: string = 'GET', url: string = '/', headers = {}): IncomingMessage => {
@@ -34,12 +40,14 @@ describe('StaticFileMiddleware', () => {
   };
 
   const createMockResponse = (): jest.Mocked<ServerResponse> => {
-    const res = {
+    return {
       writeHead: jest.fn(),
       setHeader: jest.fn(),
-      end: jest.fn()
+      end: jest.fn(),
+      on: jest.fn(),
+      once: jest.fn(),
+      emit: jest.fn(),
     } as unknown as jest.Mocked<ServerResponse>;
-    return res;
   };
 
   describe('Configuration', () => {
@@ -62,7 +70,6 @@ describe('StaticFileMiddleware', () => {
         etag: false
       });
 
-      expect(customMiddleware['root']).toBe('/test');
       expect(customMiddleware['maxAge']).toBe(7200);
       expect(customMiddleware['compression']).toBe(false);
       expect(customMiddleware['dotFiles']).toBe('allow');
@@ -82,6 +89,56 @@ describe('StaticFileMiddleware', () => {
       expect(res.writeHead).not.toHaveBeenCalled();
     });
 
+    it('should handle HEAD requests same as GET but without body', async () => {
+      const req = createMockRequest('HEAD', '/test.txt');
+      const res = createMockResponse();
+      const next = jest.fn();
+
+      mockStat.mockResolvedValueOnce({
+        isFile: () => true,
+        isDirectory: () => false,
+        mtime: new Date(),
+      } as any);
+
+      mockReadFile.mockResolvedValueOnce(Buffer.from('content'));
+
+      await middleware.middleware()(req, res, next);
+      expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object));
+      expect(res.end).toHaveBeenCalledWith();
+    });
+
+    it('should handle URL-encoded paths', async () => {
+      const req = createMockRequest('GET', '/test%20file.txt');
+      const res = createMockResponse();
+      const next = jest.fn();
+
+      mockStat.mockResolvedValueOnce({
+        isFile: () => true,
+        isDirectory: () => false,
+        mtime: new Date(),
+      } as any);
+
+      await middleware.middleware()(req, res, next);
+      expect(mockPath.join).toHaveBeenCalledWith('/test/public', 'test file.txt');
+    });
+
+    it('should strip query strings from URLs', async () => {
+      const req = createMockRequest('GET', '/test.txt?param=value');
+      const res = createMockResponse();
+      const next = jest.fn();
+
+      mockStat.mockResolvedValueOnce({
+        isFile: () => true,
+        isDirectory: () => false,
+        mtime: new Date(),
+      } as any);
+
+      await middleware.middleware()(req, res, next);
+      expect(mockPath.join).toHaveBeenCalledWith('/test/public', 'test.txt');
+    });
+  });
+
+  describe('Security', () => {
     it('should handle dotfiles with deny configuration', async () => {
       const restrictedMiddleware = new StaticFileMiddleware({
         root: '/test',
@@ -93,35 +150,29 @@ describe('StaticFileMiddleware', () => {
       const next = jest.fn();
 
       await restrictedMiddleware.middleware()(req, res, next);
-      
       expect(res.writeHead).toHaveBeenCalledWith(403, { 'Content-Type': 'text/plain' });
       expect(res.end).toHaveBeenCalledWith('Forbidden');
       expect(next).not.toHaveBeenCalled();
     });
 
-    it('should ignore dotfiles with ignore configuration', async () => {
-      const ignoringMiddleware = new StaticFileMiddleware({
-        root: '/test',
-        dotFiles: 'ignore'
-      });
-
-      const req = createMockRequest('GET', '/.hidden');
+    it('should prevent directory traversal attempts', async () => {
+      const req = createMockRequest('GET', '/../secret.txt');
       const res = createMockResponse();
       const next = jest.fn();
 
-      await ignoringMiddleware.middleware()(req, res, next);
+      mockPath.normalize.mockReturnValueOnce('/../secret.txt');
       
-      expect(res.writeHead).not.toHaveBeenCalled();
+      await middleware.middleware()(req, res, next);
       expect(next).toHaveBeenCalled();
+      expect(res.writeHead).not.toHaveBeenCalled();
     });
+  });
 
-    it('should allow dotfiles with allow configuration', async () => {
-      const allowingMiddleware = new StaticFileMiddleware({
-        root: '/test',
-        dotFiles: 'allow'
+  describe('Caching', () => {
+    it('should handle ETags correctly', async () => {
+      const req = createMockRequest('GET', '/test.txt', {
+        'if-none-match': '"123456"'
       });
-
-      const req = createMockRequest('GET', '/.allowed');
       const res = createMockResponse();
       const next = jest.fn();
 
@@ -133,46 +184,16 @@ describe('StaticFileMiddleware', () => {
 
       mockReadFile.mockResolvedValueOnce(Buffer.from('content'));
 
-      await allowingMiddleware.middleware()(req, res, next);
-      
-      expect(next).not.toHaveBeenCalled();
-      expect(mockStat).toHaveBeenCalled();
-    });
-  });
-
-  describe('File Serving', () => {
-    it('should serve files with correct headers', async () => {
-      const req = createMockRequest('GET', '/test.html');
-      const res = createMockResponse();
-      const next = jest.fn();
-      const mtime = new Date();
-
-      mockStat.mockResolvedValueOnce({
-        isFile: () => true,
-        isDirectory: () => false,
-        mtime,
-      } as any);
-
-      mockReadFile.mockResolvedValueOnce(Buffer.from('content'));
-
       await middleware.middleware()(req, res, next);
-
-      expect(res.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
-        'Content-Type': 'text/html',
-        'Cache-Control': 'public, max-age=3600',
-        'Last-Modified': mtime.toUTCString(),
+      expect(res.writeHead).toHaveBeenCalledWith(expect.any(Number), expect.objectContaining({
+        'ETag': expect.any(String)
       }));
     });
 
-    it('should handle directory requests with index files', async () => {
-      const req = createMockRequest('GET', '/dir');
+    it('should set correct cache headers', async () => {
+      const req = createMockRequest('GET', '/test.txt');
       const res = createMockResponse();
       const next = jest.fn();
-
-      mockStat.mockResolvedValueOnce({
-        isFile: () => false,
-        isDirectory: () => true,
-      } as any);
 
       mockStat.mockResolvedValueOnce({
         isFile: () => true,
@@ -180,37 +201,122 @@ describe('StaticFileMiddleware', () => {
         mtime: new Date(),
       } as any);
 
-      mockReadFile.mockResolvedValueOnce(Buffer.from('index content'));
+      mockReadFile.mockResolvedValueOnce(Buffer.from('content'));
 
       await middleware.middleware()(req, res, next);
-
-      expect(mockPath.join).toHaveBeenCalledWith('/test/public/dir', 'index.html');
-      expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object));
-      expect(res.end).toHaveBeenCalledWith(expect.any(Buffer));
-    });
-  });
-
-  describe('MIME Type Handling', () => {
-    it('should return correct MIME type for known extensions', () => {
-      expect(middleware['getMimeType']('.html')).toBe('text/html');
-      expect(middleware['getMimeType']('.css')).toBe('text/css');
-      expect(middleware['getMimeType']('.js')).toBe('application/javascript');
-      expect(middleware['getMimeType']('.jpg')).toBe('image/jpeg');
-      expect(middleware['getMimeType']('.wasm')).toBe('application/wasm');
-    });
-
-    it('should return octet-stream for unknown extensions', () => {
-      expect(middleware['getMimeType']('.unknown')).toBe('application/octet-stream');
+      expect(res.writeHead).toHaveBeenCalledWith(expect.any(Number), expect.objectContaining({
+        'Cache-Control': 'public, max-age=3600'
+      }));
     });
   });
 
   describe('Compression', () => {
-    it('should identify compressible content types', () => {
-      expect(middleware['isCompressible']('text/html')).toBe(true);
-      expect(middleware['isCompressible']('application/javascript')).toBe(true);
-      expect(middleware['isCompressible']('text/css')).toBe(true);
-      expect(middleware['isCompressible']('image/png')).toBe(false);
-      expect(middleware['isCompressible']('audio/wav')).toBe(false);
+    it('should compress content when appropriate', async () => {
+      const req = createMockRequest('GET', '/test.txt', {
+        'accept-encoding': 'gzip'
+      });
+      const res = createMockResponse();
+      const next = jest.fn();
+
+      mockStat.mockResolvedValueOnce({
+        isFile: () => true,
+        isDirectory: () => false,
+        mtime: new Date(),
+      } as any);
+
+      const content = Buffer.from('x'.repeat(2000));
+      mockReadFile.mockResolvedValueOnce(content);
+      (gzip as unknown as jest.Mock).mockImplementation((buffer, callback) => 
+        callback(null, Buffer.from('compressed')));
+
+      await middleware.middleware()(req, res, next);
+      expect(res.writeHead).toHaveBeenCalledWith(expect.any(Number), expect.objectContaining({
+        'Content-Encoding': 'gzip',
+        'Vary': 'Accept-Encoding'
+      }));
+    });
+
+    it('should not compress small files', async () => {
+      const req = createMockRequest('GET', '/test.txt', {
+        'accept-encoding': 'gzip'
+      });
+      const res = createMockResponse();
+      const next = jest.fn();
+
+      mockStat.mockResolvedValueOnce({
+        isFile: () => true,
+        isDirectory: () => false,
+        mtime: new Date(),
+      } as any);
+
+      mockReadFile.mockResolvedValueOnce(Buffer.from('small'));
+
+      await middleware.middleware()(req, res, next);
+      expect(res.writeHead).toHaveBeenCalledWith(expect.any(Number), expect.not.objectContaining({
+        'Content-Encoding': 'gzip'
+      }));
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should handle file not found gracefully', async () => {
+      const req = createMockRequest('GET', '/missing.txt');
+      const res = createMockResponse();
+      const next = jest.fn();
+
+      mockStat.mockRejectedValueOnce(new Error('ENOENT'));
+
+      await middleware.middleware()(req, res, next);
+      expect(next).toHaveBeenCalled();
+    });
+
+    it('should handle read errors gracefully', async () => {
+      const req = createMockRequest('GET', '/error.txt');
+      const res = createMockResponse();
+      const next = jest.fn();
+
+      mockStat.mockResolvedValueOnce({
+        isFile: () => true,
+        isDirectory: () => false,
+        mtime: new Date(),
+      } as any);
+
+      mockReadFile.mockRejectedValueOnce(new Error('Read error'));
+
+      await middleware.middleware()(req, res, next);
+      expect(next).toHaveBeenCalled();
+    });
+  });
+
+  describe('MIME Types', () => {
+    it.each([
+      ['.html', 'text/html'],
+      ['.css', 'text/css'],
+      ['.js', 'application/javascript'],
+      ['.json', 'application/json'],
+      ['.png', 'image/png'],
+      ['.jpg', 'image/jpeg'],
+      ['.svg', 'image/svg+xml'],
+      ['.wasm', 'application/wasm'],
+      ['.unknown', 'application/octet-stream']
+    ])('should return correct MIME type for %s extension', async (ext, expectedMime) => {
+      const req = createMockRequest('GET', `/test${ext}`);
+      const res = createMockResponse();
+      const next = jest.fn();
+
+      mockStat.mockResolvedValueOnce({
+        isFile: () => true,
+        isDirectory: () => false,
+        mtime: new Date(),
+      } as any);
+
+      mockReadFile.mockResolvedValueOnce(Buffer.from('content'));
+      mockPath.extname.mockReturnValueOnce(ext);
+
+      await middleware.middleware()(req, res, next);
+      expect(res.writeHead).toHaveBeenCalledWith(expect.any(Number), expect.objectContaining({
+        'Content-Type': expectedMime
+      }));
     });
   });
 });

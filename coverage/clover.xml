@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1735772414407" clover="3.2.0">
-  <project timestamp="1735772414407" name="All files">
-    <metrics statements="472" coveredstatements="308" conditionals="221" coveredconditionals="150" methods="81" coveredmethods="48" elements="774" coveredelements="506" complexity="0" loc="472" ncloc="472" packages="6" files="19" classes="19"/>
+<coverage generated="1735772575822" clover="3.2.0">
+  <project timestamp="1735772575822" name="All files">
+    <metrics statements="472" coveredstatements="257" conditionals="221" coveredconditionals="125" methods="81" coveredmethods="39" elements="774" coveredelements="421" complexity="0" loc="472" ncloc="472" packages="6" files="19" classes="19"/>
     <package name="src">
       <metrics statements="87" coveredstatements="59" conditionals="36" coveredconditionals="21" methods="18" coveredmethods="14"/>
       <file name="AeroSSR.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\AeroSSR.ts">
@@ -152,7 +152,7 @@
       </file>
     </package>
     <package name="src.middlewares">
-      <metrics statements="109" coveredstatements="61" conditionals="42" coveredconditionals="25" methods="18" coveredmethods="9"/>
+      <metrics statements="109" coveredstatements="10" conditionals="42" coveredconditionals="0" methods="18" coveredmethods="0"/>
       <file name="SecurityMiddleware.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\middlewares\SecurityMiddleware.ts">
         <metrics statements="32" coveredstatements="1" conditionals="9" coveredconditionals="0" methods="9" coveredmethods="0"/>
         <line num="3" count="1" type="stmt"/>
@@ -189,43 +189,43 @@
         <line num="70" count="0" type="stmt"/>
       </file>
       <file name="StaticFileMiddleware.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\middlewares\StaticFileMiddleware.ts">
-        <metrics statements="75" coveredstatements="58" conditionals="33" coveredconditionals="25" methods="9" coveredmethods="9"/>
-        <line num="1" count="2" type="stmt"/>
-        <line num="2" count="2" type="stmt"/>
-        <line num="3" count="2" type="stmt"/>
-        <line num="4" count="2" type="stmt"/>
-        <line num="6" count="2" type="stmt"/>
-        <line num="9" count="2" type="stmt"/>
-        <line num="11" count="2" type="stmt"/>
-        <line num="20" count="16" type="stmt"/>
-        <line num="21" count="16" type="cond" truecount="2" falsecount="0"/>
-        <line num="22" count="16" type="cond" truecount="2" falsecount="0"/>
-        <line num="23" count="16" type="cond" truecount="2" falsecount="0"/>
-        <line num="24" count="16" type="stmt"/>
-        <line num="25" count="16" type="stmt"/>
-        <line num="29" count="10" type="stmt"/>
-        <line num="37" count="3" type="cond" truecount="1" falsecount="0"/>
-        <line num="38" count="1" type="stmt"/>
-        <line num="40" count="2" type="cond" truecount="1" falsecount="0"/>
-        <line num="41" count="1" type="stmt"/>
-        <line num="42" count="1" type="stmt"/>
-        <line num="43" count="1" type="stmt"/>
-        <line num="46" count="1" type="stmt"/>
-        <line num="47" count="1" type="stmt"/>
-        <line num="51" count="8" type="stmt"/>
-        <line num="55" count="9" type="stmt"/>
-        <line num="72" count="9" type="cond" truecount="2" falsecount="0"/>
-        <line num="81" count="3" type="stmt"/>
-        <line num="83" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="84" count="3" type="cond" truecount="2" falsecount="1"/>
+        <metrics statements="75" coveredstatements="7" conditionals="33" coveredconditionals="0" methods="9" coveredmethods="0"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="3" count="1" type="stmt"/>
+        <line num="4" count="1" type="stmt"/>
+        <line num="6" count="1" type="stmt"/>
+        <line num="9" count="1" type="stmt"/>
+        <line num="11" count="1" type="stmt"/>
+        <line num="20" count="0" type="stmt"/>
+        <line num="21" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="22" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="23" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="24" count="0" type="stmt"/>
+        <line num="25" count="0" type="stmt"/>
+        <line num="29" count="0" type="stmt"/>
+        <line num="37" count="0" type="cond" truecount="0" falsecount="1"/>
+        <line num="38" count="0" type="stmt"/>
+        <line num="40" count="0" type="cond" truecount="0" falsecount="1"/>
+        <line num="41" count="0" type="stmt"/>
+        <line num="42" count="0" type="stmt"/>
+        <line num="43" count="0" type="stmt"/>
+        <line num="46" count="0" type="stmt"/>
+        <line num="47" count="0" type="stmt"/>
+        <line num="51" count="0" type="stmt"/>
+        <line num="55" count="0" type="stmt"/>
+        <line num="72" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="81" count="0" type="stmt"/>
+        <line num="83" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="84" count="0" type="cond" truecount="0" falsecount="3"/>
         <line num="85" count="0" type="stmt"/>
         <line num="86" count="0" type="stmt"/>
         <line num="87" count="0" type="stmt"/>
-        <line num="90" count="3" type="stmt"/>
-        <line num="96" count="3" type="cond" truecount="1" falsecount="0"/>
-        <line num="97" count="3" type="stmt"/>
-        <line num="100" count="3" type="stmt"/>
-        <line num="102" count="3" type="cond" truecount="2" falsecount="2"/>
+        <line num="90" count="0" type="stmt"/>
+        <line num="96" count="0" type="cond" truecount="0" falsecount="1"/>
+        <line num="97" count="0" type="stmt"/>
+        <line num="100" count="0" type="stmt"/>
+        <line num="102" count="0" type="cond" truecount="0" falsecount="4"/>
         <line num="103" count="0" type="cond" truecount="0" falsecount="2"/>
         <line num="104" count="0" type="cond" truecount="0" falsecount="1"/>
         <line num="105" count="0" type="stmt"/>
@@ -234,34 +234,34 @@
         <line num="108" count="0" type="stmt"/>
         <line num="109" count="0" type="stmt"/>
         <line num="110" count="0" type="stmt"/>
-        <line num="114" count="3" type="stmt"/>
-        <line num="115" count="3" type="stmt"/>
-        <line num="119" count="6" type="stmt"/>
-        <line num="120" count="6" type="stmt"/>
-        <line num="122" count="6" type="cond" truecount="3" falsecount="0"/>
-        <line num="123" count="1" type="stmt"/>
-        <line num="124" count="1" type="stmt"/>
-        <line num="127" count="5" type="cond" truecount="1" falsecount="1"/>
-        <line num="130" count="5" type="cond" truecount="1" falsecount="0"/>
-        <line num="131" count="3" type="stmt"/>
-        <line num="132" count="3" type="cond" truecount="1" falsecount="0"/>
-        <line num="135" count="3" type="stmt"/>
-        <line num="137" count="3" type="stmt"/>
-        <line num="138" count="3" type="stmt"/>
-        <line num="140" count="3" type="cond" truecount="1" falsecount="0"/>
-        <line num="142" count="1" type="stmt"/>
-        <line num="143" count="1" type="stmt"/>
-        <line num="144" count="1" type="stmt"/>
-        <line num="145" count="1" type="stmt"/>
-        <line num="146" count="1" type="cond" truecount="1" falsecount="0"/>
-        <line num="147" count="1" type="stmt"/>
-        <line num="148" count="1" type="stmt"/>
+        <line num="114" count="0" type="stmt"/>
+        <line num="115" count="0" type="stmt"/>
+        <line num="119" count="0" type="stmt"/>
+        <line num="120" count="0" type="stmt"/>
+        <line num="122" count="0" type="cond" truecount="0" falsecount="3"/>
+        <line num="123" count="0" type="stmt"/>
+        <line num="124" count="0" type="stmt"/>
+        <line num="127" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="130" count="0" type="cond" truecount="0" falsecount="1"/>
+        <line num="131" count="0" type="stmt"/>
+        <line num="132" count="0" type="cond" truecount="0" falsecount="1"/>
+        <line num="135" count="0" type="stmt"/>
+        <line num="137" count="0" type="stmt"/>
+        <line num="138" count="0" type="stmt"/>
+        <line num="140" count="0" type="cond" truecount="0" falsecount="1"/>
+        <line num="142" count="0" type="stmt"/>
+        <line num="143" count="0" type="stmt"/>
+        <line num="144" count="0" type="stmt"/>
+        <line num="145" count="0" type="stmt"/>
+        <line num="146" count="0" type="cond" truecount="0" falsecount="1"/>
+        <line num="147" count="0" type="stmt"/>
+        <line num="148" count="0" type="stmt"/>
         <line num="151" count="0" type="stmt"/>
         <line num="154" count="0" type="stmt"/>
         <line num="155" count="0" type="stmt"/>
-        <line num="158" count="2" type="cond" truecount="1" falsecount="0"/>
-        <line num="159" count="2" type="stmt"/>
-        <line num="160" count="2" type="stmt"/>
+        <line num="158" count="0" type="cond" truecount="0" falsecount="1"/>
+        <line num="159" count="0" type="stmt"/>
+        <line num="160" count="0" type="stmt"/>
         <line num="163" count="0" type="stmt"/>
         <line num="164" count="0" type="stmt"/>
         <line num="167" count="0" type="stmt"/>
@@ -302,18 +302,18 @@
       <metrics statements="218" coveredstatements="178" conditionals="131" coveredconditionals="104" methods="35" coveredmethods="25"/>
       <file name="async.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\utils\async.ts">
         <metrics statements="6" coveredstatements="2" conditionals="4" coveredconditionals="0" methods="3" coveredmethods="0"/>
-        <line num="6" count="2" type="stmt"/>
+        <line num="6" count="1" type="stmt"/>
         <line num="7" count="0" type="stmt"/>
-        <line num="15" count="2" type="stmt"/>
+        <line num="15" count="1" type="stmt"/>
         <line num="18" count="0" type="stmt"/>
         <line num="19" count="0" type="stmt"/>
         <line num="20" count="0" type="stmt"/>
       </file>
       <file name="bundler.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\utils\bundler.ts">
         <metrics statements="86" coveredstatements="73" conditionals="47" coveredconditionals="39" methods="7" coveredmethods="7"/>
-        <line num="1" count="3" type="stmt"/>
-        <line num="2" count="3" type="stmt"/>
-        <line num="20" count="3" type="stmt"/>
+        <line num="1" count="2" type="stmt"/>
+        <line num="2" count="2" type="stmt"/>
+        <line num="20" count="2" type="stmt"/>
         <line num="30" count="10" type="stmt"/>
         <line num="33" count="652" type="cond" truecount="3" falsecount="0"/>
         <line num="34" count="37" type="stmt"/>
@@ -355,7 +355,7 @@
         <line num="121" count="0" type="stmt"/>
         <line num="123" count="0" type="stmt"/>
         <line num="127" count="0" type="stmt"/>
-        <line num="133" count="3" type="stmt"/>
+        <line num="133" count="2" type="stmt"/>
         <line num="134" count="6" type="cond" truecount="0" falsecount="1"/>
         <line num="137" count="6" type="stmt"/>
         <line num="140" count="6" type="stmt"/>
@@ -381,7 +381,7 @@
         <line num="171" count="139" type="stmt"/>
         <line num="173" count="296" type="stmt"/>
         <line num="177" count="6" type="stmt"/>
-        <line num="186" count="3" type="stmt"/>
+        <line num="186" count="2" type="stmt"/>
         <line num="195" count="6" type="stmt"/>
         <line num="197" count="6" type="stmt"/>
         <line num="198" count="6" type="stmt"/>
@@ -400,7 +400,7 @@
       </file>
       <file name="cache.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\utils\cache.ts">
         <metrics statements="24" coveredstatements="19" conditionals="23" coveredconditionals="20" methods="7" coveredmethods="4"/>
-        <line num="14" count="3" type="cond" truecount="1" falsecount="0"/>
+        <line num="14" count="2" type="cond" truecount="1" falsecount="0"/>
         <line num="15" count="23" type="stmt"/>
         <line num="16" count="23" type="stmt"/>
         <line num="18" count="23" type="stmt"/>
@@ -427,12 +427,12 @@
       </file>
       <file name="cookie.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\utils\cookie.ts">
         <metrics statements="15" coveredstatements="3" conditionals="1" coveredconditionals="0" methods="3" coveredmethods="0"/>
-        <line num="2" count="2" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
         <line num="3" count="0" type="stmt"/>
         <line num="4" count="0" type="stmt"/>
         <line num="5" count="0" type="stmt"/>
         <line num="6" count="0" type="stmt"/>
-        <line num="9" count="2" type="stmt"/>
+        <line num="9" count="1" type="stmt"/>
         <line num="10" count="0" type="stmt"/>
         <line num="11" count="0" type="stmt"/>
         <line num="12" count="0" type="stmt"/>
@@ -440,12 +440,12 @@
         <line num="14" count="0" type="stmt"/>
         <line num="15" count="0" type="cond" truecount="0" falsecount="1"/>
         <line num="17" count="0" type="stmt"/>
-        <line num="20" count="2" type="stmt"/>
+        <line num="20" count="1" type="stmt"/>
         <line num="21" count="0" type="stmt"/>
       </file>
       <file name="cors.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\utils\cors.ts">
         <metrics statements="14" coveredstatements="9" conditionals="14" coveredconditionals="9" methods="2" coveredmethods="1"/>
-        <line num="17" count="3" type="cond" truecount="1" falsecount="0"/>
+        <line num="17" count="2" type="cond" truecount="1" falsecount="0"/>
         <line num="25" count="3" type="stmt"/>
         <line num="27" count="3" type="cond" truecount="2" falsecount="0"/>
         <line num="28" count="3" type="stmt"/>
@@ -455,18 +455,18 @@
         <line num="35" count="3" type="cond" truecount="0" falsecount="1"/>
         <line num="36" count="0" type="stmt"/>
         <line num="39" count="3" type="stmt"/>
-        <line num="42" count="3" type="stmt"/>
+        <line num="42" count="2" type="stmt"/>
         <line num="43" count="0" type="cond" truecount="0" falsecount="1"/>
         <line num="44" count="0" type="stmt"/>
         <line num="46" count="0" type="cond" truecount="0" falsecount="2"/>
       </file>
       <file name="errorHandler.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\utils\errorHandler.ts">
         <metrics statements="11" coveredstatements="11" conditionals="20" coveredconditionals="16" methods="2" coveredmethods="2"/>
-        <line num="15" count="3" type="stmt"/>
+        <line num="15" count="2" type="stmt"/>
         <line num="29" count="2" type="stmt"/>
         <line num="31" count="2" type="cond" truecount="4" falsecount="0"/>
         <line num="39" count="2" type="stmt"/>
-        <line num="57" count="3" type="stmt"/>
+        <line num="57" count="2" type="stmt"/>
         <line num="62" count="1" type="cond" truecount="1" falsecount="1"/>
         <line num="63" count="1" type="cond" truecount="1" falsecount="1"/>
         <line num="65" count="1" type="stmt"/>
@@ -476,14 +476,14 @@
       </file>
       <file name="etag.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\utils\etag.ts">
         <metrics statements="4" coveredstatements="4" conditionals="3" coveredconditionals="3" methods="1" coveredmethods="1"/>
-        <line num="1" count="3" type="stmt"/>
-        <line num="7" count="3" type="cond" truecount="1" falsecount="0"/>
-        <line num="8" count="5" type="stmt"/>
-        <line num="9" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="1" count="2" type="stmt"/>
+        <line num="7" count="2" type="cond" truecount="1" falsecount="0"/>
+        <line num="8" count="2" type="stmt"/>
+        <line num="9" count="2" type="cond" truecount="2" falsecount="0"/>
       </file>
       <file name="html.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\utils\html.ts">
         <metrics statements="14" coveredstatements="13" conditionals="6" coveredconditionals="4" methods="3" coveredmethods="3"/>
-        <line num="18" count="3" type="stmt"/>
+        <line num="18" count="2" type="stmt"/>
         <line num="23" count="2" type="stmt"/>
         <line num="30" count="2" type="stmt"/>
         <line num="31" count="8" type="stmt"/>
@@ -500,24 +500,24 @@
       </file>
       <file name="index.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\utils\index.ts">
         <metrics statements="10" coveredstatements="10" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
-        <line num="1" count="2" type="stmt"/>
-        <line num="2" count="2" type="stmt"/>
-        <line num="3" count="2" type="stmt"/>
-        <line num="4" count="2" type="stmt"/>
-        <line num="5" count="2" type="stmt"/>
-        <line num="6" count="2" type="stmt"/>
-        <line num="7" count="2" type="stmt"/>
-        <line num="8" count="2" type="stmt"/>
-        <line num="9" count="2" type="stmt"/>
-        <line num="10" count="2" type="stmt"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="3" count="1" type="stmt"/>
+        <line num="4" count="1" type="stmt"/>
+        <line num="5" count="1" type="stmt"/>
+        <line num="6" count="1" type="stmt"/>
+        <line num="7" count="1" type="stmt"/>
+        <line num="8" count="1" type="stmt"/>
+        <line num="9" count="1" type="stmt"/>
+        <line num="10" count="1" type="stmt"/>
       </file>
       <file name="logger.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\utils\logger.ts">
         <metrics statements="34" coveredstatements="34" conditionals="13" coveredconditionals="13" methods="7" coveredmethods="7"/>
-        <line num="1" count="3" type="stmt"/>
-        <line num="2" count="3" type="stmt"/>
-        <line num="4" count="3" type="stmt"/>
-        <line num="14" count="3" type="stmt"/>
-        <line num="17" count="3" type="stmt"/>
+        <line num="1" count="2" type="stmt"/>
+        <line num="2" count="2" type="stmt"/>
+        <line num="4" count="2" type="stmt"/>
+        <line num="14" count="2" type="stmt"/>
+        <line num="17" count="2" type="stmt"/>
         <line num="26" count="13" type="stmt"/>
         <line num="27" count="13" type="stmt"/>
         <line num="29" count="13" type="cond" truecount="1" falsecount="0"/>
