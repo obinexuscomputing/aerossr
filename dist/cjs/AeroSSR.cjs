@@ -2,7 +2,7 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const be4ef3a8d9f873b843ad69399ebcc5 = require('./_virtual/be4ef3a8d9f873b843ad69399ebcc5.cjs');
+const _204361a70bb1b522b226afef7f84ce = require('./_virtual/204361a70bb1b522b226afef7f84ce.cjs');
 const http = require('http');
 const fs = require('fs');
 const url = require('url');
@@ -28,7 +28,7 @@ class AeroSSR {
         this.config = {
             port: config.port || 3000,
             cacheMaxAge: config.cacheMaxAge || 3600,
-            corsOrigins: config.corsOrigins || '*',
+            corsOrigins: typeof config.corsOrigins === 'string' ? { origins: [config.corsOrigins] } : config.corsOrigins || { origins: '*' },
             compression: config.compression !== false,
             logFilePath: config.logFilePath || null,
             bundleCache: config.bundleCache || cache.createCache(),
@@ -116,7 +116,7 @@ class AeroSSR {
         }
     }
     async handleDefaultRequest(_req, res, pathname) {
-        const htmlPath = path.join(be4ef3a8d9f873b843ad69399ebcc5.default, 'index.html');
+        const htmlPath = path.join(_204361a70bb1b522b226afef7f84ce.default, 'index.html');
         let html$1 = await fs.promises.readFile(htmlPath, 'utf-8');
         const meta = {
             title: `Page - ${pathname}`,

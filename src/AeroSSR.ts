@@ -26,7 +26,7 @@ export class AeroSSR {
     this.config = {
       port: config.port || 3000,
       cacheMaxAge: config.cacheMaxAge || 3600,
-      corsOrigins: config.corsOrigins || '*',
+      corsOrigins: typeof config.corsOrigins === 'string' ? { origins: [config.corsOrigins] } : config.corsOrigins || { origins: '*' },
       compression: config.compression !== false,
       logFilePath: config.logFilePath || null,
       bundleCache: config.bundleCache || createCache<string>(),

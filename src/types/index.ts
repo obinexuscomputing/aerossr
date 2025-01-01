@@ -3,7 +3,7 @@ import type {  IncomingMessage, ServerResponse } from 'http';
 export interface AeroSSRConfig {
     port?: number;
     cacheMaxAge?: number;
-    corsOrigins?: string;
+    corsOrigins?: string | { origin: string } | { origin: string[] };
     compression?: boolean;
     logFilePath?: string | null;
     bundleCache?: CacheStore<string>;

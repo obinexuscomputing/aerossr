@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">7.14% </span>
+                <span class="strong">92.85% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1/14</span>
+                <span class='fraction'>13/14</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>4/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">7.14% </span>
+                <span class="strong">92.85% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1/14</span>
+                <span class='fraction'>13/14</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -129,38 +129,38 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">export interface MetaTags {
   title?: string;
   description?: string;
@@ -178,38 +178,38 @@
   [key: string]: string | undefined;
 }
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >injectMetaTags(</span>
+export function injectMetaTags(
   html: string,
   meta: MetaTags = <span class="branch-0 cbranch-no" title="branch not covered" >{},</span>
-  defaultMeta: MetaTags = <span class="branch-0 cbranch-no" title="branch not covered" >{}</span>
+  defaultMeta: MetaTags = {}
 ): string {
-  const finalMeta: MetaTags = <span class="cstat-no" title="statement not covered" >{</span>
+  const finalMeta: MetaTags = {
     charset: 'utf-8',
     viewport: 'width=device-width, initial-scale=1.0',
     ...defaultMeta,
     ...meta
   };
 &nbsp;
-  const metaTags = <span class="cstat-no" title="statement not covered" >Object.entries(finalMeta)</span>
-    .filter(<span class="fstat-no" title="function not covered" >([</span>_, value]) =&gt; <span class="cstat-no" title="statement not covered" >value !== undefined)</span>
-    .map(<span class="fstat-no" title="function not covered" >([</span>key, value]) =&gt; {
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (key === 'title') {</span>
-<span class="cstat-no" title="statement not covered" >        return `&lt;title&gt;${value}&lt;/title&gt;`;</span>
+  const metaTags = Object.entries(finalMeta)
+    .filter(([_, value]) =&gt; value !== undefined)
+    .map(([key, value]) =&gt; {
+      if (key === 'title') {
+        return `&lt;title&gt;${value}&lt;/title&gt;`;
       }
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (key.startsWith('og')) {</span>
-<span class="cstat-no" title="statement not covered" >        return `&lt;meta property="og:${key.slice(2).toLowerCase()}" content="${value}"&gt;`;</span>
+      if (key.startsWith('og')) {
+        return `&lt;meta property="og:${key.slice(2).toLowerCase()}" content="${value}"&gt;`;
       }
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (key.startsWith('twitter')) {</span>
+      <span class="missing-if-branch" title="if path not taken" >I</span>if (key.startsWith('twitter')) {
 <span class="cstat-no" title="statement not covered" >        return `&lt;meta name="twitter:${key.slice(7).toLowerCase()}" content="${value}"&gt;`;</span>
       }
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (key === 'charset') {</span>
-<span class="cstat-no" title="statement not covered" >        return `&lt;meta charset="${value}"&gt;`;</span>
+      if (key === 'charset') {
+        return `&lt;meta charset="${value}"&gt;`;
       }
-<span class="cstat-no" title="statement not covered" >      return `&lt;meta name="${key}" content="${value}"&gt;`;</span>
+      return `&lt;meta name="${key}" content="${value}"&gt;`;
     })
     .join('\n    ');
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return html.replace('&lt;/head&gt;', `    ${metaTags}\n  &lt;/head&gt;`);</span>
+  return html.replace('&lt;/head&gt;', `    ${metaTags}\n  &lt;/head&gt;`);
 }</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -217,7 +217,7 @@ export function <span class="fstat-no" title="function not covered" >injectMetaT
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-01-01T13:25:14.973Z
+                at 2025-01-01T13:31:26.604Z
             </div>
         <script src="../prettify.js"></script>
         <script>

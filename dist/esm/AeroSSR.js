@@ -1,4 +1,4 @@
-import __dirname from './_virtual/f10eb0067b0fd41701e1773058a1fa.js';
+import __dirname from './_virtual/dfaf624ed881b14010886bf02002ee.js';
 import { createServer } from 'http';
 import { promises } from 'fs';
 import { parse } from 'url';
@@ -24,7 +24,7 @@ class AeroSSR {
         this.config = {
             port: config.port || 3000,
             cacheMaxAge: config.cacheMaxAge || 3600,
-            corsOrigins: config.corsOrigins || '*',
+            corsOrigins: typeof config.corsOrigins === 'string' ? { origins: [config.corsOrigins] } : config.corsOrigins || { origins: '*' },
             compression: config.compression !== false,
             logFilePath: config.logFilePath || null,
             bundleCache: config.bundleCache || createCache(),

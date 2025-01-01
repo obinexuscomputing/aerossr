@@ -21,8 +21,9 @@ function _interopNamespaceDefault(e) {
 
 const crypto__namespace = /*#__PURE__*/_interopNamespaceDefault(crypto);
 
-function generateETag(content) {
-    return crypto__namespace.createHash('md5').update(content).digest('hex');
+function generateETag(content, options = {}) {
+    const hash = crypto__namespace.createHash('md5').update(content).digest('hex');
+    return options.weak ? `W/"${hash}"` : `"${hash}"`;
 }
 
 exports.generateETag = generateETag;
