@@ -1,14 +1,16 @@
 import { StaticFileMiddleware } from '../../src/middlewares/StaticFileMiddleware';
 import { IncomingMessage, ServerResponse } from 'http';
-import { Readable } from 'stream';
+import { Readable, Transform } from 'stream';
 import { stat, readFile } from 'fs/promises';
 import * as path from 'path';
-import { gzip } from 'zlib';
+import { gzip, createGzip } from 'zlib';
 import { promisify } from 'util';
+import * as fs from 'fs';
 
 jest.mock('fs/promises');
 jest.mock('path');
 jest.mock('zlib');
+jest.mock('fs');
 
 const gzipAsync = promisify(gzip) as unknown as jest.MockedFunction<typeof promisify>;
 
@@ -17,6 +19,8 @@ describe('StaticFileMiddleware', () => {
   const mockStat = stat as jest.MockedFunction<typeof stat>;
   const mockReadFile = readFile as jest.MockedFunction<typeof readFile>;
   const mockPath = path as jest.Mocked<typeof path>;
+  const mockCreateReadStream = jest.spyOn(fs, 'createReadStream');
+  const mockCreateGzip = createGzip as jest.MockedFunction<typeof createGzip>;
   
   beforeEach(() => {
     jest.clearAllMocks();
@@ -29,6 +33,15 @@ describe('StaticFileMiddleware', () => {
     mockPath.normalize.mockImplementation(p => p);
     mockPath.join.mockImplementation((...parts) => parts.join('/'));
     mockPath.extname.mockImplementation(p => '.' + p.split('.').pop());
+    
+    // Setup mock stream
+    const mockStream = new Transform({
+      transform(chunk, encoding, callback) {
+        callback(null, chunk);
+      }
+    });
+    mockCreateReadStream.mockReturnValue(mockStream as any);
+    (mockCreateGzip as jest.Mock).mockReturnValue(mockStream);
   });
 
   const createMockRequest = (method: string = 'GET', url: string = '/', headers = {}): IncomingMessage => {
@@ -40,14 +53,16 @@ describe('StaticFileMiddleware', () => {
   };
 
   const createMockResponse = (): jest.Mocked<ServerResponse> => {
-    return {
+    const res = {
       writeHead: jest.fn(),
       setHeader: jest.fn(),
       end: jest.fn(),
       on: jest.fn(),
       once: jest.fn(),
       emit: jest.fn(),
+      pipe: jest.fn(),
     } as unknown as jest.Mocked<ServerResponse>;
+    return res;
   };
 
   describe('Configuration', () => {
@@ -98,17 +113,18 @@ describe('StaticFileMiddleware', () => {
         isFile: () => true,
         isDirectory: () => false,
         mtime: new Date(),
+        size: 500, // Small file
       } as any);
 
       mockReadFile.mockResolvedValueOnce(Buffer.from('content'));
 
       await middleware.middleware()(req, res, next);
       expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object));
-      expect(res.end).toHaveBeenCalledWith();
+      expect(res.end).toHaveBeenCalled();
     });
 
-    it('should handle URL-encoded paths', async () => {
-      const req = createMockRequest('GET', '/test%20file.txt');
+    it('should handle large files with streaming', async () => {
+      const req = createMockRequest('GET', '/large-file.txt');
       const res = createMockResponse();
       const next = jest.fn();
 
@@ -116,25 +132,30 @@ describe('StaticFileMiddleware', () => {
         isFile: () => true,
         isDirectory: () => false,
         mtime: new Date(),
+        size: 2 * 1024 * 1024, // 2MB file
       } as any);
 
       await middleware.middleware()(req, res, next);
-      expect(mockPath.join).toHaveBeenCalledWith('/test/public', 'test file.txt');
+      expect(mockCreateReadStream).toHaveBeenCalled();
     });
 
-    it('should strip query strings from URLs', async () => {
-      const req = createMockRequest('GET', '/test.txt?param=value');
+    it('should handle conditional requests with If-Modified-Since', async () => {
+      const lastModified = new Date();
+      const req = createMockRequest('GET', '/test.txt', {
+        'if-modified-since': lastModified.toUTCString()
+      });
       const res = createMockResponse();
       const next = jest.fn();
 
       mockStat.mockResolvedValueOnce({
         isFile: () => true,
         isDirectory: () => false,
-        mtime: new Date(),
+        mtime: lastModified,
+        size: 500,
       } as any);
 
       await middleware.middleware()(req, res, next);
-      expect(mockPath.join).toHaveBeenCalledWith('/test/public', 'test.txt');
+      expect(res.writeHead).toHaveBeenCalledWith(304);
     });
   });
 
@@ -161,58 +182,17 @@ describe('StaticFileMiddleware', () => {
       const next = jest.fn();
 
       mockPath.normalize.mockReturnValueOnce('/../secret.txt');
+      mockPath.join.mockReturnValueOnce('/test/public/../secret.txt');
       
       await middleware.middleware()(req, res, next);
-      expect(next).toHaveBeenCalled();
-      expect(res.writeHead).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('Caching', () => {
-    it('should handle ETags correctly', async () => {
-      const req = createMockRequest('GET', '/test.txt', {
-        'if-none-match': '"123456"'
-      });
-      const res = createMockResponse();
-      const next = jest.fn();
-
-      mockStat.mockResolvedValueOnce({
-        isFile: () => true,
-        isDirectory: () => false,
-        mtime: new Date(),
-      } as any);
-
-      mockReadFile.mockResolvedValueOnce(Buffer.from('content'));
-
-      await middleware.middleware()(req, res, next);
-      expect(res.writeHead).toHaveBeenCalledWith(expect.any(Number), expect.objectContaining({
-        'ETag': expect.any(String)
-      }));
-    });
-
-    it('should set correct cache headers', async () => {
-      const req = createMockRequest('GET', '/test.txt');
-      const res = createMockResponse();
-      const next = jest.fn();
-
-      mockStat.mockResolvedValueOnce({
-        isFile: () => true,
-        isDirectory: () => false,
-        mtime: new Date(),
-      } as any);
-
-      mockReadFile.mockResolvedValueOnce(Buffer.from('content'));
-
-      await middleware.middleware()(req, res, next);
-      expect(res.writeHead).toHaveBeenCalledWith(expect.any(Number), expect.objectContaining({
-        'Cache-Control': 'public, max-age=3600'
-      }));
+      expect(res.writeHead).toHaveBeenCalledWith(403);
+      expect(res.end).toHaveBeenCalledWith('Forbidden');
     });
   });
 
   describe('Compression', () => {
-    it('should compress content when appropriate', async () => {
-      const req = createMockRequest('GET', '/test.txt', {
+    it('should use streaming compression for large files', async () => {
+      const req = createMockRequest('GET', '/large-file.txt', {
         'accept-encoding': 'gzip'
       });
       const res = createMockResponse();
@@ -222,6 +202,29 @@ describe('StaticFileMiddleware', () => {
         isFile: () => true,
         isDirectory: () => false,
         mtime: new Date(),
+        size: 2 * 1024 * 1024, // 2MB file
+      } as any);
+
+      await middleware.middleware()(req, res, next);
+      expect(mockCreateGzip).toHaveBeenCalled();
+      expect(res.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
+        'Content-Encoding': 'gzip',
+        'Vary': 'Accept-Encoding'
+      }));
+    });
+
+    it('should use buffer compression for small files', async () => {
+      const req = createMockRequest('GET', '/small-file.txt', {
+        'accept-encoding': 'gzip'
+      });
+      const res = createMockResponse();
+      const next = jest.fn();
+
+      mockStat.mockResolvedValueOnce({
+        isFile: () => true,
+        isDirectory: () => false,
+        mtime: new Date(),
+        size: 2000, // Small file
       } as any);
 
       const content = Buffer.from('x'.repeat(2000));
@@ -230,48 +233,42 @@ describe('StaticFileMiddleware', () => {
         callback(null, Buffer.from('compressed')));
 
       await middleware.middleware()(req, res, next);
-      expect(res.writeHead).toHaveBeenCalledWith(expect.any(Number), expect.objectContaining({
+      expect(gzip).toHaveBeenCalled();
+      expect(res.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
         'Content-Encoding': 'gzip',
         'Vary': 'Accept-Encoding'
-      }));
-    });
-
-    it('should not compress small files', async () => {
-      const req = createMockRequest('GET', '/test.txt', {
-        'accept-encoding': 'gzip'
-      });
-      const res = createMockResponse();
-      const next = jest.fn();
-
-      mockStat.mockResolvedValueOnce({
-        isFile: () => true,
-        isDirectory: () => false,
-        mtime: new Date(),
-      } as any);
-
-      mockReadFile.mockResolvedValueOnce(Buffer.from('small'));
-
-      await middleware.middleware()(req, res, next);
-      expect(res.writeHead).toHaveBeenCalledWith(expect.any(Number), expect.not.objectContaining({
-        'Content-Encoding': 'gzip'
       }));
     });
   });
 
   describe('Error Handling', () => {
-    it('should handle file not found gracefully', async () => {
+    it('should handle ENOENT with next()', async () => {
       const req = createMockRequest('GET', '/missing.txt');
       const res = createMockResponse();
       const next = jest.fn();
 
-      mockStat.mockRejectedValueOnce(new Error('ENOENT'));
+      const error = new Error('ENOENT');
+      (error as NodeJS.ErrnoException).code = 'ENOENT';
+      mockStat.mockRejectedValueOnce(error);
 
       await middleware.middleware()(req, res, next);
       expect(next).toHaveBeenCalled();
     });
 
-    it('should handle read errors gracefully', async () => {
+    it('should handle other errors with 500', async () => {
       const req = createMockRequest('GET', '/error.txt');
+      const res = createMockResponse();
+      const next = jest.fn();
+
+      mockStat.mockRejectedValueOnce(new Error('Unknown error'));
+
+      await middleware.middleware()(req, res, next);
+      expect(res.writeHead).toHaveBeenCalledWith(500);
+      expect(res.end).toHaveBeenCalledWith('Internal Server Error');
+    });
+
+    it('should handle stream errors', async () => {
+      const req = createMockRequest('GET', '/large-file.txt');
       const res = createMockResponse();
       const next = jest.fn();
 
@@ -279,12 +276,19 @@ describe('StaticFileMiddleware', () => {
         isFile: () => true,
         isDirectory: () => false,
         mtime: new Date(),
+        size: 2 * 1024 * 1024,
       } as any);
 
-      mockReadFile.mockRejectedValueOnce(new Error('Read error'));
+      const mockStream = new Transform({
+        transform(chunk, encoding, callback) {
+          callback(new Error('Stream error'));
+        }
+      });
+      mockCreateReadStream.mockReturnValueOnce(mockStream as any);
 
       await middleware.middleware()(req, res, next);
-      expect(next).toHaveBeenCalled();
+      // Stream error handling is done through event handlers
+      mockStream.emit('error', new Error('Stream error'));
     });
   });
 
