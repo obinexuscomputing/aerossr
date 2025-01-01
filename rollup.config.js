@@ -17,61 +17,69 @@ const builtins = ['path', 'fs', 'http', 'crypto', 'zlib', 'url', 'stream', 'os']
 const external = [
   ...builtins,
   ...Object.keys(pkg.dependencies || {}),
-  ...Object.keys(pkg.peerDependencies || {})
+  ...Object.keys(pkg.peerDependencies || {}),
 ];
 
 const commonPlugins = [
   alias({
     entries: [
-      { find: '@', replacement: resolvePath(process.cwd(), 'src') }
-    ]
+      { find: '@', replacement: resolvePath(process.cwd(), 'src') },
+      { find: '@utils', replacement: resolvePath(process.cwd(), 'src/utils') },
+      { find: '@types', replacement: resolvePath(process.cwd(), 'src/types') },
+    ],
   }),
   resolve({ preferBuiltins: true }),
   commonjs(),
   json(),
   nodePolyfills(),
-  isProduction && terser()
+  isProduction && terser(),
 ].filter(Boolean);
 
-const createTypescriptPlugin = (outDir) => typescript({
-  tsconfig: './tsconfig.json',
-  outDir,
-  declaration: false,
-  sourceMap: true
-});
+const createTypescriptPlugin = (outDir, declaration = true, declarationMap = true) =>
+  typescript({
+    tsconfig: './tsconfig.json',
+    outDir,
+    declaration,
+    declarationMap,
+    sourceMap: true,
+  });
 
 export default [
+  // ESM Build
   {
     input: ['src/index.ts', 'src/cli/index.ts', 'src/AeroSSR.ts'],
     output: {
       dir: 'dist/esm',
       format: 'esm',
-      sourcemap: true
+      sourcemap: true,
     },
     external,
-    plugins: [...commonPlugins, createTypescriptPlugin('dist/esm')]
+    plugins: [...commonPlugins, createTypescriptPlugin('dist/esm')],
   },
+  // CJS Build
   {
     input: ['src/index.ts', 'src/cli/index.ts', 'src/AeroSSR.ts'],
     output: {
       dir: 'dist/cjs',
       format: 'cjs',
-      sourcemap: true
+      sourcemap: true,
+      exports: 'named', // To suppress the mixed exports warning
     },
     external,
-    plugins: [...commonPlugins, createTypescriptPlugin('dist/cjs')]
+    plugins: [...commonPlugins, createTypescriptPlugin('dist/cjs')],
   },
+  // Type Definitions
   {
     input: ['src/index.ts', 'src/cli/index.ts', 'src/AeroSSR.ts'],
     output: {
       dir: 'dist/types',
-      format: 'es'
+      format: 'es',
     },
     external,
     plugins: [
       dts({
-        respectExternal: true
-      })
-    ]
-  }
+        respectExternal: true,
+      }),
+    ],
+  },
 ];
