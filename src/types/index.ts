@@ -77,11 +77,6 @@ export type TemplateHandler = (
   templatePath: string
 ) => Promise<void>;
 
-// Main Configuration Interfaces
-export interface CacheOptions {
-  maxSize?: number;
-  ttl?: number;
-}
 export type AnyFunction = (...args: any[]) => any;
 
 export interface AsyncResult<T> {

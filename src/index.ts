@@ -5,7 +5,6 @@ export { StaticFileMiddleware } from './middlewares/StaticFileMiddleware';
 export * from './types';
 export * from './utils';
 export * from './middlewares';
-export * from './types';
 
 // Export interfaces with new names to avoid conflicts
 export type {
