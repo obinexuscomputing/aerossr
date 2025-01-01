@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1735738893120" clover="3.2.0">
-  <project timestamp="1735738893120" name="All files">
-    <metrics statements="297" coveredstatements="109" conditionals="168" coveredconditionals="70" methods="56" coveredmethods="19" elements="521" coveredelements="198" complexity="0" loc="297" ncloc="297" packages="3" files="11" classes="11"/>
+<coverage generated="1735739058273" clover="3.2.0">
+  <project timestamp="1735739058273" name="All files">
+    <metrics statements="313" coveredstatements="126" conditionals="174" coveredconditionals="75" methods="59" coveredmethods="23" elements="546" coveredelements="224" complexity="0" loc="313" ncloc="313" packages="3" files="11" classes="11"/>
     <package name="src">
       <metrics statements="67" coveredstatements="0" conditionals="36" coveredconditionals="0" methods="16" coveredmethods="0"/>
       <file name="AeroSSR.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\AeroSSR.ts">
@@ -182,7 +182,7 @@
       </file>
     </package>
     <package name="src.utils">
-      <metrics statements="133" coveredstatements="82" conditionals="90" coveredconditionals="56" methods="24" coveredmethods="13"/>
+      <metrics statements="149" coveredstatements="99" conditionals="96" coveredconditionals="61" methods="27" coveredmethods="17"/>
       <file name="bundler.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\utils\bundler.ts">
         <metrics statements="42" coveredstatements="5" conditionals="20" coveredconditionals="0" methods="6" coveredmethods="0"/>
         <line num="2" count="1" type="stmt"/>
@@ -318,27 +318,43 @@
         <line num="8" count="1" type="stmt"/>
       </file>
       <file name="logger.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\utils\logger.ts">
-        <metrics statements="20" coveredstatements="14" conditionals="7" coveredconditionals="4" methods="4" coveredmethods="2"/>
-        <line num="1" count="2" type="stmt"/>
-        <line num="4" count="2" type="stmt"/>
-        <line num="6" count="2" type="stmt"/>
-        <line num="10" count="4" type="cond" truecount="2" falsecount="0"/>
-        <line num="12" count="4" type="cond" truecount="1" falsecount="0"/>
-        <line num="13" count="2" type="stmt"/>
-        <line num="14" count="2" type="stmt"/>
-        <line num="15" count="2" type="cond" truecount="0" falsecount="1"/>
-        <line num="16" count="0" type="stmt"/>
+        <metrics statements="36" coveredstatements="31" conditionals="13" coveredconditionals="9" methods="7" coveredmethods="6"/>
+        <line num="2" count="2" type="stmt"/>
+        <line num="3" count="2" type="stmt"/>
+        <line num="5" count="2" type="stmt"/>
+        <line num="15" count="2" type="stmt"/>
         <line num="18" count="2" type="stmt"/>
-        <line num="20" count="2" type="stmt"/>
-        <line num="23" count="2" type="stmt"/>
-        <line num="29" count="3" type="stmt"/>
-        <line num="30" count="3" type="stmt"/>
-        <line num="32" count="3" type="cond" truecount="0" falsecount="1"/>
-        <line num="33" count="0" type="stmt"/>
-        <line num="34" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="35" count="0" type="stmt"/>
-        <line num="42" count="0" type="stmt"/>
-        <line num="43" count="0" type="stmt"/>
+        <line num="27" count="10" type="stmt"/>
+        <line num="28" count="10" type="stmt"/>
+        <line num="30" count="10" type="cond" truecount="1" falsecount="0"/>
+        <line num="31" count="5" type="stmt"/>
+        <line num="32" count="5" type="stmt"/>
+        <line num="34" count="1" type="stmt"/>
+        <line num="37" count="1" type="stmt"/>
+        <line num="43" count="5" type="stmt"/>
+        <line num="45" count="5" type="cond" truecount="1" falsecount="0"/>
+        <line num="46" count="2" type="stmt"/>
+        <line num="47" count="2" type="stmt"/>
+        <line num="49" count="1" type="stmt"/>
+        <line num="55" count="3" type="stmt"/>
+        <line num="59" count="6" type="stmt"/>
+        <line num="60" count="6" type="cond" truecount="0" falsecount="1"/>
+        <line num="61" count="0" type="stmt"/>
+        <line num="67" count="6" type="stmt"/>
+        <line num="71" count="6" type="stmt"/>
+        <line num="72" count="6" type="stmt"/>
+        <line num="74" count="6" type="cond" truecount="1" falsecount="0"/>
+        <line num="75" count="2" type="stmt"/>
+        <line num="76" count="2" type="stmt"/>
+        <line num="78" count="1" type="stmt"/>
+        <line num="84" count="2" type="cond" truecount="3" falsecount="0"/>
+        <line num="85" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="86" count="2" type="stmt"/>
+        <line num="87" count="2" type="stmt"/>
+        <line num="91" count="0" type="cond" truecount="0" falsecount="3"/>
+        <line num="92" count="0" type="stmt"/>
+        <line num="93" count="0" type="stmt"/>
+        <line num="95" count="0" type="stmt"/>
       </file>
     </package>
   </project>
