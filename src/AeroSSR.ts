@@ -71,7 +71,10 @@ export class AeroSSR {
       return;
     }
 
-    await this.middlewares[index](req, res, () => this.executeMiddlewares(req, res, index + 1));
+    const middleware = this.middlewares[index];
+    if (middleware) {
+      await middleware(req, res, () => this.executeMiddlewares(req, res, index + 1));
+    }
   }
 
   private async handleRequest(

@@ -1,5 +1,11 @@
 import { IncomingMessage, ServerResponse } from 'http';
 
+declare module 'http' {
+  interface IncomingMessage {
+    body?: any;
+  }
+}
+
 export class SecurityMiddleware {
   /**
    * CSRF Protection Middleware
@@ -65,9 +71,45 @@ export class SecurityMiddleware {
    */
   static async sanitizeInput(req: IncomingMessage, res: ServerResponse): Promise<void> {
     return new Promise((resolve) => {
-      // A placeholder for input sanitization
-      // Implement as needed, e.g., escaping special characters
-      resolve();
+      const sanitize = (input: string): string => {
+        return input.replace(/[&<>"'\/]/g, (char) => {
+          const escapeChars: { [key: string]: string } = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '/': '&#x2F;',
+          };
+          return escapeChars[char] || char;
+        });
+      };
+
+      if (req.method === 'POST' || req.method === 'PUT') {
+        let body = '';
+        req.on('data', (chunk) => {
+          body += chunk.toString();
+        });
+
+        req.on('end', () => {
+          try {
+            const parsedBody = JSON.parse(body);
+            for (const key in parsedBody) {
+              if (typeof parsedBody[key] === 'string') {
+                parsedBody[key] = sanitize(parsedBody[key]);
+              }
+            }
+            req.body = parsedBody;
+            resolve();
+          } catch (err) {
+            res.writeHead(400, { 'Content-Type': 'text/plain' });
+            res.end('Invalid JSON');
+            return;
+          }
+        });
+      } else {
+        resolve();
+      }
     });
   }
 }
