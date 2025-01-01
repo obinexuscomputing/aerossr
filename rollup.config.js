@@ -12,74 +12,132 @@ import { readFileSync } from 'fs';
 const pkg = JSON.parse(readFileSync('./package.json'));
 const isProduction = process.env.NODE_ENV === 'production';
 
-const builtins = ['path', 'fs', 'http', 'crypto', 'zlib', 'url', 'stream', 'os'];
+// Include all Node.js built-in modules
+const builtins = [
+  'path', 
+  'fs', 
+  'http', 
+  'crypto', 
+  'zlib', 
+  'url', 
+  'stream', 
+  'os', 
+  'util',
+  'events',
+  'buffer'
+];
 
+// External dependencies that shouldn't be bundled
 const external = [
   ...builtins,
   ...Object.keys(pkg.dependencies || {}),
   ...Object.keys(pkg.peerDependencies || {}),
+  /@types\/.*/,  // Exclude all @types packages
 ];
 
+// Alias configuration for path resolution
+const aliasEntries = {
+  entries: [
+    { find: /^@\/(.*)/, replacement: resolvePath(process.cwd(), 'src/$1') },
+    { find: /^@utils\/(.*)/, replacement: resolvePath(process.cwd(), 'src/utils/$1') },
+    { find: /^@types\/(.*)/, replacement: resolvePath(process.cwd(), 'src/types/$1') },
+    { find: '@', replacement: resolvePath(process.cwd(), 'src') },
+    { find: '@utils', replacement: resolvePath(process.cwd(), 'src/utils') },
+    { find: '@types', replacement: resolvePath(process.cwd(), 'src/types') }
+  ]
+};
+
+// Common plugins used across all builds
 const commonPlugins = [
-  alias({
-    entries: [
-      { find: '@', replacement: resolvePath(process.cwd(), 'src') },
-      { find: '@utils', replacement: resolvePath(process.cwd(), 'src/utils') },
-      { find: '@types', replacement: resolvePath(process.cwd(), 'src/types') },
-    ],
+  alias(aliasEntries),
+  resolve({ 
+    preferBuiltins: true,
+    extensions: ['.ts', '.js', '.json'],
+    resolveOnly: [/^(?!@types).+/]
   }),
-  resolve({ preferBuiltins: true }),
-  commonjs(),
+  commonjs({
+    include: /node_modules/,
+    extensions: ['.js', '.ts']
+  }),
   json(),
   nodePolyfills(),
-  isProduction && terser(),
+  isProduction && terser()
 ].filter(Boolean);
 
-const createTypescriptPlugin = (outDir, declaration = true, declarationMap = true) =>
+// TypeScript configuration for different build targets
+const createTypescriptPlugin = (outDir, declaration = true, declarationMap = true) => 
   typescript({
     tsconfig: './tsconfig.json',
     outDir,
     declaration,
     declarationMap,
     sourceMap: true,
+    exclude: ['**/__tests__/**'],
+    include: ['src/**/*'],
+    moduleResolution: 'node'
   });
+
+// Input files for all builds
+const inputFiles = {
+  'index': 'src/index.ts',
+  'cli': 'src/cli/index.ts',
+  'AeroSSR': 'src/AeroSSR.ts'
+};
 
 export default [
   // ESM Build
   {
-    input: ['src/index.ts', 'src/cli/index.ts', 'src/AeroSSR.ts'],
+    input: inputFiles,
     output: {
       dir: 'dist/esm',
       format: 'esm',
       sourcemap: true,
+      preserveModules: true,
+      preserveModulesRoot: 'src'
     },
     external,
-    plugins: [...commonPlugins, createTypescriptPlugin('dist/esm')],
+    plugins: [...commonPlugins, createTypescriptPlugin('dist/esm')]
   },
+
   // CJS Build
   {
-    input: ['src/index.ts', 'src/cli/index.ts', 'src/AeroSSR.ts'],
+    input: inputFiles,
     output: {
       dir: 'dist/cjs',
       format: 'cjs',
       sourcemap: true,
-      exports: 'named', // To suppress the mixed exports warning
+      preserveModules: true,
+      preserveModulesRoot: 'src',
+      exports: 'named',
+      interop: 'auto'
     },
     external,
-    plugins: [...commonPlugins, createTypescriptPlugin('dist/cjs')],
+    plugins: [...commonPlugins, createTypescriptPlugin('dist/cjs')]
   },
+
   // Type Definitions
   {
-    input: ['src/index.ts', 'src/cli/index.ts', 'src/AeroSSR.ts'],
+    input: inputFiles,
     output: {
       dir: 'dist/types',
-      format: 'es',
+      format: 'esm',
+      preserveModules: true,
+      preserveModulesRoot: 'src'
     },
     external,
     plugins: [
+      alias(aliasEntries),
       dts({
         respectExternal: true,
-      }),
-    ],
-  },
+        compilerOptions: {
+          baseUrl: '.',
+          paths: {
+            '@/*': ['src/*'],
+            '@utils/*': ['src/utils/*'],
+            '@types/*': ['src/types/*']
+          }
+        }
+      })
+    ]
+  }
 ];
