@@ -214,6 +214,8 @@ declare class StaticFileMiddleware {
     readonly etag: boolean;
     constructor(options: StaticFileOptions);
     private serveFile;
+    private isDotFile;
+    private handleDotFile;
     private isCompressible;
     private getMimeType;
     middleware(): Middleware;

@@ -51,6 +51,21 @@ class StaticFileMiddleware {
         res.writeHead(200, headers);
         res.end(content);
     }
+    isDotFile(urlPath) {
+        return urlPath.split('/').some(part => part.startsWith('.'));
+    }
+    handleDotFile(req, res, next) {
+        if (this.dotFiles === 'allow') {
+            return false; // Continue processing
+        }
+        if (this.dotFiles === 'deny') {
+            res.writeHead(403, { 'Content-Type': 'text/plain' });
+            res.end('Forbidden');
+            return Promise.resolve();
+        }
+        // ignore - pass to next middleware
+        return next();
+    }
     isCompressible(mimeType) {
         return /^(text|application)\/(javascript|json|html|xml|css|plain)/.test(mimeType);
     }
@@ -81,13 +96,10 @@ class StaticFileMiddleware {
                     return next();
                 }
                 const urlPath = path.normalize(decodeURIComponent(req.url || '').split('?')[0]);
-                if (this.dotFiles !== 'allow' && urlPath.split('/').some((p) => p.startsWith('.'))) {
-                    if (this.dotFiles === 'deny') {
-                        res.writeHead(403);
-                        res.end('Forbidden');
-                        return;
-                    }
-                    return next();
+                if (this.isDotFile(urlPath)) {
+                    const dotFileResult = this.handleDotFile(req, res, next);
+                    if (dotFileResult)
+                        return dotFileResult;
                 }
                 const fullPath = path.join(this.root, urlPath);
                 try {
