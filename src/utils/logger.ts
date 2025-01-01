@@ -1,6 +1,5 @@
-// src/utils/logger.ts
 import * as fs from 'fs/promises';
-import { existsSync, mkdirSync, constants } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
 import { IncomingMessage } from 'http';
 import path from 'path';
 
@@ -28,26 +27,22 @@ export class Logger {
     this.logFilePath = this.options.logFilePath;
 
     if (this.logFilePath) {
-      try {
-        this.initializeLogFile();
-      } catch (error) {
-        console.error(
-          `Logger initialization failed for path: ${this.logFilePath} - ${(error as Error).message}`
-        );
-        this.logFilePath = null;
-      }
+      this.initializeLogFile();
     }
   }
 
   private initializeLogFile(): void {
-    const logDir = path.dirname(this.logFilePath!);
-    
-    if (!existsSync(logDir)) {
-      try {
+    try {
+      const logDir = path.dirname(this.logFilePath!);
+      
+      if (!existsSync(logDir)) {
         mkdirSync(logDir, { recursive: true });
-      } catch (error) {
-        throw new Error(`Failed to create log directory: ${(error as Error).message}`);
       }
+    } catch (error) {
+      console.error(
+        `Logger initialization failed for path: ${this.logFilePath} - ${(error as Error).message}`
+      );
+      this.logFilePath = null;
     }
   }
 

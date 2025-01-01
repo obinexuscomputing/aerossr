@@ -1,7 +1,7 @@
 
 // src/index.ts
 export { default as AeroSSR } from './AeroSSR';
-export { default as StaticFileMiddleware } from './middlewares/StaticFileMiddleware';
+export { StaticFileMiddleware } from './middlewares/StaticFileMiddleware';
 export * from './types';
 export * from './utils';
 export * from './middlewares';
