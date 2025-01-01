@@ -82,6 +82,19 @@ export interface CacheOptions {
   maxSize?: number;
   ttl?: number;
 }
+export type AnyFunction = (...args: any[]) => any;
+
+export interface AsyncResult<T> {
+  success: boolean;
+  data?: T;
+  error?: Error;
+}
+
+export interface AsyncOptions {
+  timeout?: number;
+  retries?: number;
+  onRetry?: (error: Error, attempt: number) => void;
+}
 
 export interface CorsOptions extends CorsOptionsBase {}
 
@@ -129,6 +142,12 @@ export * from '../utils/cache';
 export * from '../utils/cors';
 export * from '../utils/html';
 export * from '../utils/logger';
+export * from '../utils/errorHandler';
+export * from '../utils/etag';
+export * from '../utils/bundler';
+export * from '../utils/async';
+export * from '../utils/cookie';
+export * from '../utils/async';
 
 // Create union type for all possible HTTP methods
 export type HTTPMethod = 

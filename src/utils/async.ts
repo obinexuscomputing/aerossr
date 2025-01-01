@@ -1,10 +1,17 @@
-export  type AnyFunction = (...args: any[]) => any;
+import type { AnyFunction } from '../types';
+
+/**
+ * Type guard to check if a value is a Promise
+ */
 export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
   return Boolean(
     value && typeof value === 'object' && 'then' in value && typeof value.then === 'function'
   );
 }
 
+/**
+ * Ensures a function returns a Promise
+ */
 export function ensureAsync<T extends AnyFunction>(
   fn: T
 ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
@@ -13,4 +20,3 @@ export function ensureAsync<T extends AnyFunction>(
     return result as ReturnType<T>;
   };
 }
-
