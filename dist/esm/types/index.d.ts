@@ -34,7 +34,6 @@ export interface StaticFileOptions {
     dotFiles?: 'ignore' | 'allow' | 'deny';
     compression?: boolean;
     etag?: boolean;
-    cacheSize?: number;
 }
 export type StaticFileHandler = (req: IncomingMessage, res: ServerResponse, options: StaticFileOptions) => Promise<void>;
 export type BundleHandler = (req: IncomingMessage, res: ServerResponse, bundlePath: string) => Promise<void>;
