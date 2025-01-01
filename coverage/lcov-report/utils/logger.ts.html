@@ -3,15 +3,15 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for src/utils/bundler.ts</title>
+    <title>Code coverage report for utils/logger.ts</title>
     <meta charset="utf-8" />
-    <link rel="stylesheet" href="../../prettify.css" />
-    <link rel="stylesheet" href="../../base.css" />
-    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style type='text/css'>
         .coverage-summary .sorter {
-            background-image: url(../../sort-arrow-sprite.png);
+            background-image: url(../sort-arrow-sprite.png);
         }
     </style>
 </head>
@@ -19,13 +19,13 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/utils</a> bundler.ts</h1>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">utils</a> logger.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">19.23% </span>
+                <span class="strong">15% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>5/26</span>
+                <span class='fraction'>3/20</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>0/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">20% </span>
+                <span class="strong">15% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>5/25</span>
+                <span class='fraction'>3/20</span>
             </div>
         
             
@@ -107,19 +107,15 @@
 <a name='L42'></a><a href='#L42'>42</a>
 <a name='L43'></a><a href='#L43'>43</a>
 <a name='L44'></a><a href='#L44'>44</a>
-<a name='L45'></a><a href='#L45'>45</a>
-<a name='L46'></a><a href='#L46'>46</a>
-<a name='L47'></a><a href='#L47'>47</a>
-<a name='L48'></a><a href='#L48'>48</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<a name='L45'></a><a href='#L45'>45</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -127,26 +123,18 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -156,54 +144,57 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import * as fs from 'fs/promises';
-import * as path from 'path';
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import * as fs from 'fs';
+import { IncomingMessage } from 'http';
+import { LoggerOptions } from '..';
+import path from 'path';
 &nbsp;
-export async function <span class="fstat-no" title="function not covered" >resolveDependencies(</span>
-  filePath: string,
-  deps: Set&lt;string&gt; = <span class="branch-0 cbranch-no" title="branch not covered" >new Set()</span>
-): Promise&lt;Set&lt;string&gt;&gt; {
-<span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (deps.has(filePath)) <span class="cstat-no" title="statement not covered" >return deps;</span></span>
+export class Logger {
+  private logFilePath: string | null;
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  deps.add(filePath);</span>
-  const content = <span class="cstat-no" title="statement not covered" >await fs.readFile(filePath, 'utf-8');</span>
+<span class="fstat-no" title="function not covered" >  constructor(o</span>ptions: LoggerOptions = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="cstat-no" title="statement not covered" >    this.logFilePath = options.logFilePath || null;</span>
 &nbsp;
-  const importMatches = <span class="cstat-no" title="statement not covered" >content.match(/(?:require|import)\s*\(['"]([^'"]+)['"]\)/g);</span>
-<span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (importMatches) {</span>
-<span class="cstat-no" title="statement not covered" >    for (const match of importMatches) {</span>
-      const depPath = <span class="cstat-no" title="statement not covered" >match.match(/['"]([^'"]+)['"]/)?.[1];</span>
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (depPath) {</span>
-        const fullPath = <span class="cstat-no" title="statement not covered" >path.resolve(path.dirname(filePath), depPath);</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (fullPath.endsWith('.js') || fullPath.endsWith('.ts')) {</span>
-<span class="cstat-no" title="statement not covered" >          await resolveDependencies(fullPath, deps);</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (this.logFilePath) {</span>
+<span class="cstat-no" title="statement not covered" >      try {</span>
+        const logDir = <span class="cstat-no" title="statement not covered" >path.dirname(this.logFilePath);</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (!fs.existsSync(logDir)) {</span>
+<span class="cstat-no" title="statement not covered" >          fs.mkdirSync(logDir, { recursive: true });</span>
         }
+<span class="cstat-no" title="statement not covered" >        fs.accessSync(this.logFilePath, fs.constants.W_OK | fs.constants.R_OK);</span>
+      } catch (error) {
+<span class="cstat-no" title="statement not covered" >        console.error(</span>
+          `Logger initialization failed for path: ${this.logFilePath} - ${(error as Error).message}`
+        );
+<span class="cstat-no" title="statement not covered" >        this.logFilePath = null;</span>
       }
     }
   }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return deps;</span>
-}
+<span class="fstat-no" title="function not covered" >  log(</span>message: string): void {
+    const logMessage = <span class="cstat-no" title="statement not covered" >`[${new Date().toISOString()}] ${message}`;</span>
+<span class="cstat-no" title="statement not covered" >    console.log(logMessage);</span>
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >minifyBundle(</span>code: string): string {
-<span class="cstat-no" title="statement not covered" >  return code</span>
-    .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '') // Remove comments
-    .replace(/\s+/g, ' ') // Reduce multiple spaces to single space
-    .replace(/^\s+|\s+$/gm, ''); // Trim line starts and ends
-}
-&nbsp;
-export async function <span class="fstat-no" title="function not covered" >generateBundle(</span>projectPath: string, entryPoint: string): Promise&lt;string&gt; {
-  const entryFilePath = <span class="cstat-no" title="statement not covered" >path.join(projectPath, entryPoint);</span>
-  const dependencies = <span class="cstat-no" title="statement not covered" >await resolveDependencies(entryFilePath);</span>
-&nbsp;
-  let bundle = <span class="cstat-no" title="statement not covered" >'';</span>
-<span class="cstat-no" title="statement not covered" >  for (const dep of dependencies) {</span>
-    const content = <span class="cstat-no" title="statement not covered" >await fs.readFile(dep, 'utf-8');</span>
-<span class="cstat-no" title="statement not covered" >    bundle += `\n// File: ${path.relative(projectPath, dep)}\n${content}\n`;</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (this.logFilePath) {</span>
+<span class="cstat-no" title="statement not covered" >      fs.appendFile(this.logFilePath, `${logMessage}\n`, <span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (err) {</span>
+<span class="cstat-no" title="statement not covered" >          console.error(`Failed to write to log file: ${err.message}`);</span>
+        }
+      });
+    }
   }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return minifyBundle(bundle);</span>
+<span class="fstat-no" title="function not covered" >  logRequest(</span>req: IncomingMessage): void {
+    const { method, url } = <span class="cstat-no" title="statement not covered" >req;</span>
+<span class="cstat-no" title="statement not covered" >    this.log(`${method} ${url}`);</span>
+  }
 }</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -211,16 +202,16 @@ export async function <span class="fstat-no" title="function not covered" >gener
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-01-01T13:17:18.515Z
+                at 2025-01-01T13:25:14.973Z
             </div>
-        <script src="../../prettify.js"></script>
+        <script src="../prettify.js"></script>
         <script>
             window.onload = function () {
                 prettyPrint();
             };
         </script>
-        <script src="../../sorter.js"></script>
-        <script src="../../block-navigation.js"></script>
+        <script src="../sorter.js"></script>
+        <script src="../block-navigation.js"></script>
     </body>
 </html>
     

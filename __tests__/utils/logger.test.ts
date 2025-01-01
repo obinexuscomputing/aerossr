@@ -1,4 +1,4 @@
-import { Logger } from '../../utils/logger';
+import { Logger } from '../../src/utils/logger';
 import fs from 'fs/promises';
 
 jest.mock('fs/promises');
@@ -8,7 +8,7 @@ describe('Logger', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockFs.writeFile.mockResolvedValue();
-    mockFs.mkdir.mockResolvedValue();
+    mockFs.mkdir.mockResolvedValue(undefined);
   });
 
   test('should create logger without file path', () => {

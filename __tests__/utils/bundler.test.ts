@@ -2,7 +2,11 @@ import { generateBundle, resolveDependencies, minifyBundle } from '../../src/uti
 import fs from 'fs/promises';
 
 jest.mock('fs/promises');
+
+const mockIndexPath = './test/index.js';
+const mockDependencyPath = './test/dependency.js';
 const mockFs = fs as jest.Mocked<typeof fs>;
+const mockProjectPath = './test';
 
 describe('Bundler', () => {
   test('should generate bundle', async () => {
@@ -11,7 +15,8 @@ describe('Bundler', () => {
     expect(bundle).toBeDefined();
   });
   beforeEach(() => {
-    mockFs.readFile.mockImplementation(async (path: string) => {
+    mockFs.readFile.mockImplementation(async (path) => {
+      path = path.toString();
       if (path === mockIndexPath) {
         return `const dep = require('./dependency');\nconsole.log(dep);`;
       }
@@ -34,7 +39,8 @@ describe('Bundler', () => {
     });
 
     test('should handle circular dependencies', async () => {
-      mockFs.readFile.mockImplementation(async (path: string) => {
+      mockFs.readFile.mockImplementation(async (path) => {
+        path = path.toString();
         if (path.includes('index.js')) {
           return `require('./circular')`;
         }

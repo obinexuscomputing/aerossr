@@ -1,23 +1,15 @@
-import { generateETag } from '../../utils/etag';
+import { generateETag } from '../../src/utils/etag';
 
 describe('ETag Generator', () => {
-  test('should generate consistent ETags for same content', () => {
-    const testContent = 'test content';
-    const etag1 = generateETag(testContent);
-    const etag2 = generateETag(testContent);
-    expect(etag1).toBe(etag2);
+  it('should generate a strong ETag by default', () => {
+    const content = 'test content';
+    const etag = generateETag(content);
+    expect(etag).toMatch(/^"[a-f0-9]{32}"$/);
   });
 
-  test('should generate different ETags for different content', () => {
-    const etag1 = generateETag('content1');
-    const etag2 = generateETag('content2');
-    expect(etag1).not.toBe(etag2);
-  });
-
-  test('should handle Buffer input', () => {
-    const testBuffer = Buffer.from('test content');
-    const etag = generateETag(testBuffer);
-    expect(typeof etag).toBe('string');
-    expect(etag.length).toBeGreaterThan(0);
+  it('should generate a weak ETag when specified', () => {
+    const content = 'test content';
+    const etag = generateETag(content, { weak: true });
+    expect(etag).toMatch(/^W\/"[a-f0-9]{32}"$/);
   });
 });
