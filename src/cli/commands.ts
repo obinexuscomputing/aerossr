@@ -55,7 +55,7 @@ export function configureMiddleware(app: AeroSSR): void {
     });
 
     // Add error handling middleware
-    app.use(async (req, res, next) => {
+    app.use(async (req, res) => {
         try {
             await next();
         } catch (error) {
@@ -65,4 +65,5 @@ export function configureMiddleware(app: AeroSSR): void {
         }
     });
 }
+
 
