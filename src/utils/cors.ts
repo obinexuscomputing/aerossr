@@ -1,3 +1,4 @@
+import { CorsOptionsBase } from '@/types';
 import { ServerResponse } from 'http';
 
 export interface CorsOptions {
@@ -8,6 +9,10 @@ export interface CorsOptions {
   credentials?: boolean;
   maxAge?: number;
 }
+
+
+
+export interface CorsOptions extends CorsOptionsBase {}
 
 export function setCorsHeaders(res: ServerResponse, options: CorsOptions = {}): void {
   const {
@@ -34,7 +39,6 @@ export function setCorsHeaders(res: ServerResponse, options: CorsOptions = {}): 
   res.setHeader('Access-Control-Max-Age', maxAge.toString());
 }
 
-// Helper functions
 export function normalizeCorsOptions(options: string | CorsOptions | undefined): CorsOptions {
   if (typeof options === 'string') {
     return { origins: options };

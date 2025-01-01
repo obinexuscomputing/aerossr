@@ -11,8 +11,7 @@ import { generateETag } from './utils/etag';
 import { handleError } from './utils/errorHandler';
 import { injectMetaTags } from './utils/html';
 import { generateBundle } from './utils/bundler';
-import { AeroSSRConfig, Middleware, RouteHandler, CorsOptions } from './types';
-
+import { AeroSSRConfig, CorsOptions, Middleware, RouteHandler } from './types';
 const gzipAsync = promisify(gzip);
 
 export class AeroSSR {

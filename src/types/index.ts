@@ -1,13 +1,14 @@
+// types/index.ts
 import type { IncomingMessage, ServerResponse } from 'http';
 
-// Core interfaces
-export interface CacheStore<T> {
+// Core Base Interfaces
+export interface CacheStoreBase<T> {
   get(key: string): T | undefined;
   set(key: string, value: T): void;
   clear(): void;
 }
 
-export interface CorsOptions {
+export interface CorsOptionsBase {
   origins?: string | string[];
   methods?: string[];
   allowedHeaders?: string[];
@@ -16,7 +17,7 @@ export interface CorsOptions {
   maxAge?: number;
 }
 
-export interface MetaTags {
+export interface MetaTagsBase {
   title?: string;
   description?: string;
   charset?: string;
@@ -24,6 +25,30 @@ export interface MetaTags {
   [key: string]: string | undefined;
 }
 
+export interface LoggerOptionsBase {
+  logFilePath?: string | null;
+  logLevel?: 'debug' | 'info' | 'warn' | 'error';
+}
+
+// Core Type Definitions
+export type Middleware = (
+  req: IncomingMessage,
+  res: ServerResponse,
+  next: () => Promise<void>
+) => Promise<void>;
+
+export type RouteHandler = (
+  req: IncomingMessage,
+  res: ServerResponse
+) => Promise<void>;
+
+export type ErrorHandler = (
+  error: Error,
+  req: IncomingMessage,
+  res: ServerResponse
+) => Promise<void>;
+
+// File Handling Types
 export interface StaticFileOptions {
   root: string;
   maxAge?: number;
@@ -34,32 +59,10 @@ export interface StaticFileOptions {
   cacheSize?: number;
 }
 
-export interface LoggerOptions {
-  logFilePath?: string | null;
-}
-
-// Main config interface
-export interface AeroSSRConfig {
-  port?: number;
-  cacheMaxAge?: number;
-  corsOrigins?: string | CorsOptions;
-  compression?: boolean;
-  logFilePath?: string | null;
-  bundleCache?: CacheStore<string>;
-  templateCache?: CacheStore<string>;
-  defaultMeta?: MetaTags;
-}
-
-// Request handler types
-export type Middleware = (
+export type StaticFileHandler = (
   req: IncomingMessage,
   res: ServerResponse,
-  next: () => Promise<void>
-) => Promise<void>;
-
-export type RouteHandler = (
-  req: IncomingMessage,
-  res: ServerResponse
+  options: StaticFileOptions
 ) => Promise<void>;
 
 export type BundleHandler = (
@@ -74,21 +77,72 @@ export type TemplateHandler = (
   templatePath: string
 ) => Promise<void>;
 
-export type StaticFileHandler = (
-  req: IncomingMessage,
-  res: ServerResponse,
-  options: StaticFileOptions
-) => Promise<void>;
+// Main Configuration Interfaces
+export interface CacheOptions {
+  maxSize?: number;
+  ttl?: number;
+}
 
-export type ErrorHandler = (
-  req: IncomingMessage,
-  res: ServerResponse,
-  error: Error
-) => Promise<void>;
+export interface CorsOptions extends CorsOptionsBase {}
 
-// Utility type to ensure all required fields are present
-export type RequiredAeroSSRConfig = Required<
-  Omit<AeroSSRConfig, 'corsOrigins'> & {
-    corsOrigins: CorsOptions;
-  }
->;
+export interface MetaTags extends MetaTagsBase {}
+
+export interface LoggerOptions extends LoggerOptionsBase {}
+
+export interface AeroSSRConfig {
+  port?: number;
+  cacheMaxAge?: number;
+  corsOrigins?: string | CorsOptions;
+  compression?: boolean;
+  logFilePath?: string | null;
+  bundleCache?: CacheStoreBase<string>;
+  templateCache?: CacheStoreBase<string>;
+  defaultMeta?: MetaTags;
+}
+
+// Utility Types
+export interface AsyncResult<T> {
+  success: boolean;
+  data?: T;
+  error?: Error;
+}
+
+export type AsyncHandler<T> = (...args: any[]) => Promise<AsyncResult<T>>;
+
+// Type Guards
+export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
+  return Boolean(
+    value && 
+    typeof value === 'object' && 
+    'then' in value && 
+    typeof value.then === 'function'
+  );
+}
+
+export function isError(error: unknown): error is Error {
+  return error instanceof Error;
+}
+
+// Re-export utility types
+export type { ServerResponse, IncomingMessage } from 'http';
+export * from '../utils/cache';
+export * from '../utils/cors';
+export * from '../utils/html';
+export * from '../utils/logger';
+
+// Create union type for all possible HTTP methods
+export type HTTPMethod = 
+  | 'GET'
+  | 'POST'
+  | 'PUT'
+  | 'DELETE'
+  | 'PATCH'
+  | 'HEAD'
+  | 'OPTIONS'
+  | 'TRACE'
+  | 'CONNECT';
+
+// Create RequiredConfig type with all required fields
+export type RequiredConfig = Required<AeroSSRConfig> & {
+  corsOrigins: Required<CorsOptions>;
+};
