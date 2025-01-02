@@ -3,13 +3,11 @@ import { CorsOptions, CacheStore, MetaTags } from './types';
 
 export interface AeroSSRConfig {
   port?: number;
-  cacheMaxAge?: number;
-  corsOrigins?: string | CorsOptions;
   compression?: boolean;
+  corsOrigins?: { origins: string };
+  cacheMaxAge?: number;
   logFilePath?: string | null;
-  bundleCache?: CacheStore<string>;
-  templateCache?: CacheStore<string>;
-  defaultMeta?: MetaTags;
+  logger?: Logger;
 }
 
 export type Middleware = (
@@ -18,10 +16,17 @@ export type Middleware = (
   next: () => Promise<void>
 ) => Promise<void>;
 
+export interface MiddlewareOptions {
+  name: string;
+  path: string;
+  options?: string;
+}
+
 export type RouteHandler = (
   req: IncomingMessage,
   res: ServerResponse
 ) => Promise<void>;
+
 
 export declare class AeroSSR {
   public readonly config: Required<AeroSSRConfig>;
