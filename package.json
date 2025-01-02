@@ -7,15 +7,23 @@
     ".": {
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js",
-      "types": "./dist/types/index.d.ts"
+      "types": "./dist/cjs/types/index.d.ts"
     },
     "./cli": {
       "import": "./dist/esm/cli/index.js",
       "require": "./dist/cjs/cli/index.js"
+    },
+    "./middlewares": {
+      "import": "./dist/esm/middlewares/index.js",
+      "require": "./dist/cjs/middlewares/index.js"
+    },
+    "./utils": {
+      "import": "./dist/esm/utils/index.js",
+      "require": "./dist/cjs/utils/index.js"
     }
   },
   "bin": {
-    "aerossr": "./dist/cjs/cli/index.js"
+    "aerossr": "./dist/cli/bin/index.js"
   },
   "files": [
     "dist",
@@ -25,9 +33,9 @@
   ],
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
-  "types": "./dist/types/index.d.ts",
+  "types": "./dist/cjs/types/index.d.ts",
   "scripts": {
-    "build": "npm run clean && rollup -c  && node scripts/make-cli-executable.js && npm run link:package",
+    "build": "npm run clean && rollup -c && node scripts/make-cli-executable.js && npm run link:package",
     "clean": "rimraf dist coverage",
     "lint": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\" --fix",
@@ -36,11 +44,11 @@
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
     "prepublishOnly": "npm run test:ci && npm run build && npm run lint:fix",
-    "prepare": "npm run build ",
+    "prepare": "npm run build",
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags",
-    "postbuild": "node -e \"require('fs').chmodSync('dist/cli/bin/index.js', '755')\" ",
+    "postbuild": "node -e \"require('fs').chmodSync('dist/cli/bin/index.js', '755')\"",
     "link:package": "npm link @obinexuscomputing/aerossr"
   },
   "devDependencies": {
