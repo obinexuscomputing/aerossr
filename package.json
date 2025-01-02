@@ -20,7 +20,12 @@
     "./utils": {
       "import": "./dist/esm/utils/index.js",
       "require": "./dist/cjs/utils/index.js"
+    },
+    "./types": {
+      "import": "./dist/esm/types/index.js",
+      "require": "./dist/cjs/types/index.js"
     }
+    
   },
  "bin": {
   "aerossr": "./dist/cli/bin/index.cjs"
@@ -35,7 +40,7 @@
   "module": "./dist/esm/index.js",
   "types": "./dist/cjs/types/index.d.ts",
   "scripts": {
-    "build": "npm run clean && rollup -c && node scripts/make-cli-executable.js && npm run link:package",
+    "build": "npm run clean && rollup -c && node scripts/make-cli-executable.cjs && npm run link:package",
     "clean": "rimraf dist coverage",
     "lint": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\" --fix",
