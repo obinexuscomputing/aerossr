@@ -48,7 +48,7 @@
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags",
-    "postbuild": "node -e \"require('fs').chmodSync('dist/cli/bin/index.js', '755')\"",
+"postbuild": "node -e \"require('fs').chmodSync('dist/cli/bin/index.cjs', '755')\"",
     "link:package": "npm link @obinexuscomputing/aerossr"
   },
   "devDependencies": {
