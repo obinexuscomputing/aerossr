@@ -3,15 +3,20 @@ import { jest } from '@jest/globals';
 import { TextDecoder } from 'util';
 
 declare global {
-  var TextDecoder: typeof TextDecoder;
+    // eslint-disable-next-line no-var
+    var TextDecoder: {
+        new(label?: string, options?: TextDecoderOptions): TextDecoder;
+        prototype: TextDecoder;
+    };
 }
 
-global.TextDecoder = TextDecoder;
+// Cast TextDecoder to match the expected interface
+global.TextDecoder = TextDecoder as unknown as typeof global.TextDecoder;
 
 beforeAll(() => {
-  jest.setTimeout(10000);
+    jest.setTimeout(10000);
 });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+    jest.clearAllMocks();
 });
