@@ -11,7 +11,7 @@
     // Module Resolution
     "baseUrl": ".",
     "rootDir": "src",
-    "outDir": "./dist/temp",
+    "outDir": "./dist/types", // For type declarations only
     "paths": {
       "@/*": ["src/*"],
       "@utils/*": ["src/utils/*"],
