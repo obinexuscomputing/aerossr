@@ -81,7 +81,8 @@ const configs = [
       format: 'commonjs',
       banner: '#!/usr/bin/env node',
       sourcemap: true,
-      exports: 'named'
+      exports: 'named',
+
     },
     external,
     plugins: [
@@ -92,7 +93,7 @@ const configs = [
         declarationMap: true,
         sourceMap: true,
         outputToFilesystem: true,
-        outDir: 'dist/cli'
+        outDir: 'dist/cli',
       }),
       resolve(),
       commonjs(),
