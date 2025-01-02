@@ -94,7 +94,7 @@ const configs = [
         declaration: true,
         declarationMap: true,
         sourceMap: true,
-        outputToFilesystem:false
+        outputToFilesystem:true
       }),
       resolve(),
       commonjs(),

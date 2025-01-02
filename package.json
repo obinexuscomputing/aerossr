@@ -40,8 +40,8 @@
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags",
-"prebuild": "node -e \"require('fs').chmodSync('dist/cli/index.js', '755')\"",
-"postbuild": "npm link"
+"postbuild": "node -e \"require('fs').chmodSync('dist/cli/index.js', '755')\" && npm link",
+"link": "npm link"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
