@@ -130,7 +130,7 @@ const configs = [
 
     },
     copy({
-      targets: [{ src: './package.json', dest: 'dist/cli' }], // Match the correct destination
+      targets: [{ src: './package.json', dest: 'dist/' }], // Match the correct destination
       hook: 'writeBundle',
     }),
     
