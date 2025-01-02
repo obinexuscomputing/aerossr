@@ -102,14 +102,21 @@ const configs = [
   // CLI Build
 {
   input: 'src/cli/index.ts',
-  output: {
-
-    format: 'cjs',
-    sourcemap: true,
-    banner: '#!/usr/bin/env node\n' + banner,
-    footer,
-    file: 'dist/cli/bin/index.cjs', // Ensure this aligns with outDir
-  },
+  output: [
+    {
+      format: 'cjs',
+      sourcemap: true,
+      banner: '#!/usr/bin/env node\n',
+      file: 'dist/cli/bin/index.cjs',
+    },
+    {
+      format: 'esm',
+      sourcemap: true,
+      banner: '#!/usr/bin/env node\n',
+      file: 'dist/cli/bin/index.mjs',
+    },
+  ],
+  
   
   external,
   plugins: [
