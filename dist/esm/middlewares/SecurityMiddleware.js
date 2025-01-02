@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 class SecurityMiddleware {
     /**
      * CSRF Protection Middleware
@@ -99,4 +104,7 @@ class SecurityMiddleware {
 }
 
 export { SecurityMiddleware };
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=SecurityMiddleware.js.map

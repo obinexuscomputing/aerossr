@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 'use strict';
 
 function generateErrorPage(statusCode, message, error, options = {}) {
@@ -56,4 +61,7 @@ async function handleError(error, req, res) {
 
 exports.generateErrorPage = generateErrorPage;
 exports.handleError = handleError;
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=errorHandler.js.map

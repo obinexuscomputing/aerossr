@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 'use strict';
 
 function setCorsHeaders(res, options = {}) {
@@ -22,4 +27,7 @@ function normalizeCorsOptions(options) {
 
 exports.normalizeCorsOptions = normalizeCorsOptions;
 exports.setCorsHeaders = setCorsHeaders;
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=cors.js.map

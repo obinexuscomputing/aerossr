@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 import * as crypto from 'crypto';
 
 function generateETag(content, options = {}) {
@@ -6,4 +11,7 @@ function generateETag(content, options = {}) {
 }
 
 export { generateETag };
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=etag.js.map

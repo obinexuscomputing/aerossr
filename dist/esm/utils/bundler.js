@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -172,4 +177,7 @@ async function generateBundle(projectPath, entryPoint, options = {}) {
 }
 
 export { generateBundle, minifyBundle, resolveDependencies };
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=bundler.js.map

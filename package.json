@@ -64,6 +64,7 @@
   },
   "dependencies": {
     "@types/node": "^22.10.3",
-    "commander": "^13.0.0"
+    "commander": "^13.0.0",
+    "rollup-plugin-copy": "^3.5.0"
   }
 }

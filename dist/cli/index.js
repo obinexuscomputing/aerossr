@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 #!/usr/bin/env node
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 'use strict';
 
 var commander = require('commander');
@@ -912,4 +917,7 @@ program
     }
 });
 program.parse(process.argv);
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=index.js.map

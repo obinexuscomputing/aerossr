@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 /**
  * Check if we're in a browser environment
  */
@@ -113,4 +118,7 @@ function getAllCookies() {
 }
 
 export { areCookiesEnabled, deleteCookie, getAllCookies, getCookie, setCookie };
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=cookie.js.map

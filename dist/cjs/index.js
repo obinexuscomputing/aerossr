@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 'use strict';
 
 var AeroSSR = require('./AeroSSR.js');
@@ -36,4 +41,7 @@ exports.getAllCookies = cookie.getAllCookies;
 exports.getCookie = cookie.getCookie;
 exports.setCookie = cookie.setCookie;
 exports.SecurityMiddleware = SecurityMiddleware.SecurityMiddleware;
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=index.js.map

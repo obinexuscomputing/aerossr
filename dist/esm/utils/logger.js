@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 import * as fs from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
 import path__default from 'path';
@@ -76,4 +81,7 @@ class Logger {
 }
 
 export { Logger };
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=logger.js.map

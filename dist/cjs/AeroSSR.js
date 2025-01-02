@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -176,4 +181,7 @@ class AeroSSR {
 
 exports.AeroSSR = AeroSSR;
 exports.default = AeroSSR;
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=AeroSSR.js.map

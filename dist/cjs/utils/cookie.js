@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 'use strict';
 
 /**
@@ -119,4 +124,7 @@ exports.deleteCookie = deleteCookie;
 exports.getAllCookies = getAllCookies;
 exports.getCookie = getCookie;
 exports.setCookie = setCookie;
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=cookie.js.map

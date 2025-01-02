@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 import { createReadStream } from 'fs';
 import { readFile, stat } from 'fs/promises';
 import * as path from 'path';
@@ -183,4 +188,7 @@ class StaticFileMiddleware {
 }
 
 export { StaticFileMiddleware };
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=StaticFileMiddleware.js.map

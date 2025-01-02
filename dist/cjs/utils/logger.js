@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 'use strict';
 
 var fs$1 = require('fs/promises');
@@ -97,4 +102,7 @@ class Logger {
 }
 
 exports.Logger = Logger;
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=logger.js.map

@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 function createCache() {
     const cache = new Map();
     return {
@@ -22,4 +27,7 @@ function createCache() {
 }
 
 export { createCache };
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=cache.js.map

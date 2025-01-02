@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 'use strict';
 
 /**
@@ -18,4 +23,7 @@ function ensureAsync(fn) {
 
 exports.ensureAsync = ensureAsync;
 exports.isPromise = isPromise;
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=async.js.map

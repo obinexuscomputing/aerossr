@@ -1,3 +1,8 @@
+/*!
+ * @obinexuscomputing/aerossr v0.1.0
+ * (c) 2025 OBINexus Computing
+ * Released under the ISC License
+ */
 function generateErrorPage(statusCode, message, error, options = {}) {
     const { styles = `
       body { font-family: system-ui; padding: 2rem; max-width: 600px; margin: 0 auto; }
@@ -53,4 +58,7 @@ async function handleError(error, req, res) {
 }
 
 export { generateErrorPage, handleError };
+/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */
 //# sourceMappingURL=errorHandler.js.map
