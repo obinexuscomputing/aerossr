@@ -76,24 +76,21 @@ const configs = [
   {
     input: 'src/cli/index.ts',
     output: {
-      dir: 'dist/cli',
-      entryFileNames: 'index.js',
+      file: 'dist/cli/index.js', // Single file instead of preserving modules
       format: 'commonjs',
       banner: '#!/usr/bin/env node',
       sourcemap: true,
-      exports: 'named',
-      preserveModules: true
+      exports: 'named'
     },
     external,
     plugins: [
       alias(aliasEntries),
       typescript({
         tsconfig: './tsconfig.json',
-        outDir: 'dist/cli',
         declaration: true,
         declarationMap: true,
         sourceMap: true,
-        outputToFilesystem:true
+        outputToFilesystem: true
       }),
       resolve(),
       commonjs(),
@@ -106,7 +103,8 @@ const configs = [
         }
       }
     ].filter(Boolean)
-   }
+  }
+  
 ];
 
 export default configs;
