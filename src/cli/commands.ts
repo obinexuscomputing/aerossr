@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { AeroSSR, StaticFileMiddleware } from '../';
-import type { AeroSSRConfig, Middleware } from '../types';
+import type { Middleware } from '../types';
 
 export interface MiddlewareConfig {
   name: string;
@@ -38,19 +38,19 @@ export async function initializeSSR(directory: string): Promise<void> {
 }
 
 function createLoggingMiddleware(): Middleware {
-    return async (req, res, next) => {
+    return async (_req, _res, next) => {
         const start = Date.now();
         try {
             await next();
         } finally {
             const duration = Date.now() - start;
-            console.log(`${req.method} ${req.url} - ${duration}ms`);
+            console.log(`${_req.method} ${_req.url} - ${duration}ms`);
         }
     };
 }
 
 function createErrorMiddleware(): Middleware {
-    return async (req, res, next) => {
+    return async (_req, res, next) => {
         try {
             await next();
         } catch (error) {
