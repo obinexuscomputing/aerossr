@@ -39,7 +39,7 @@ export default {
     '!src/types/**',
     '!src/**/index.ts'
   ],
-  setupFilesAfterEnv: ['./__tests__/setup.ts'],
+  setupFilesAfterEnv: ['./__tests__/jest.setup.js'],
   testTimeout: 10000,
   verbose: true,
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node']
