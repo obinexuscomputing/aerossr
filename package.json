@@ -28,7 +28,7 @@
   "types": "./dist/types/index.d.ts",
   "scripts": {
 
-    "build": "npm run clean && rollup -c --bundleConfigAsCjs && npm run build:types && npm link",
+    "build": "npm run clean && rollup -c --bundleConfigAsCjs && npm link",
     "build:types": "tsc --emitDeclarationOnly",
     "clean": "rimraf dist coverage",
     "lint": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\"",
