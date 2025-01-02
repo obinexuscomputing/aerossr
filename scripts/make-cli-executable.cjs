@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Resolve the target path
-const target = path.resolve(__dirname, '../dist/cli/bin/index.js');
+const target = path.resolve(__dirname, '../dist/cli/bin/index.cjs');
 
 try {
   fs.chmodSync(target, '755'); // Set the file as executable

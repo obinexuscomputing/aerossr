@@ -1,7 +1,7 @@
 import { chmodSync, existsSync } from 'fs';
 import { join } from 'path';
 
-const cliPath = join(__dirname, 'dist/cli/bin/index.cjs');
+const cliPath = join(__dirname, 'dist/cli/bin/index.mjs');
 
 if (existsSync(cliPath)) {
   try {
