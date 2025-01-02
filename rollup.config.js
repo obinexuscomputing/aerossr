@@ -11,86 +11,87 @@ const pkg = JSON.parse(readFileSync('./package.json'));
 const isProduction = process.env.NODE_ENV === 'production';
 
 const aliasEntries = {
-  entries: [
-    { find: /^@\/(.*)/, replacement: _resolve(process.cwd(), 'src/$1') },
-    { find: /^@utils\/(.*)/, replacement: _resolve(process.cwd(), 'src/utils/$1') },
-    { find: /^@types\/(.*)/, replacement: _resolve(process.cwd(), 'src/types/$1') },
-    { find: '@', replacement: _resolve(process.cwd(), 'src') },
-    { find: '@utils', replacement: _resolve(process.cwd(), 'src/utils') },
-    { find: '@types', replacement: _resolve(process.cwd(), 'src/types') }
-  ]
+ entries: [
+   { find: /^@\/(.*)/, replacement: _resolve(process.cwd(), 'src/$1') },
+   { find: '@', replacement: _resolve(process.cwd(), 'src') }
+ ]
 };
 
 const external = [
-  'path', 'fs', 'http', 'crypto', 'zlib', 'url', 'stream', 'os', 'util', 'events', 'buffer',
-  ...Object.keys(pkg.dependencies || {}),
-  ...Object.keys(pkg.peerDependencies || {}),
-  /@types\/.*/
+ 'path', 'fs', 'http', 'crypto', 'zlib', 'url', 'stream', 'os', 'util', 'events', 'buffer',  
+ 'commander',
+ ...Object.keys(pkg.dependencies || {}),
+ ...Object.keys(pkg.peerDependencies || {})
 ];
 
-const inputFiles = {
-  'index': 'src/index.ts',
-  'cli': 'src/cli/index.ts',
-  'AeroSSR': 'src/AeroSSR.ts'
-};
-
 export default [
-  // ESM Build
-  {
-    input: inputFiles,
-    output: {
-      dir: 'dist/esm',
-      format: 'esm',
-      sourcemap: true,
-      preserveModules: true,
-      preserveModulesRoot: 'src'
-    },
-    external,
-    plugins: [
-      alias(aliasEntries),
-      typescript({
-        tsconfig: './tsconfig.build.json',
-        sourceMap: true,
-        outDir: 'dist/esm',
-        outputToFilesystem: true // Explicitly set to true
-      }),
-      resolve({ 
-        preferBuiltins: true,
-        extensions: ['.ts', '.js', '.json']
-      }),
-      commonjs(),
-      json(),
-      isProduction && terser()
-    ].filter(Boolean)
-  },
+ // ESM
+ {
+   input: 'src/index.ts',
+   output: {
+     dir: 'dist/esm',
+     format: 'esm',
+     sourcemap: true,
+     preserveModules: true,
+     preserveModulesRoot: 'src'
+   },
+   external,
+   plugins: [
+     alias(aliasEntries),
+     typescript({
+       tsconfig: './tsconfig.json',
+       outDir: 'dist/esm'
+     }),
+     resolve(),
+     commonjs(),
+     json(),
+     isProduction && terser()
+   ].filter(Boolean)
+ },
 
-  // CJS Build
-  {
-    input: inputFiles,
-    output: {
-      dir: 'dist/cjs',
-      format: 'cjs',
-      sourcemap: true,
-      preserveModules: true,
-      preserveModulesRoot: 'src',
-      exports: 'named'
-    },
-    external,
-    plugins: [
-      alias(aliasEntries),
-      typescript({
-        tsconfig: './tsconfig.json',
-        sourceMap: true,
-        outDir: 'dist/cjs',
-        outputToFilesystem: true // Explicitly set to true
-      }),
-      resolve({ 
-        preferBuiltins: true,
-        extensions: ['.ts', '.js', '.json']
-      }),
-      commonjs(),
-      json(),
-      isProduction && terser()
-    ].filter(Boolean)
-  }
+ // CJS
+ {
+   input: 'src/index.ts',
+   output: {
+     dir: 'dist/cjs',
+     format: 'cjs', 
+     sourcemap: true,
+     preserveModules: true,
+     preserveModulesRoot: 'src'
+   },
+   external,
+   plugins: [
+     alias(aliasEntries),
+     typescript({
+       tsconfig: './tsconfig.json',
+       outDir: 'dist/cjs'
+     }),
+     resolve(),
+     commonjs(),
+     json(),
+     isProduction && terser()
+   ].filter(Boolean)
+ },
+
+ // CLI
+ {
+   input: 'src/cli/index.ts',
+   output: {
+     file: 'dist/cli/index.js',
+     format: 'commonjs',
+     banner: '#!/usr/bin/env node',
+     sourcemap: true
+   },
+   external,
+   plugins: [
+     alias(aliasEntries),
+     typescript({
+       tsconfig: './tsconfig.json'
+     }),
+     resolve(),
+     commonjs(),
+     json(),
+     isProduction && terser()
+   ].filter(Boolean)
+ }
 ];

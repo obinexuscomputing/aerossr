@@ -21,7 +21,7 @@ export class AeroSSR {
   public server: Server | null;
   public readonly routes: Map<string, RouteHandler>;
   private readonly middlewares: Middleware[];
-
+  
   constructor(config: AeroSSRConfig = {}) {
     const corsOptions: CorsOptions = typeof config.corsOrigins === 'string'
       ? { origins: config.corsOrigins }
