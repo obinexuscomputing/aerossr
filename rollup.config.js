@@ -107,7 +107,7 @@ const configs = [
     sourcemap: true,
     banner: '#!/usr/bin/env node\n' + banner,
     footer,
-    file: 'dist/cli/index.js', // Ensure this aligns with outDir
+    file: 'dist/cli/bin/index.js', // Ensure this aligns with outDir
   },
   
   external,
@@ -119,7 +119,7 @@ const configs = [
       declarationMap: true,
       sourceMap: true,
       outputToFilesystem: true,
-      outDir: 'dist/cli',
+      outDir: 'dist/cli/bin',
     }),
     
     {
@@ -127,7 +127,7 @@ const configs = [
       writeBundle(options, bundle) {
         console.log('Bundle:', bundle);
       },
-          
+
     },
     copy({
       targets: [{ src: './package.json', dest: 'dist/cli' }], // Match the correct destination
