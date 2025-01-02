@@ -120,8 +120,10 @@ const configs = [
       declarationMap: true,
       sourceMap: true,
       outputToFilesystem: true,
-      outDir: 'dist/cli/bin',
-    }),
+      outDir: 'dist/cli/bin', // Ensure this is a valid directory
+      declarationDir: 'dist/cli/bin/types', // Explicitly set declaration directory
+    })
+    ,
     
     {
       name: 'log-output',
