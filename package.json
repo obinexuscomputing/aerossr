@@ -40,7 +40,6 @@
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags",
     "postbuild": "node -e \"require('fs').chmodSync('dist/cli/index.js', '755')\""
-
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
@@ -62,6 +61,7 @@
     "tslib": "^2.8.1"
   },
   "dependencies": {
-    "@types/node": "^22.10.3"
+    "@types/node": "^22.10.3",
+    "commander": "^13.0.0"
   }
 }
