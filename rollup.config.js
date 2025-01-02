@@ -11,15 +11,9 @@ import { readFileSync, chmodSync } from 'fs';
 const pkg = JSON.parse(readFileSync('./package.json'));
 const isProduction = process.env.NODE_ENV === 'production';
 
-const banner = `/*!
- * @obinexuscomputing/aerossr v${pkg.version}
- * (c) ${new Date().getFullYear()} OBINexus Computing
- * Released under the ISC License
- */`;
+const banner = `/*!\n * @obinexuscomputing/aerossr v${pkg.version}\n * (c) ${new Date().getFullYear()} OBINexus Computing\n * Released under the ISC License\n */`;
 
-const footer = `/*!
- * End of bundle for @obinexuscomputing/aerossr
- */`;
+const footer = `/*!\n * End of bundle for @obinexuscomputing/aerossr\n */`;
 
 const aliasEntries = {
   entries: [
@@ -116,7 +110,6 @@ const configs = [
       file: 'dist/cli/bin/index.mjs',
     },
   ],
-  
   
   external,
   plugins: [
