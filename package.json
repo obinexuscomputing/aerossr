@@ -27,7 +27,7 @@
   "module": "./dist/esm/index.js",
   "types": "./dist/types/index.d.ts",
   "scripts": {
-    "build": "npm run clean && rollup -c --bundleConfigAsCjs && node scripts/make-cli-executable.js && npm run link:internal && npm run link:package",
+    "build": "npm run clean && rollup -c --bundleConfigAsCjs && node scripts/make-cli-executable.js && npm run link:package",
     "clean": "rimraf dist coverage",
     "lint": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\" --fix",
@@ -41,7 +41,6 @@
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags",
     "postbuild": "node -e \"require('fs').chmodSync('dist/cli/index.js', '755')\" ",
-    "link:internal": "npm link",
     "link:package": "npm link @obinexuscomputing/aerossr"
   },
   "devDependencies": {
