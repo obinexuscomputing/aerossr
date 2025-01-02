@@ -1,6 +1,6 @@
 {
   "name": "@obinexuscomputing/aerossr",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "A Node.js library for server-side rendering (SSR) with TypeScript.",
   "exports": {

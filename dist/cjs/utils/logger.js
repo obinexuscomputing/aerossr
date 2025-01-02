@@ -1,5 +1,5 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.0
+ * @obinexuscomputing/aerossr v0.1.1
  * (c) 2025 OBINexus Computing
  * Released under the ISC License
  */

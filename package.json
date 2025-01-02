@@ -3,6 +3,20 @@
   "version": "0.1.1",
   "type": "module",
   "description": "A Node.js library for server-side rendering (SSR) with TypeScript.",
+  "author": {
+    "name": "Nnamdi Michael Okpala",
+    "email": "okpalan@protonmail.com"
+  },
+  "funding": {
+    "type": "individual",
+    "url": "https://buymeacoffee.com/obinexuscomputing"
+  },
+  "keywords": [
+    "ssr",
+    "server-side rendering",
+    "typescript",
+    "nodejs"
+  ],
   "exports": {
     ".": {
       "import": "./dist/esm/index.js",
