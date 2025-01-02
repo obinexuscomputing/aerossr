@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { c as commanderExports } from './_virtual/index.js';
 import { AeroSSR } from './AeroSSR.js';
 import './middlewares/StaticFileMiddleware.js';
