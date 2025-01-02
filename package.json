@@ -27,7 +27,6 @@
   "module": "./dist/esm/index.js",
   "types": "./dist/types/index.d.ts",
   "scripts": {
-
     "build": "npm run clean && rollup -c --bundleConfigAsCjs && npm link",
     "build:types": "tsc --emitDeclarationOnly",
     "clean": "rimraf dist coverage",
