@@ -73,16 +73,22 @@ const configs = [
   {
     input: 'src/cli/index.ts',
     output: {
-      file: 'dist/cli/index.js',
+      dir: 'dist/cli',
+      entryFileNames: 'index.js',
       format: 'commonjs',
       banner: '#!/usr/bin/env node',
-      sourcemap: true
+      sourcemap: true,
+      preserveModules: true,
+      preserveModulesRoot: 'src/cli'
     },
     external,
     plugins: [
       alias(aliasEntries),
       typescript({
-        tsconfig: './tsconfig.json'
+        tsconfig: './tsconfig.json',
+        outDir: 'dist/cli',
+        declaration: false,
+        sourceMap: true
       }),
       resolve(),
       commonjs(),
@@ -95,7 +101,7 @@ const configs = [
         }
       }
     ].filter(Boolean)
-  }
+   }
 ];
 
 export default configs;

@@ -9,7 +9,7 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "rootDir": "src",
-    "outDir": "./dist/esm", // Updated to match Rollup
+    "outDir": "./dist/",
     "paths": {
       "@/*": ["src/*"],
       "@utils/*": ["src/utils/*"],
