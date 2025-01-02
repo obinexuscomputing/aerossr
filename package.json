@@ -41,7 +41,7 @@
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags",
     "postbuild": "node -e \"require('fs').chmodSync('dist/cli/index.js', '755')\" ",
-    "link:internal": "npm link @obinexuscomputing/aerossr"
+    "link:internal": "npm link && npm link @obinexuscomputing/aerossr"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
