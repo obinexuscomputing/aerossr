@@ -75,8 +75,9 @@ const configs = [
   },
   {
     input: 'src/cli/index.ts',
+    
     output: {
-      file: 'dist/cli/index.js', // Single file instead of preserving modules
+      file: 'dist/cli/index.js', // Single output file for CLI
       format: 'commonjs',
       banner: '#!/usr/bin/env node',
       sourcemap: true,
@@ -90,7 +91,8 @@ const configs = [
         declaration: true,
         declarationMap: true,
         sourceMap: true,
-        outputToFilesystem: true
+        outputToFilesystem: true,
+        outDir: 'dist/cli'
       }),
       resolve(),
       commonjs(),
