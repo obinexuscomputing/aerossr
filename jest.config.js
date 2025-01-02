@@ -1,3 +1,4 @@
+// jest.config.ts
 export default {
   preset: 'ts-jest',
   testEnvironment: 'node',
@@ -39,8 +40,8 @@ export default {
     '!src/types/**',
     '!src/**/index.ts'
   ],
-  setupFilesAfterEnv: ['./__tests__/jest.setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/__tests__/setup.ts'],
   testTimeout: 10000,
   verbose: true,
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node']
-}
+};
