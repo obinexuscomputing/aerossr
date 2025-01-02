@@ -49,7 +49,9 @@ export default [
     plugins: [
       alias(aliasEntries),
       typescript({
-        tsconfig: './tsconfig.json',
+        tsconfig: './tsconfig.build.json',
+        sourceMap: true,
+        outDir: 'dist/esm',
         sourceMap: true
       }),
       resolve({ 
@@ -78,6 +80,8 @@ export default [
       alias(aliasEntries),
       typescript({
         tsconfig: './tsconfig.json',
+        sourceMap: true,
+        outDir: 'dist/cjs',
         sourceMap: true
       }),
       resolve({ 
