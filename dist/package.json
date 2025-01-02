@@ -10,8 +10,8 @@
       "types": "./dist/cjs/types/index.d.ts"
     },
     "./cli": {
-      "import": "./dist/esm/cli/index.js",
-      "require": "./dist/cjs/cli/index.js"
+      "import": "./dist/cli/bin/index.mjs",
+      "require": "./dist/cli/bin/index.cjs"
     },
     "./middlewares": {
       "import": "./dist/esm/middlewares/index.js",

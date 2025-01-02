@@ -1,41 +1,16 @@
 #!/usr/bin/env node
-/*!
- * @obinexuscomputing/aerossr v0.1.0
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
- */
-'use strict';
 
-var commander = require('commander');
-var http = require('http');
-var fs = require('fs');
-var url = require('url');
-var path = require('path');
-var zlib = require('zlib');
-var util = require('util');
-var fs$1 = require('fs/promises');
-var crypto = require('crypto');
-
-function _interopNamespaceDefault(e) {
-    var n = Object.create(null);
-    if (e) {
-        Object.keys(e).forEach(function (k) {
-            if (k !== 'default') {
-                var d = Object.getOwnPropertyDescriptor(e, k);
-                Object.defineProperty(n, k, d.get ? d : {
-                    enumerable: true,
-                    get: function () { return e[k]; }
-                });
-            }
-        });
-    }
-    n.default = e;
-    return Object.freeze(n);
-}
-
-var path__namespace = /*#__PURE__*/_interopNamespaceDefault(path);
-var fs__namespace = /*#__PURE__*/_interopNamespaceDefault(fs$1);
-var crypto__namespace = /*#__PURE__*/_interopNamespaceDefault(crypto);
+import { Command } from 'commander';
+import { createServer } from 'http';
+import { existsSync, mkdirSync, promises, createReadStream, readFileSync, writeFileSync } from 'fs';
+import { parse } from 'url';
+import * as path from 'path';
+import path__default, { join, resolve } from 'path';
+import { gzip, createGzip } from 'zlib';
+import { promisify } from 'util';
+import * as fs from 'fs/promises';
+import { readFile, stat } from 'fs/promises';
+import * as crypto from 'crypto';
 
 class Logger {
     logFilePath;
@@ -56,9 +31,9 @@ class Logger {
     }
     initializeLogFile() {
         try {
-            const logDir = path.dirname(this.logFilePath);
-            if (!fs.existsSync(logDir)) {
-                fs.mkdirSync(logDir, { recursive: true });
+            const logDir = path__default.dirname(this.logFilePath);
+            if (!existsSync(logDir)) {
+                mkdirSync(logDir, { recursive: true });
             }
         }
         catch (error) {
@@ -85,7 +60,7 @@ class Logger {
         console.log(formattedMessage.trim());
         if (this.logFilePath) {
             try {
-                await fs__namespace.appendFile(this.logFilePath, formattedMessage, 'utf-8');
+                await fs.appendFile(this.logFilePath, formattedMessage, 'utf-8');
             }
             catch (error) {
                 console.error(`Failed to write to log file: ${error.message}`);
@@ -99,9 +74,9 @@ class Logger {
         this.log(logMessage);
     }
     async clear() {
-        if (this.logFilePath && fs.existsSync(this.logFilePath)) {
+        if (this.logFilePath && existsSync(this.logFilePath)) {
             try {
-                await fs__namespace.writeFile(this.logFilePath, '', 'utf-8');
+                await fs.writeFile(this.logFilePath, '', 'utf-8');
             }
             catch (error) {
                 console.error(`Failed to clear log file: ${error.message}`);
@@ -148,7 +123,7 @@ function setCorsHeaders(res, options = {}) {
 }
 
 function generateETag(content, options = {}) {
-    const hash = crypto__namespace.createHash('md5').update(content).digest('hex');
+    const hash = crypto.createHash('md5').update(content).digest('hex');
     return options.weak ? `W/"${hash}"` : `"${hash}"`;
 }
 
@@ -246,7 +221,7 @@ async function resolveDependencies(filePath, deps = new Set(), options = {}) {
         // Add the file to dependencies before processing to handle circular dependencies
         deps.add(currentPath);
         try {
-            const content = await fs__namespace.readFile(currentPath, 'utf-8');
+            const content = await fs.readFile(currentPath, 'utf-8');
             // Match different import patterns
             const importPatterns = [
                 /require\s*\(['"]([^'"]+)['"]\)/g,
@@ -290,11 +265,11 @@ async function resolveFilePath(importPath, fromPath, extensions) {
     if (!importPath.startsWith('.') && !importPath.startsWith('/')) {
         return null;
     }
-    const basePath = path__namespace.resolve(path__namespace.dirname(fromPath), importPath);
+    const basePath = path.resolve(path.dirname(fromPath), importPath);
     // Check if path has extension
     if (extensions.some(ext => importPath.endsWith(ext))) {
         try {
-            await fs__namespace.access(basePath);
+            await fs.access(basePath);
             return basePath;
         }
         catch {
@@ -305,7 +280,7 @@ async function resolveFilePath(importPath, fromPath, extensions) {
     for (const ext of extensions) {
         const fullPath = basePath + ext;
         try {
-            await fs__namespace.access(fullPath);
+            await fs.access(fullPath);
             return fullPath;
         }
         catch {
@@ -314,9 +289,9 @@ async function resolveFilePath(importPath, fromPath, extensions) {
     }
     // Try index files
     for (const ext of extensions) {
-        const indexPath = path__namespace.join(basePath, `index${ext}`);
+        const indexPath = path.join(basePath, `index${ext}`);
         try {
-            await fs__namespace.access(indexPath);
+            await fs.access(indexPath);
             return indexPath;
         }
         catch {
@@ -380,7 +355,7 @@ function minifyBundle(code) {
 async function generateBundle(projectPath, entryPoint, options = {}) {
     const { minify = true, comments = true, ...dependencyOptions } = options;
     try {
-        const entryFilePath = path__namespace.resolve(projectPath, entryPoint);
+        const entryFilePath = path.resolve(projectPath, entryPoint);
         const dependencies = await resolveDependencies(entryFilePath, new Set(), {
             ...dependencyOptions,
             baseDir: projectPath
@@ -390,8 +365,8 @@ async function generateBundle(projectPath, entryPoint, options = {}) {
         }
         let bundle = '';
         for (const dep of dependencies) {
-            const content = await fs__namespace.readFile(dep, 'utf-8');
-            const relativePath = path__namespace.relative(projectPath, dep);
+            const content = await fs.readFile(dep, 'utf-8');
+            const relativePath = path.relative(projectPath, dep);
             if (comments) {
                 bundle += `\n// File: ${relativePath}\n`;
             }
@@ -404,7 +379,7 @@ async function generateBundle(projectPath, entryPoint, options = {}) {
     }
 }
 
-const gzipAsync$1 = util.promisify(zlib.gzip);
+const gzipAsync$1 = promisify(gzip);
 class AeroSSR {
     config;
     logger;
@@ -469,7 +444,7 @@ class AeroSSR {
         try {
             this.logger.log(`Request received: ${req.method} ${req.url}`);
             await this.executeMiddlewares(req, res);
-            const parsedUrl = url.parse(req.url || '', true);
+            const parsedUrl = parse(req.url || '', true);
             const pathname = parsedUrl.pathname || '/';
             if (req.method === 'OPTIONS') {
                 setCorsHeaders(res, this.config.corsOrigins);
@@ -518,10 +493,10 @@ class AeroSSR {
         }
     }
     async handleDefaultRequest(req, res) {
-        const parsedUrl = url.parse(req.url || '', true);
+        const parsedUrl = parse(req.url || '', true);
         const pathname = parsedUrl.pathname || '/';
-        const htmlPath = path.join(__dirname, 'index.html');
-        let html = await fs.promises.readFile(htmlPath, 'utf-8');
+        const htmlPath = join(__dirname, 'index.html');
+        let html = await promises.readFile(htmlPath, 'utf-8');
         const meta = {
             title: `Page - ${pathname}`,
             description: `Content for ${pathname}`,
@@ -535,7 +510,7 @@ class AeroSSR {
     }
     async start() {
         return new Promise((resolve) => {
-            this.server = http.createServer((req, res) => this.handleRequest(req, res));
+            this.server = createServer((req, res) => this.handleRequest(req, res));
             this.server.listen(this.config.port, () => {
                 this.logger.log(`Server is running on port ${this.config.port}`);
                 resolve(this.server);
@@ -562,7 +537,7 @@ class AeroSSR {
     }
 }
 
-const gzipAsync = util.promisify(zlib.gzip);
+const gzipAsync = promisify(gzip);
 class StaticFileMiddleware {
     root;
     maxAge;
@@ -618,7 +593,7 @@ class StaticFileMiddleware {
         return mimeTypes[ext] || 'application/octet-stream';
     }
     async serveFile(filepath, stats, req, res) {
-        const mimeType = this.getMimeType(path__namespace.extname(filepath).toLowerCase());
+        const mimeType = this.getMimeType(path.extname(filepath).toLowerCase());
         const lastModified = stats.mtime.toUTCString();
         // Handle conditional requests
         const ifModifiedSince = req.headers['if-modified-since'];
@@ -647,13 +622,13 @@ class StaticFileMiddleware {
                 res.writeHead(200, headers);
                 // Use streaming for large files
                 if (stats.size > 1024 * 1024) { // 1MB threshold
-                    const stream = fs.createReadStream(filepath).pipe(zlib.createGzip());
+                    const stream = createReadStream(filepath).pipe(createGzip());
                     stream.pipe(res);
                     return;
                 }
                 else {
                     // Use buffer compression for smaller files
-                    const content = await fs$1.readFile(filepath);
+                    const content = await readFile(filepath);
                     const compressed = await gzipAsync(content);
                     res.end(compressed);
                     return;
@@ -663,10 +638,10 @@ class StaticFileMiddleware {
         // Serve uncompressed
         res.writeHead(200, headers);
         if (stats.size > 1024 * 1024) { // 1MB threshold
-            fs.createReadStream(filepath).pipe(res);
+            createReadStream(filepath).pipe(res);
         }
         else {
-            const content = await fs$1.readFile(filepath);
+            const content = await readFile(filepath);
             res.end(content);
         }
     }
@@ -683,7 +658,7 @@ class StaticFileMiddleware {
                 const queryIndex = rawUrl.indexOf('?');
                 const urlWithoutQuery = queryIndex >= 0 ? rawUrl.slice(0, queryIndex) : rawUrl;
                 const decodedUrl = decodeURIComponent(urlWithoutQuery);
-                const urlPath = path__namespace.normalize(decodedUrl);
+                const urlPath = path.normalize(decodedUrl);
                 // Security check for dotfiles
                 if (this.isDotFile(urlPath)) {
                     const handled = await this.handleDotFile(_req, res, next);
@@ -691,19 +666,19 @@ class StaticFileMiddleware {
                         return;
                 }
                 // Prevent directory traversal
-                const fullPath = path__namespace.join(this.root, urlPath);
+                const fullPath = path.join(this.root, urlPath);
                 if (!fullPath.startsWith(this.root)) {
                     res.writeHead(403);
                     res.end('Forbidden');
                     return;
                 }
                 try {
-                    const stats = await fs$1.stat(fullPath);
+                    const stats = await stat(fullPath);
                     if (stats.isDirectory()) {
                         for (const indexFile of this.index) {
-                            const indexPath = path__namespace.join(fullPath, indexFile);
+                            const indexPath = path.join(fullPath, indexFile);
                             try {
-                                const indexStats = await fs$1.stat(indexPath);
+                                const indexStats = await stat(indexPath);
                                 if (indexStats.isFile()) {
                                     await this.serveFile(indexPath, indexStats, _req, res);
                                     return;
@@ -740,13 +715,13 @@ class StaticFileMiddleware {
 }
 
 async function initializeSSR(directory) {
-    const projectRoot = path.resolve(directory);
-    const publicDir = path.join(projectRoot, 'public');
-    const logDir = path.join(projectRoot, 'logs');
-    const logFilePath = path.join(logDir, 'server.log');
-    await fs.promises.mkdir(publicDir, { recursive: true });
-    await fs.promises.mkdir(logDir, { recursive: true });
-    const indexHtmlPath = path.join(publicDir, 'index.html');
+    const projectRoot = path__default.resolve(directory);
+    const publicDir = path__default.join(projectRoot, 'public');
+    const logDir = path__default.join(projectRoot, 'logs');
+    const logFilePath = path__default.join(logDir, 'server.log');
+    await promises.mkdir(publicDir, { recursive: true });
+    await promises.mkdir(logDir, { recursive: true });
+    const indexHtmlPath = path__default.join(publicDir, 'index.html');
     const defaultHtmlContent = `
 <!DOCTYPE html>
 <html>
@@ -760,8 +735,8 @@ async function initializeSSR(directory) {
     <div id="app"></div>
 </body>
 </html>`;
-    await fs.promises.writeFile(indexHtmlPath, defaultHtmlContent, 'utf-8');
-    await fs.promises.writeFile(logFilePath, '', 'utf-8');
+    await promises.writeFile(indexHtmlPath, defaultHtmlContent, 'utf-8');
+    await promises.writeFile(logFilePath, '', 'utf-8');
 }
 function createLoggingMiddleware() {
     return async (_req, _res, next) => {
@@ -821,7 +796,7 @@ async function configureMiddleware(app, config) {
 const CONFIG_FILE = 'aerossr.config.json';
 function loadConfig() {
     try {
-        const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8'));
+        const config = JSON.parse(readFileSync(CONFIG_FILE, 'utf-8'));
         return {
             port: config.port ?? 3000,
             logPath: config.logPath ?? 'logs/server.log',
@@ -838,9 +813,9 @@ function loadConfig() {
     }
 }
 function saveConfig(config) {
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf-8');
+    writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf-8');
 }
-const program = new commander.Command();
+const program = new Command();
 program
     .version('1.0.0')
     .description('AeroSSR CLI for managing server-side rendering configurations');
@@ -850,11 +825,11 @@ program
     .option('-d, --directory <path>', 'Project directory path', '.')
     .action(async (options) => {
     try {
-        const directory = path.resolve(options.directory);
+        const directory = resolve(options.directory);
         await initializeSSR(directory);
         const config = {
             port: 3000,
-            logPath: path.join(directory, 'logs/server.log'),
+            logPath: join(directory, 'logs/server.log'),
             middleware: []
         };
         saveConfig(config);
@@ -879,7 +854,7 @@ program
         });
         const middlewareConfig = {
             name: options.name,
-            path: path.resolve(options.path),
+            path: resolve(options.path),
             options: options.options ? JSON.parse(options.options) : undefined
         };
         await configureMiddleware(app, middlewareConfig);
@@ -916,7 +891,4 @@ program
     }
 });
 program.parse(process.argv);
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
-//# sourceMappingURL=index.js.map
+//# sourceMappingURL=index.mjs.map
