@@ -22,9 +22,9 @@
       "require": "./dist/cjs/utils/index.js"
     }
   },
-  "bin": {
-    "aerossr": "./dist/cli/bin/index.js"
-  },
+ "bin": {
+  "aerossr": "./dist/cli/bin/index.cjs"
+},
   "files": [
     "dist",
     "src",
