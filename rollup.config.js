@@ -87,7 +87,8 @@ const configs = [
       typescript({
         tsconfig: './tsconfig.json',
         outDir: 'dist/cli',
-        declaration: false,
+        declaration: true,
+        declarationMap: true,
         sourceMap: true
       }),
       resolve(),
