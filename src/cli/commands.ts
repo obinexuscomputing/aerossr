@@ -76,7 +76,7 @@ function createErrorMiddleware(): Middleware {
 /**
  * Configure middleware for an AeroSSR application
  */
-export function configureMiddleware(app: AeroSSR): void {
+export function configureMiddleware(app: AeroSSR, name?: string, customPath?: string): void {
     // Add static file middleware
     const staticMiddleware = new StaticFileMiddleware({
         root: 'public',
@@ -94,6 +94,10 @@ export function configureMiddleware(app: AeroSSR): void {
 
     // Add error handling middleware
     app.use(createErrorMiddleware());
+
+    // Add custom middleware if provided
+    if (name && customPath) {
+        const customMiddleware = require(customPath);
+        app.use(customMiddleware[name]);
+    }
 }
-
-
