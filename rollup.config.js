@@ -123,10 +123,11 @@ const configs = [
     }),
     
     {
-      name: 'make-executable',
-      writeBundle() {
-        chmodSync('dist/bin/index.js', 0o755);
+      name: 'log-output',
+      writeBundle(options, bundle) {
+        console.log('Bundle:', bundle);
       },
+          
     },
     copy({
       targets: [{ src: './package.json', dest: 'dist/cli' }], // Match the correct destination
