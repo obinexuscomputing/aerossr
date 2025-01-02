@@ -66,7 +66,6 @@ const configs = [
         tsconfig: './tsconfig.json',
         outDir: 'dist/cjs',
         outputToFilesystem:false
-
       }),
       resolve(),
       commonjs(),
