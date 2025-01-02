@@ -62,5 +62,6 @@ export declare class AeroSSR {
     pathname: string
   ): Promise<void>;
 }
+export type BundleHandler = (req: IncomingMessage, res: ServerResponse, query: Record<string, string | string[] | undefined>) => Promise<void>;
 
 export default AeroSSR;

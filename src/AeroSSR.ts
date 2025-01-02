@@ -11,7 +11,7 @@ import { generateETag } from './utils/etag';
 import { handleError } from './utils/errorHandler';
 import { injectMetaTags } from './utils/html';
 import { generateBundle } from './utils/bundler';
-import { AeroSSRConfig, CorsOptions, Middleware, RouteHandler } from './types';
+import { AeroSSRConfig, CorsOptions, Middleware, RouteHandler, BundleHandler } from './types';
 
 const gzipAsync = promisify(gzip);
 
@@ -28,6 +28,10 @@ export class AeroSSR {
       : config.corsOrigins || { origins: '*' };
 
     this.config = {
+      loggerOptions: config.loggerOptions || {},
+      errorHandler: config.errorHandler || handleError,
+      staticFileHandler: config.staticFileHandler || this.handleDefaultRequest.bind(this),
+      bundleHandler: config.bundleHandler as BundleHandler || this.handleDistRequest.bind(this),
       port: config.port || 3000,
       cacheMaxAge: config.cacheMaxAge || 3600,
       corsOrigins: corsOptions,
@@ -98,7 +102,7 @@ export class AeroSSR {
       const pathname = parsedUrl.pathname || '/';
 
       if (req.method === 'OPTIONS') {
-        setCorsHeaders(res, this.config.corsOrigins);
+        setCorsHeaders(res, this.config.corsOrigins as CorsOptions);
         res.writeHead(204);
         res.end();
         return;
@@ -115,7 +119,7 @@ export class AeroSSR {
         return;
       }
 
-      await this.handleDefaultRequest(req, res, pathname);
+      await this.handleDefaultRequest(req, res);
     } catch (error) {
       await handleError(error instanceof Error ? error : new Error('Unknown error'), req, res);
     }
@@ -138,7 +142,7 @@ export class AeroSSR {
       return;
     }
 
-    setCorsHeaders(res, this.config.corsOrigins);
+    setCorsHeaders(res, this.config.corsOrigins as CorsOptions);
     res.writeHead(200, {
       'Content-Type': 'application/javascript',
       'Cache-Control': `public, max-age=${this.config.cacheMaxAge}`,
@@ -156,9 +160,11 @@ export class AeroSSR {
 
   private async handleDefaultRequest(
     req: IncomingMessage,
-    res: ServerResponse,
-    pathname: string
+    res: ServerResponse
   ): Promise<void> {
+    const parsedUrl = parseUrl(req.url || '', true);
+    const pathname = parsedUrl.pathname || '/';
+
     const htmlPath = join(__dirname, 'index.html');
     let html = await fs.readFile(htmlPath, 'utf-8');
 
