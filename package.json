@@ -3,16 +3,26 @@
   "version": "0.1.0",
   "type": "module",
   "description": "A Node.js library for server-side rendering (SSR) with TypeScript.",
-  "exports": {
-    ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
-      "types": "./dist/types/index.d.ts"
-    }
-  },
-  "bin": {
-    "aerossr": "./dist/cjs/cli/index.js"
-  },
+  
+    "exports": {
+      ".": {
+        "import": "./dist/esm/index.js",
+        "require": "./dist/cjs/index.js",
+        "types": "./dist/types/index.d.ts"
+      },
+      "./cli": {
+        "import": "./dist/esm/cli/index.js",
+        "require": "./dist/cjs/cli/index.js"
+      }
+    },
+    "bin": {
+      "aerossr": "./dist/cjs/cli/index.js"
+    },
+    "files": [
+      "dist",
+      "src"
+    ],
+ 
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/types/index.d.ts",
