@@ -1,8 +1,8 @@
 import { AddressInfo } from 'net';
 import { IncomingMessage, ServerResponse } from 'http';
 import { jest } from '@jest/globals';
-import { AeroSSR } from '../src/AeroSSR';
-import { Logger } from '../src/utils/logger';
+import AeroSSR from '../../src/AeroSSR';
+import { Logger } from '../../src/utils/logger';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import fetch from 'node-fetch';
@@ -120,8 +120,6 @@ describe('AeroSSR Core Tests', () => {
     });
   });
 
-  // ... Rest of AeroSSR tests ...
-  [Previous AeroSSR test sections]
 });
 
 describe('Logger Tests', () => {
@@ -159,8 +157,6 @@ describe('Logger Tests', () => {
     });
   });
 
-  // ... Rest of Logger tests ...
-  [Previous Logger test sections]
 });
 
 // Integration Tests

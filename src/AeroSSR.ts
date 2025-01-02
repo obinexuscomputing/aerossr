@@ -12,6 +12,7 @@ import { handleError } from './utils/errorHandler';
 import { injectMetaTags } from './utils/html';
 import { generateBundle } from './utils/bundler';
 import { AeroSSRConfig, CorsOptions, Middleware, RouteHandler } from './types';
+
 const gzipAsync = promisify(gzip);
 
 export class AeroSSR {
@@ -19,7 +20,7 @@ export class AeroSSR {
   public readonly logger: Logger;
   public server: Server | null;
   public readonly routes: Map<string, RouteHandler>;
-  public readonly middlewares: Middleware[] = [];
+  private readonly middlewares: Middleware[];
 
   constructor(config: AeroSSRConfig = {}) {
     const corsOptions: CorsOptions = typeof config.corsOrigins === 'string'
@@ -71,26 +72,33 @@ export class AeroSSR {
       return;
     }
 
-    const middleware = this.middlewares[index];
-    if (middleware) {
-      await middleware(req, res, () => this.executeMiddlewares(req, res, index + 1));
-    }
+    const chain = [...this.middlewares];
+    let currentIndex = index;
+
+    const next = async (): Promise<void> => {
+      const middleware = chain[currentIndex];
+      if (middleware) {
+        currentIndex++;
+        await middleware(req, res, next);
+      }
+    };
+
+    await next();
   }
 
   private async handleRequest(
-    _req: IncomingMessage,
+    req: IncomingMessage,
     res: ServerResponse
   ): Promise<void> {
     try {
-      this.logger.logRequest(_req);
+      this.logger.log(`Request received: ${req.method} ${req.url}`);
+      await this.executeMiddlewares(req, res);
 
-      await this.executeMiddlewares(_req, res);
-
-      const parsedUrl = parseUrl(_req.url || '', true);
+      const parsedUrl = parseUrl(req.url || '', true);
       const pathname = parsedUrl.pathname || '/';
 
-      if (_req.method === 'OPTIONS') {
-        setCorsHeaders(res, this.config.corsOrigins as CorsOptions);
+      if (req.method === 'OPTIONS') {
+        setCorsHeaders(res, this.config.corsOrigins);
         res.writeHead(204);
         res.end();
         return;
@@ -98,23 +106,23 @@ export class AeroSSR {
 
       const routeHandler = this.routes.get(pathname);
       if (routeHandler) {
-        await routeHandler(_req, res);
+        await routeHandler(req, res);
         return;
       }
 
       if (pathname === '/dist') {
-        await this.handleDistRequest(_req, res, parsedUrl.query);
+        await this.handleDistRequest(req, res, parsedUrl.query);
         return;
       }
 
-      await this.handleDefaultRequest(_req, res, pathname);
+      await this.handleDefaultRequest(req, res, pathname);
     } catch (error) {
-      await handleError(error instanceof Error ? error : new Error('Unknown error'), _req, res);
+      await handleError(error instanceof Error ? error : new Error('Unknown error'), req, res);
     }
   }
 
   private async handleDistRequest(
-    _req: IncomingMessage,
+    req: IncomingMessage,
     res: ServerResponse,
     query: Record<string, string | string[] | undefined>
   ): Promise<void> {
@@ -124,20 +132,20 @@ export class AeroSSR {
     const bundle = await generateBundle(projectPath, entryPoint);
     const etag = generateETag(bundle);
 
-    if (_req.headers['if-none-match'] === etag) {
+    if (req.headers['if-none-match'] === etag) {
       res.writeHead(304);
       res.end();
       return;
     }
 
-    setCorsHeaders(res, this.config.corsOrigins as CorsOptions);
+    setCorsHeaders(res, this.config.corsOrigins);
     res.writeHead(200, {
       'Content-Type': 'application/javascript',
       'Cache-Control': `public, max-age=${this.config.cacheMaxAge}`,
       'ETag': etag,
     });
 
-    if (this.config.compression && _req.headers['accept-encoding']?.includes('gzip')) {
+    if (this.config.compression && req.headers['accept-encoding']?.includes('gzip')) {
       const compressed = await gzipAsync(bundle);
       res.setHeader('Content-Encoding', 'gzip');
       res.end(compressed);
@@ -147,7 +155,7 @@ export class AeroSSR {
   }
 
   private async handleDefaultRequest(
-    _req: IncomingMessage,
+    req: IncomingMessage,
     res: ServerResponse,
     pathname: string
   ): Promise<void> {
@@ -171,9 +179,8 @@ export class AeroSSR {
   public async start(): Promise<Server> {
     return new Promise((resolve) => {
       this.server = createServer((req, res) => this.handleRequest(req, res));
-
       this.server.listen(this.config.port, () => {
-        this.logger.log(`AeroSSR server running on port ${this.config.port}`);
+        this.logger.log(`Server is running on port ${this.config.port}`);
         resolve(this.server as Server);
       });
     });
@@ -190,6 +197,13 @@ export class AeroSSR {
       });
     }
     return Promise.resolve();
+  }
+
+  public listen(port: number): void {
+    this.config.port = port;
+    this.start().catch(error => {
+      this.logger.log(`Failed to start server: ${error.message}`);
+    });
   }
 }
 

@@ -1,96 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1735832341178" clover="3.2.0">
-  <project timestamp="1735832341179" name="All files">
-    <metrics statements="594" coveredstatements="144" conditionals="264" coveredconditionals="85" methods="92" coveredmethods="21" elements="950" coveredelements="250" complexity="0" loc="594" ncloc="594" packages="6" files="19" classes="19"/>
+<coverage generated="1735832464640" clover="3.2.0">
+  <project timestamp="1735832464640" name="All files">
+    <metrics statements="510" coveredstatements="144" conditionals="227" coveredconditionals="85" methods="76" coveredmethods="21" elements="813" coveredelements="250" complexity="0" loc="510" ncloc="510" packages="6" files="18" classes="18"/>
     <package name="src">
-      <metrics statements="89" coveredstatements="0" conditionals="37" coveredconditionals="0" methods="18" coveredmethods="0"/>
-      <file name="AeroSSR.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\AeroSSR.ts">
-        <metrics statements="84" coveredstatements="0" conditionals="37" coveredconditionals="0" methods="16" coveredmethods="0"/>
-        <line num="1" count="0" type="stmt"/>
-        <line num="2" count="0" type="stmt"/>
-        <line num="3" count="0" type="stmt"/>
-        <line num="4" count="0" type="stmt"/>
-        <line num="5" count="0" type="stmt"/>
-        <line num="6" count="0" type="stmt"/>
-        <line num="7" count="0" type="stmt"/>
-        <line num="8" count="0" type="stmt"/>
-        <line num="9" count="0" type="stmt"/>
-        <line num="10" count="0" type="stmt"/>
-        <line num="11" count="0" type="stmt"/>
-        <line num="12" count="0" type="stmt"/>
-        <line num="13" count="0" type="stmt"/>
-        <line num="15" count="0" type="stmt"/>
-        <line num="17" count="0" type="stmt"/>
-        <line num="22" count="0" type="stmt"/>
-        <line num="25" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="29" count="0" type="stmt"/>
-        <line num="46" count="0" type="stmt"/>
-        <line num="47" count="0" type="stmt"/>
-        <line num="48" count="0" type="stmt"/>
-        <line num="49" count="0" type="stmt"/>
-        <line num="53" count="0" type="stmt"/>
-        <line num="57" count="0" type="stmt"/>
-        <line num="61" count="0" type="stmt"/>
-        <line num="62" count="0" type="stmt"/>
-        <line num="70" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="71" count="0" type="stmt"/>
-        <line num="74" count="0" type="stmt"/>
-        <line num="75" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="76" count="0" type="stmt"/>
-        <line num="84" count="0" type="stmt"/>
-        <line num="85" count="0" type="stmt"/>
-        <line num="87" count="0" type="stmt"/>
-        <line num="89" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="90" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="92" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="93" count="0" type="stmt"/>
-        <line num="94" count="0" type="stmt"/>
-        <line num="95" count="0" type="stmt"/>
-        <line num="96" count="0" type="stmt"/>
-        <line num="99" count="0" type="stmt"/>
-        <line num="100" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="101" count="0" type="stmt"/>
-        <line num="102" count="0" type="stmt"/>
-        <line num="105" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="106" count="0" type="stmt"/>
-        <line num="107" count="0" type="stmt"/>
-        <line num="110" count="0" type="stmt"/>
-        <line num="112" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="121" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="122" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="124" count="0" type="stmt"/>
-        <line num="125" count="0" type="stmt"/>
-        <line num="127" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="128" count="0" type="stmt"/>
-        <line num="129" count="0" type="stmt"/>
-        <line num="130" count="0" type="stmt"/>
-        <line num="133" count="0" type="stmt"/>
-        <line num="134" count="0" type="stmt"/>
-        <line num="140" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="141" count="0" type="stmt"/>
-        <line num="142" count="0" type="stmt"/>
-        <line num="143" count="0" type="stmt"/>
-        <line num="145" count="0" type="stmt"/>
-        <line num="154" count="0" type="stmt"/>
-        <line num="155" count="0" type="stmt"/>
-        <line num="157" count="0" type="stmt"/>
-        <line num="162" count="0" type="stmt"/>
-        <line num="164" count="0" type="stmt"/>
-        <line num="168" count="0" type="stmt"/>
-        <line num="172" count="0" type="stmt"/>
-        <line num="173" count="0" type="stmt"/>
-        <line num="175" count="0" type="stmt"/>
-        <line num="176" count="0" type="stmt"/>
-        <line num="177" count="0" type="stmt"/>
-        <line num="183" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="184" count="0" type="stmt"/>
-        <line num="185" count="0" type="stmt"/>
-        <line num="186" count="0" type="stmt"/>
-        <line num="187" count="0" type="stmt"/>
-        <line num="188" count="0" type="stmt"/>
-        <line num="192" count="0" type="stmt"/>
-        <line num="196" count="0" type="stmt"/>
-      </file>
+      <metrics statements="5" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="0"/>
       <file name="index.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\index.ts">
         <metrics statements="5" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="0"/>
         <line num="3" count="0" type="stmt"/>
@@ -365,16 +278,16 @@
       <metrics statements="10" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
       <file name="index.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\types\index.ts">
         <metrics statements="10" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
-        <line num="122" count="0" type="stmt"/>
-        <line num="123" count="0" type="stmt"/>
-        <line num="124" count="0" type="stmt"/>
-        <line num="125" count="0" type="stmt"/>
-        <line num="126" count="0" type="stmt"/>
         <line num="127" count="0" type="stmt"/>
         <line num="128" count="0" type="stmt"/>
         <line num="129" count="0" type="stmt"/>
         <line num="130" count="0" type="stmt"/>
         <line num="131" count="0" type="stmt"/>
+        <line num="132" count="0" type="stmt"/>
+        <line num="133" count="0" type="stmt"/>
+        <line num="134" count="0" type="stmt"/>
+        <line num="135" count="0" type="stmt"/>
+        <line num="136" count="0" type="stmt"/>
       </file>
     </package>
     <package name="src.types.utils">
