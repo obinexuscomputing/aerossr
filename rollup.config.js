@@ -100,16 +100,16 @@ const configs = [
     ],
   },
   // CLI Build
-  // CLI Build
 {
   input: 'src/cli/index.ts',
   output: {
-    file: 'dist/cli/index.js',
     format: 'cjs',
     sourcemap: true,
     banner: '#!/usr/bin/env node\n' + banner,
     footer,
+    file: 'dist/cli/index.js', // Ensure this aligns with outDir
   },
+  
   external,
   plugins: [
     ...basePlugins,
@@ -121,16 +121,18 @@ const configs = [
       outputToFilesystem: true,
       outDir: 'dist/cli',
     }),
+    
     {
       name: 'make-executable',
       writeBundle() {
-        chmodSync('dist/cli/index.js', 0o755);
+        chmodSync('dist/bin/index.js', 0o755);
       },
     },
     copy({
-      targets: [{ src: './package.json', dest: 'dist' }],
+      targets: [{ src: './package.json', dest: 'dist/cli' }], // Match the correct destination
       hook: 'writeBundle',
     }),
+    
   ],
 },
 
