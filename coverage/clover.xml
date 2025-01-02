@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1735776446025" clover="3.2.0">
-  <project timestamp="1735776446025" name="All files">
+<coverage generated="1735776847905" clover="3.2.0">
+  <project timestamp="1735776847905" name="All files">
     <metrics statements="471" coveredstatements="144" conditionals="244" coveredconditionals="85" methods="81" coveredmethods="21" elements="796" coveredelements="250" complexity="0" loc="471" ncloc="471" packages="4" files="13" classes="13"/>
     <package name="src">
       <metrics statements="69" coveredstatements="0" conditionals="37" coveredconditionals="0" methods="16" coveredmethods="0"/>
@@ -363,17 +363,17 @@
       </file>
       <file name="cache.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\utils\cache.ts">
         <metrics statements="11" coveredstatements="0" conditionals="10" coveredconditionals="0" methods="4" coveredmethods="0"/>
-        <line num="13" count="0" type="stmt"/>
-        <line num="15" count="0" type="stmt"/>
-        <line num="17" count="0" type="stmt"/>
-        <line num="18" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="20" count="0" type="cond" truecount="0" falsecount="3"/>
-        <line num="21" count="0" type="stmt"/>
-        <line num="22" count="0" type="stmt"/>
+        <line num="16" count="0" type="stmt"/>
+        <line num="18" count="0" type="stmt"/>
+        <line num="20" count="0" type="stmt"/>
+        <line num="21" count="0" type="cond" truecount="0" falsecount="1"/>
+        <line num="23" count="0" type="cond" truecount="0" falsecount="3"/>
+        <line num="24" count="0" type="stmt"/>
         <line num="25" count="0" type="stmt"/>
-        <line num="28" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="32" count="0" type="stmt"/>
-        <line num="34" count="0" type="stmt"/>
+        <line num="28" count="0" type="stmt"/>
+        <line num="31" count="0" type="cond" truecount="0" falsecount="4"/>
+        <line num="35" count="0" type="stmt"/>
+        <line num="37" count="0" type="stmt"/>
       </file>
       <file name="cookie.ts" path="C:\Users\OBINexusComputing\Projects\obinexuscomputing\pkg\aerossr\src\utils\cookie.ts">
         <metrics statements="53" coveredstatements="0" conditionals="25" coveredconditionals="0" methods="8" coveredmethods="0"/>
