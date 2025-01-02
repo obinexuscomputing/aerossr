@@ -100,43 +100,40 @@ const configs = [
     ],
   },
   // CLI Build
-  {
-    input: 'src/cli/index.ts',
-    output: {
-      file: 'dist/cli/index.js',
-      format: 'cjs',
-      sourcemap: true,
-      banner: '#!/usr/bin/env node\n' + banner,
-      footer,
-    },
-    external,
-    plugins: [
-      ...basePlugins,
-      typescript({
-        tsconfig: './tsconfig.json',
-        declaration: true,
-        declarationMap: true,
-        sourceMap: true,
-        outputToFilesystem: true,
-        outDir: 'dist/cli',
-      }),
-      {
-        name: 'make-executable',
-        writeBundle() {
-          chmodSync('dist/cli/index.js', 0o755);
-        },
+  // CLI Build
+{
+  input: 'src/cli/index.ts',
+  output: {
+    file: 'dist/cli/index.js',
+    format: 'cjs',
+    sourcemap: true,
+    banner: '#!/usr/bin/env node\n' + banner,
+    footer,
+  },
+  external,
+  plugins: [
+    ...basePlugins,
+    typescript({
+      tsconfig: './tsconfig.json',
+      declaration: true,
+      declarationMap: true,
+      sourceMap: true,
+      outputToFilesystem: true,
+      outDir: 'dist/cli',
+    }),
+    {
+      name: 'make-executable',
+      writeBundle() {
+        chmodSync('dist/cli/index.js', 0o755);
       },
-    ],
-  },
-  // Copy package.json
-  {
-    plugins: [
-      copy({
-        targets: [{ src: './package.json', dest: 'dist' }],
-        hook: 'writeBundle',
-      }),
-    ],
-  },
+    },
+    copy({
+      targets: [{ src: './package.json', dest: 'dist' }],
+      hook: 'writeBundle',
+    }),
+  ],
+},
+
 ];
 
 export default configs;
