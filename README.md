@@ -1,24 +1,32 @@
 # AeroSSR
 
-AeroSSR is a lightweight, flexible server-side rendering framework for Node.js applications. It provides built-in support for static file serving, middleware, routing, caching, and compression.
+[![npm version](https://badge.fury.io/js/@obinexuscomputing%2Faerossr.svg)](https://www.npmjs.com/package/@obinexuscomputing/aerossr)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Features
+A high-performance, TypeScript-first server-side rendering (SSR) framework for Node.js applications.
 
-- Fast and efficient server-side rendering
-- Built-in static file serving with caching and compression
-- Flexible middleware system
-- TypeScript support with full type definitions
-- Customizable routing
-- CORS handling
-- Error management
-- Extensible logging
-- Cache management
-- ETag support
+## Key Features
+
+- 🚀 High-performance SSR with caching and compression
+- 📁 Advanced static file serving with ETag support
+- 🔌 Flexible middleware system with async/await
+- 🔒 Built-in security features (CORS, rate limiting)
+- 📝 Comprehensive TypeScript definitions
+- 🛠️ CLI tools for project setup and management
+- 📊 Built-in logging and monitoring
+- 💾 Configurable caching strategies
 
 ## Installation
 
 ```bash
+# Using npm
 npm install @obinexuscomputing/aerossr
+
+# Using yarn
+yarn add @obinexuscomputing/aerossr
+
+# Using pnpm
+pnpm add @obinexuscomputing/aerossr
 ```
 
 ## Quick Start
@@ -26,176 +34,122 @@ npm install @obinexuscomputing/aerossr
 ```typescript
 import { AeroSSR, StaticFileMiddleware } from '@obinexuscomputing/aerossr';
 
-// Create server instance
 const app = new AeroSSR({
   port: 3000,
   compression: true,
   logFilePath: 'logs/server.log'
 });
 
-// Add static file middleware
+// Static files
 app.use(new StaticFileMiddleware({
   root: 'public',
-  maxAge: 86400
+  maxAge: 86400,
+  compression: true
 }).middleware());
 
-// Add routes
-app.route('/api/hello', async (req, res) => {
+// API routes
+app.route('/api/data', async (req, res) => {
   res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ message: 'Hello World!' }));
+  res.end(JSON.stringify({ status: 'success' }));
 });
 
-// Start server
-app.start().then(() => {
-  console.log('Server running on port 3000');
-});
+await app.start();
 ```
 
-## Configuration
+## CLI Usage
 
-The `AeroSSR` constructor accepts the following configuration options:
+```bash
+# Initialize new project
+npx aerossr init -d ./my-project
 
-```typescript
-interface AeroSSRConfig {
-  port?: number;              // Default: 3000
-  cacheMaxAge?: number;       // Default: 3600
-  corsOrigins?: string;       // Default: '*'
-  compression?: boolean;      // Default: true
-  logFilePath?: string;       // Default: null
-  bundleCache?: CacheStore<string>;
-  templateCache?: CacheStore<string>;
-  defaultMeta?: {
-    title?: string;
-    description?: string;
-    charset?: string;
-    viewport?: string;
-  };
-}
+# Add middleware
+npx aerossr middleware -n auth -p ./middleware/auth.js
+
+# Configure settings
+npx aerossr config -u port=4000
 ```
 
-## Static File Serving
+## Advanced Features
 
-The `StaticFileMiddleware` provides robust static file serving capabilities:
-
+### Middleware System
 ```typescript
-app.use(new StaticFileMiddleware({
-  root: 'public',
-  maxAge: 86400,              // 1 day cache
-  index: ['index.html'],      // Default files
-  dotFiles: 'ignore',         // Handle dot files
-  compression: true,          // Enable compression
-  etag: true                  // Enable ETags
-}).middleware());
-```
-
-## Middleware Support
-
-AeroSSR supports middleware for request processing:
-
-```typescript
-// Logging middleware
+// Custom middleware
 app.use(async (req, res, next) => {
-  const start = Date.now();
+  const start = performance.now();
   await next();
-  console.log(`${req.method} ${req.url} - ${Date.now() - start}ms`);
-});
-
-// Error handling middleware
-app.use(async (req, res, next) => {
-  try {
-    await next();
-  } catch (error) {
-    console.error(error);
-    res.writeHead(500);
-    res.end('Internal Server Error');
-  }
+  console.log(`${req.method} ${req.url} - ${performance.now() - start}ms`);
 });
 ```
 
-## Routing
-
-Define routes with support for async handlers:
-
+### Security Features
 ```typescript
-app.route('/api/users', async (req, res) => {
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ users: [] }));
-});
+import { SecurityMiddleware } from '@obinexuscomputing/aerossr';
+
+app.use(SecurityMiddleware.csrfProtection);
+app.use(SecurityMiddleware.rateLimit(100, 60000)); // 100 requests per minute
 ```
 
-## Caching
-
-Implement caching strategies using the built-in cache store:
-
+### Caching Strategies
 ```typescript
 import { createCache } from '@obinexuscomputing/aerossr';
 
 const cache = createCache<string>();
-cache.set('key', 'value');
-const value = cache.get('key');
-```
-
-## Error Handling
-
-Custom error pages and error handling:
-
-```typescript
-import { generateErrorPage } from '@obinexuscomputing/aerossr';
-
 app.use(async (req, res, next) => {
-  try {
-    await next();
-  } catch (error) {
-    const errorPage = generateErrorPage(500, error.message);
-    res.writeHead(500, { 'Content-Type': 'text/html' });
-    res.end(errorPage);
-  }
+  const key = req.url;
+  const cached = cache.get(key);
+  if (cached) return res.end(cached);
+  await next();
 });
 ```
 
-## Logging
-
-Configure custom logging:
-
+### Static File Configuration
 ```typescript
-import { Logger } from '@obinexuscomputing/aerossr';
-
-const logger = new Logger({
-  logFilePath: 'logs/custom.log'
-});
+app.use(new StaticFileMiddleware({
+  root: 'public',
+  maxAge: 86400,
+  index: ['index.html'],
+  dotFiles: 'ignore',
+  compression: true,
+  etag: true
+}).middleware());
 ```
 
-## Best Practices
+## Performance Optimization
 
-1. Add middleware in the correct order - logging first, then authentication, then route handlers
-2. Implement error handling middleware to catch and process errors
-3. Use caching for static files and frequently accessed data
-4. Enable compression for text-based responses
-5. Implement proper security middleware for authentication
-6. Use the built-in logger for debugging and monitoring
+- Built-in gzip compression
+- Automatic ETag generation
+- Configurable caching headers
+- Static file optimization
+- Memory-efficient streaming
 
 ## TypeScript Support
 
-AeroSSR is written in TypeScript and provides comprehensive type definitions:
+Full TypeScript support with comprehensive type definitions:
 
 ```typescript
 import type {
   RouteHandler,
   Middleware,
   StaticFileOptions,
-  LoggerOptions
+  LoggerOptions,
+  CacheStore
 } from '@obinexuscomputing/aerossr';
 ```
 
-## Contributing
-Please see [./docs/CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on contributing to AeroSSR.
-See the github repo and support me with buy me a coffee.
+## Documentation
+
+- [API Reference](./docs/API.md)
+- [Configuration Guide](./docs/CONFIG.md)
+- [Security Best Practices](./docs/SECURITY.md)
+- [Contributing Guidelines](./CONTRIBUTING.md)
+
+## Support
+
+- [GitHub Issues](https://github.com/obinexuscomputing/aerossr/issues)
+- [GitLab Issues](https://gitlab.com/obinexuscomputing/aerossr/issues)
+- [Buy Me a Coffee](https://buymeacoffee.com/obinexuscomputing)
+- [Discord Community](https://discord.gg/obinexuscomputing)
 
 ## License
 
-## Support and Community
-- [Buy Me a Coffee](https://buymeacoffee.com/obinexuscomputing)
-- [GitLab](https://gitlab.com/obinexuscomputng)
-- [GitHub](https://github.com/obinexuscomputing)
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT © [OBINexus Computing](https://github.com/obinexuscomputing)
