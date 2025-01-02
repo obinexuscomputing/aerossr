@@ -4,27 +4,57 @@ import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
 import alias from '@rollup/plugin-alias';
+import copy from 'rollup-plugin-copy';
 import { resolve as _resolve } from 'path';
 import { readFileSync, chmodSync } from 'fs';
 
 const pkg = JSON.parse(readFileSync('./package.json'));
 const isProduction = process.env.NODE_ENV === 'production';
 
+const banner = `/*!
+ * @obinexuscomputing/aerossr v${pkg.version}
+ * (c) ${new Date().getFullYear()} OBINexus Computing
+ * Released under the ISC License
+ */`;
+
+const footer = `/*!
+ * End of bundle for @obinexuscomputing/aerossr
+ */`;
+
 const aliasEntries = {
   entries: [
     { find: /^@\/(.*)/, replacement: _resolve(process.cwd(), 'src/$1') },
-    { find: '@', replacement: _resolve(process.cwd(), 'src') }
-  ]
+    { find: '@', replacement: _resolve(process.cwd(), 'src') },
+  ],
 };
 
 const external = [
-  'path', 'fs', 'http', 'crypto', 'zlib', 'url', 'stream', 'os', 'util', 'events', 'buffer',
+  'path',
+  'fs',
+  'http',
+  'crypto',
+  'zlib',
+  'url',
+  'stream',
+  'os',
+  'util',
+  'events',
+  'buffer',
   'commander',
   ...Object.keys(pkg.dependencies || {}),
-  ...Object.keys(pkg.peerDependencies || {})
+  ...Object.keys(pkg.peerDependencies || {}),
 ];
 
+const basePlugins = [
+  alias(aliasEntries),
+  resolve(),
+  commonjs(),
+  json(),
+  isProduction && terser(),
+].filter(Boolean);
+
 const configs = [
+  // ESM Build
   {
     input: 'src/index.ts',
     output: {
@@ -32,61 +62,56 @@ const configs = [
       format: 'esm',
       sourcemap: true,
       preserveModules: true,
-      preserveModulesRoot: 'src'
+      preserveModulesRoot: 'src',
+      banner,
+      footer,
     },
     external,
     plugins: [
-      alias(aliasEntries),
+      ...basePlugins,
       typescript({
         tsconfig: './tsconfig.json',
         outDir: 'dist/esm',
-        outputToFilesystem:false
-
+        outputToFilesystem: false,
       }),
-      resolve(),
-      commonjs(),
-      json(),
-      isProduction && terser()
-    ].filter(Boolean)
+    ],
   },
+  // CJS Build
   {
-    input: 'src/index.ts', 
+    input: 'src/index.ts',
     output: {
       dir: 'dist/cjs',
       format: 'cjs',
-      exports: 'named',
       sourcemap: true,
       preserveModules: true,
-      preserveModulesRoot: 'src'
+      preserveModulesRoot: 'src',
+      exports: 'named',
+      banner,
+      footer,
     },
     external,
     plugins: [
-      alias(aliasEntries),
+      ...basePlugins,
       typescript({
         tsconfig: './tsconfig.json',
         outDir: 'dist/cjs',
-        outputToFilesystem:false
+        outputToFilesystem: false,
       }),
-      resolve(),
-      commonjs(),
-      json(),
-      isProduction && terser()
-    ].filter(Boolean)
+    ],
   },
+  // CLI Build
   {
     input: 'src/cli/index.ts',
-    
     output: {
-      file: 'dist/cli/index.js', // Single output file for CLI
-      format: 'commonjs',
-      banner: '#!/usr/bin/env node',
+      file: 'dist/cli/index.js',
+      format: 'cjs',
       sourcemap: true,
-      exports: 'named',
-
+      banner: '#!/usr/bin/env node\n' + banner,
+      footer,
     },
     external,
     plugins: [
-      alias(aliasEntries),
+      ...basePlugins,
       typescript({
         tsconfig: './tsconfig.json',
         declaration: true,
@@ -95,19 +120,23 @@ const configs = [
         outputToFilesystem: true,
         outDir: 'dist/cli',
       }),
-      resolve(),
-      commonjs(),
-      json(),
-      isProduction && terser(),
       {
         name: 'make-executable',
         writeBundle() {
           chmodSync('dist/cli/index.js', 0o755);
-        }
-      }
-    ].filter(Boolean)
-  }
-  
+        },
+      },
+    ],
+  },
+  // Copy package.json
+  {
+    plugins: [
+      copy({
+        targets: [{ src: './package.json', dest: 'dist' }],
+        hook: 'writeBundle',
+      }),
+    ],
+  },
 ];
 
 export default configs;
