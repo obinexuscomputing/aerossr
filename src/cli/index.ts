@@ -3,6 +3,7 @@ import { AeroSSR } from '../';
 import { initializeSSR, configureMiddleware, MiddlewareConfig } from './commands';
 import { readFileSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
+import { MiddlewareOptions } from '@/types/AeroSSR';
 
 interface AeroConfig {
   port: number;

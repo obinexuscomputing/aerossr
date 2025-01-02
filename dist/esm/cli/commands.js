@@ -5,18 +5,13 @@ import { StaticFileMiddleware } from '../middlewares/StaticFileMiddleware.js';
 import 'fs/promises';
 import 'crypto';
 
-/**
- * Initialize a new AeroSSR project in the specified directory
- */
 async function initializeSSR(directory) {
     const projectRoot = path__default.resolve(directory);
     const publicDir = path__default.join(projectRoot, 'public');
     const logDir = path__default.join(projectRoot, 'logs');
     const logFilePath = path__default.join(logDir, 'server.log');
-    // Ensure directories exist
     await promises.mkdir(publicDir, { recursive: true });
     await promises.mkdir(logDir, { recursive: true });
-    // Create a default index.html file
     const indexHtmlPath = path__default.join(publicDir, 'index.html');
     const defaultHtmlContent = `
 <!DOCTYPE html>
@@ -30,32 +25,24 @@ async function initializeSSR(directory) {
     <h1>Welcome to AeroSSR</h1>
     <div id="app"></div>
 </body>
-</html>
-`;
+</html>`;
     await promises.writeFile(indexHtmlPath, defaultHtmlContent, 'utf-8');
     await promises.writeFile(logFilePath, '', 'utf-8');
-    console.log(`Initialized a new AeroSSR project in ${projectRoot}`);
 }
-/**
- * Create a logging middleware
- */
 function createLoggingMiddleware() {
-    return async (_req, _res, next) => {
+    return async (req, res, next) => {
         const start = Date.now();
         try {
             await next();
         }
         finally {
             const duration = Date.now() - start;
-            console.log(`${_req.method} ${_req.url} - ${duration}ms`);
+            console.log(`${req.method} ${req.url} - ${duration}ms`);
         }
     };
 }
-/**
- * Create an error handling middleware
- */
 function createErrorMiddleware() {
-    return async (_req, res, next) => {
+    return async (req, res, next) => {
         try {
             await next();
         }
@@ -68,11 +55,10 @@ function createErrorMiddleware() {
         }
     };
 }
-/**
- * Configure middleware for an AeroSSR application
- */
-function configureMiddleware(app, name, customPath) {
-    // Add static file middleware
+async function configureMiddleware(app, config) {
+    if (!app) {
+        throw new Error('AeroSSR instance is required');
+    }
     const staticMiddleware = new StaticFileMiddleware({
         root: 'public',
         maxAge: 86400,
@@ -82,14 +68,19 @@ function configureMiddleware(app, name, customPath) {
         etag: true,
     });
     app.use(staticMiddleware.middleware());
-    // Add logging middleware
     app.use(createLoggingMiddleware());
-    // Add error handling middleware
     app.use(createErrorMiddleware());
-    // Add custom middleware if provided
-    if (name && customPath) {
-        const customMiddleware = require(customPath);
-        app.use(customMiddleware[name]);
+    {
+        try {
+            const customMiddleware = require(config.path);
+            if (typeof customMiddleware[config.name] !== 'function') {
+                throw new Error(`Middleware ${config.name} not found in ${config.path}`);
+            }
+            app.use(customMiddleware[config.name](config.options));
+        }
+        catch (error) {
+            throw new Error(`Failed to configure middleware ${config.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
     }
 }
 

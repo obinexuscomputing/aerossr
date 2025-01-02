@@ -12,8 +12,13 @@ var commands = require('./cli/commands.js');
 const CONFIG_FILE = 'aerossr.config.json';
 function loadConfig() {
     try {
-        const config = require$$3.readFileSync(CONFIG_FILE, 'utf-8');
-        return JSON.parse(config);
+        const config = JSON.parse(require$$3.readFileSync(CONFIG_FILE, 'utf-8'));
+        return {
+            port: config.port ?? 3000,
+            logPath: config.logPath ?? 'logs/server.log',
+            middleware: config.middleware ?? [],
+            ...config
+        };
     }
     catch {
         return {
@@ -27,100 +32,79 @@ function saveConfig(config) {
     require$$3.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf-8');
 }
 const program = new index.commanderExports.Command();
-// Define CLI version and description
 program
     .version('1.0.0')
     .description('AeroSSR CLI for managing server-side rendering configurations');
-// Command to initialize a new SSR project
 program
     .command('init')
     .description('Initialize a new AeroSSR project')
-    .option('-d, --directory <path>', 'Specify the directory for the project', '.')
+    .option('-d, --directory <path>', 'Project directory path', '.')
     .action(async (options) => {
     try {
-        const directory = options.directory;
+        const directory = path.resolve(options.directory);
         await commands.initializeSSR(directory);
-        // Initialize config file
         const config = {
             port: 3000,
             logPath: path.join(directory, 'logs/server.log'),
             middleware: []
         };
         saveConfig(config);
-        console.log(`Initialized a new AeroSSR project in ${directory}`);
     }
     catch (error) {
-        console.error('Error initializing project:', error instanceof Error ? error.message : String(error));
+        console.error('Initialization failed:', error instanceof Error ? error.message : String(error));
         process.exit(1);
     }
 });
-// Command to configure middlewares
 program
     .command('middleware')
-    .description('Configure middlewares for AeroSSR')
-    .option('-n, --name <name>', 'Specify middleware name')
-    .option('-p, --path <path>', 'Specify middleware path')
+    .description('Configure AeroSSR middleware')
+    .requiredOption('-n, --name <name>', 'Middleware name')
+    .requiredOption('-p, --path <path>', 'Middleware path')
+    .option('-o, --options <json>', 'Middleware options as JSON')
     .action(async (options) => {
     try {
-        const { name, path } = options;
-        if (!name || !path) {
-            console.error('Both middleware name and path are required.');
-            process.exit(1);
-        }
         const config = loadConfig();
-        // Create AeroSSR instance with loaded config
         const app = new AeroSSR.AeroSSR({
             port: config.port,
-            logFilePath: config.logPath
+            logFilePath: config.logPath,
         });
-        // Configure middleware
-        await commands.configureMiddleware(app, name, path);
-        // Update config
-        config.middleware.push({ name, path });
+        const middlewareConfig = {
+            name: options.name,
+            path: path.resolve(options.path),
+            options: options.options ? JSON.parse(options.options) : undefined
+        };
+        await commands.configureMiddleware(app, middlewareConfig);
+        config.middleware.push(middlewareConfig);
         saveConfig(config);
     }
     catch (error) {
-        console.error('Error configuring middleware:', error instanceof Error ? error.message : String(error));
+        console.error('Middleware configuration failed:', error instanceof Error ? error.message : String(error));
         process.exit(1);
     }
 });
-// Command to view/update configuration
 program
     .command('config')
-    .description('View or update AeroSSR configuration')
-    .option('-u, --update <key=value>', 'Update a configuration key-value pair')
+    .description('Manage AeroSSR configuration')
+    .option('-u, --update <key=value>', 'Update configuration')
     .action((options) => {
     try {
         const config = loadConfig();
         if (options.update) {
             const [key, value] = options.update.split('=');
             if (!key || value === undefined) {
-                console.error('Invalid key-value pair for configuration update.');
-                process.exit(1);
+                throw new Error('Invalid key-value format');
             }
-            // Convert value to number if possible
-            const numValue = Number(value);
-            config[key] = isNaN(numValue) ? value : numValue;
+            config[key] = isNaN(Number(value)) ? value : Number(value);
             saveConfig(config);
-            console.log(`Configuration updated: ${key} = ${value}`);
         }
         else {
-            console.log('Current configuration:');
             console.log(JSON.stringify(config, null, 2));
         }
     }
     catch (error) {
-        console.error('Error managing configuration:', error instanceof Error ? error.message : String(error));
+        console.error('Configuration failed:', error instanceof Error ? error.message : String(error));
         process.exit(1);
     }
 });
-// Add help command
-program
-    .command('help')
-    .description('Display help information')
-    .action(() => {
-    program.outputHelp();
-});
-// Parse the CLI arguments
 program.parse(process.argv);
 //# sourceMappingURL=cli.js.map

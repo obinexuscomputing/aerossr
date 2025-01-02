@@ -24,6 +24,10 @@ class AeroSSR {
             ? { origins: config.corsOrigins }
             : config.corsOrigins || { origins: '*' };
         this.config = {
+            loggerOptions: config.loggerOptions || {},
+            errorHandler: config.errorHandler || handleError,
+            staticFileHandler: config.staticFileHandler || this.handleDefaultRequest.bind(this),
+            bundleHandler: config.bundleHandler || this.handleDistRequest.bind(this),
             port: config.port || 3000,
             cacheMaxAge: config.cacheMaxAge || 3600,
             corsOrigins: corsOptions,
@@ -90,7 +94,7 @@ class AeroSSR {
                 await this.handleDistRequest(req, res, parsedUrl.query);
                 return;
             }
-            await this.handleDefaultRequest(req, res, pathname);
+            await this.handleDefaultRequest(req, res);
         }
         catch (error) {
             await handleError(error instanceof Error ? error : new Error('Unknown error'), req, res);
@@ -121,7 +125,9 @@ class AeroSSR {
             res.end(bundle);
         }
     }
-    async handleDefaultRequest(req, res, pathname) {
+    async handleDefaultRequest(req, res) {
+        const parsedUrl = parse(req.url || '', true);
+        const pathname = parsedUrl.pathname || '/';
         const htmlPath = join(__dirname, 'index.html');
         let html = await promises.readFile(htmlPath, 'utf-8');
         const meta = {
