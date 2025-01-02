@@ -8,6 +8,7 @@
       "resolveJsonModule": true,
       "baseUrl": ".",
       "rootDir": "src",
+      "outDir": "./dist/types",
       "paths": {
         "@/*": ["src/*"],
         "@utils/*": ["src/utils/*"],
@@ -15,13 +16,9 @@
       },
       "declaration": true,
       "declarationMap": true,
-      "sourceMap": true,
-      "strict": true,
-      "esModuleInterop": true,
-      "allowSyntheticDefaultImports": true,
-      "forceConsistentCasingInFileNames": true
+      "emitDeclarationOnly": true
     },
-    "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],
-    "exclude": ["node_modules", "dist"]
+    "include": ["src/**/*.ts"],
+    "exclude": ["node_modules", "dist", "**/*.test.ts"]
   }
   

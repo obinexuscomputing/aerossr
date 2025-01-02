@@ -3,7 +3,6 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
-import { dts } from 'rollup-plugin-dts';
 import alias from '@rollup/plugin-alias';
 import { resolve as _resolve } from 'path';
 import { readFileSync } from 'fs';
@@ -50,7 +49,7 @@ export default [
     plugins: [
       alias(aliasEntries),
       typescript({
-        tsconfig: './tsconfig.build.json',
+        tsconfig: './tsconfig.json',
         sourceMap: true
       }),
       resolve({ 
@@ -78,7 +77,7 @@ export default [
     plugins: [
       alias(aliasEntries),
       typescript({
-        tsconfig: './tsconfig.build.json',
+        tsconfig: './tsconfig.json',
         sourceMap: true
       }),
       resolve({ 
@@ -89,20 +88,5 @@ export default [
       json(),
       isProduction && terser()
     ].filter(Boolean)
-  },
-
-  // Type Definitions
-  {
-    input: inputFiles,
-    output: {
-      dir: 'dist/types',
-      format: 'esm',
-      preserveModules: true,
-      preserveModulesRoot: 'src'
-    },
-    plugins: [
-      alias(aliasEntries),
-      dts()
-    ]
   }
 ];
