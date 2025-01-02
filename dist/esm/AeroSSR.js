@@ -18,7 +18,7 @@ class AeroSSR {
     logger;
     server;
     routes;
-    middlewares = [];
+    middlewares;
     constructor(config = {}) {
         const corsOptions = typeof config.corsOrigins === 'string'
             ? { origins: config.corsOrigins }
@@ -58,18 +58,24 @@ class AeroSSR {
         if (index >= this.middlewares.length) {
             return;
         }
-        const middleware = this.middlewares[index];
-        if (middleware) {
-            await middleware(req, res, () => this.executeMiddlewares(req, res, index + 1));
-        }
+        const chain = [...this.middlewares];
+        let currentIndex = index;
+        const next = async () => {
+            const middleware = chain[currentIndex];
+            if (middleware) {
+                currentIndex++;
+                await middleware(req, res, next);
+            }
+        };
+        await next();
     }
-    async handleRequest(_req, res) {
+    async handleRequest(req, res) {
         try {
-            this.logger.logRequest(_req);
-            await this.executeMiddlewares(_req, res);
-            const parsedUrl = parse(_req.url || '', true);
+            this.logger.log(`Request received: ${req.method} ${req.url}`);
+            await this.executeMiddlewares(req, res);
+            const parsedUrl = parse(req.url || '', true);
             const pathname = parsedUrl.pathname || '/';
-            if (_req.method === 'OPTIONS') {
+            if (req.method === 'OPTIONS') {
                 setCorsHeaders(res, this.config.corsOrigins);
                 res.writeHead(204);
                 res.end();
@@ -77,25 +83,25 @@ class AeroSSR {
             }
             const routeHandler = this.routes.get(pathname);
             if (routeHandler) {
-                await routeHandler(_req, res);
+                await routeHandler(req, res);
                 return;
             }
             if (pathname === '/dist') {
-                await this.handleDistRequest(_req, res, parsedUrl.query);
+                await this.handleDistRequest(req, res, parsedUrl.query);
                 return;
             }
-            await this.handleDefaultRequest(_req, res, pathname);
+            await this.handleDefaultRequest(req, res, pathname);
         }
         catch (error) {
-            await handleError(error instanceof Error ? error : new Error('Unknown error'), _req, res);
+            await handleError(error instanceof Error ? error : new Error('Unknown error'), req, res);
         }
     }
-    async handleDistRequest(_req, res, query) {
+    async handleDistRequest(req, res, query) {
         const projectPath = query.projectPath || './';
         const entryPoint = query.entryPoint || 'main.js';
         const bundle = await generateBundle(projectPath, entryPoint);
         const etag = generateETag(bundle);
-        if (_req.headers['if-none-match'] === etag) {
+        if (req.headers['if-none-match'] === etag) {
             res.writeHead(304);
             res.end();
             return;
@@ -106,7 +112,7 @@ class AeroSSR {
             'Cache-Control': `public, max-age=${this.config.cacheMaxAge}`,
             'ETag': etag,
         });
-        if (this.config.compression && _req.headers['accept-encoding']?.includes('gzip')) {
+        if (this.config.compression && req.headers['accept-encoding']?.includes('gzip')) {
             const compressed = await gzipAsync(bundle);
             res.setHeader('Content-Encoding', 'gzip');
             res.end(compressed);
@@ -115,7 +121,7 @@ class AeroSSR {
             res.end(bundle);
         }
     }
-    async handleDefaultRequest(_req, res, pathname) {
+    async handleDefaultRequest(req, res, pathname) {
         const htmlPath = join(__dirname, 'index.html');
         let html = await promises.readFile(htmlPath, 'utf-8');
         const meta = {
@@ -133,7 +139,7 @@ class AeroSSR {
         return new Promise((resolve) => {
             this.server = createServer((req, res) => this.handleRequest(req, res));
             this.server.listen(this.config.port, () => {
-                this.logger.log(`AeroSSR server running on port ${this.config.port}`);
+                this.logger.log(`Server is running on port ${this.config.port}`);
                 resolve(this.server);
             });
         });
@@ -149,6 +155,12 @@ class AeroSSR {
             });
         }
         return Promise.resolve();
+    }
+    listen(port) {
+        this.config.port = port;
+        this.start().catch(error => {
+            this.logger.log(`Failed to start server: ${error.message}`);
+        });
     }
 }
 

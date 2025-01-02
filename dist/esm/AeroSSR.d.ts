@@ -7,7 +7,7 @@ export declare class AeroSSR {
     readonly logger: Logger;
     server: Server | null;
     readonly routes: Map<string, RouteHandler>;
-    readonly middlewares: Middleware[];
+    private readonly middlewares;
     constructor(config?: AeroSSRConfig);
     use(middleware: Middleware): void;
     route(path: string, handler: RouteHandler): void;
@@ -18,6 +18,7 @@ export declare class AeroSSR {
     private handleDefaultRequest;
     start(): Promise<Server>;
     stop(): Promise<void>;
+    listen(port: number): void;
 }
 export default AeroSSR;
 //# sourceMappingURL=AeroSSR.d.ts.map
