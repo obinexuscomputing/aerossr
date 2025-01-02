@@ -1,9 +1,12 @@
-interface CacheItem<T> {
+export interface CacheItem<T> {
   value: T;
   expires?: number | undefined;
 }
-
-interface CacheStore<T> {
+export interface CacheOptions {
+  ttl?: number;
+  maxSize?: number;
+}
+export interface CacheStore<T> {
   get(key: string): T | undefined;
   set(key: string, value: T, itemTtl?: number, ttl?: number): void;
   clear(): void;
