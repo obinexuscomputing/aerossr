@@ -39,7 +39,9 @@ const configs = [
       alias(aliasEntries),
       typescript({
         tsconfig: './tsconfig.json',
-        outDir: 'dist/esm'
+        outDir: 'dist/esm',
+        outputToFilesystem:false
+
       }),
       resolve(),
       commonjs(),
@@ -62,7 +64,9 @@ const configs = [
       alias(aliasEntries),
       typescript({
         tsconfig: './tsconfig.json',
-        outDir: 'dist/cjs'
+        outDir: 'dist/cjs',
+        outputToFilesystem:false
+
       }),
       resolve(),
       commonjs(),
@@ -89,7 +93,8 @@ const configs = [
         outDir: 'dist/cli',
         declaration: true,
         declarationMap: true,
-        sourceMap: true
+        sourceMap: true,
+        outputToFilesystem:false
       }),
       resolve(),
       commonjs(),
