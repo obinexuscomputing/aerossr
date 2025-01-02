@@ -120,7 +120,7 @@ const configs = [
       declarationMap: true,
       sourceMap: true,
       outputToFilesystem: true,
-      outDir: 'dist/cli/bin',
+      outDir: 'dist/cli/',
     }),
     
     {
