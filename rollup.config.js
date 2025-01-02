@@ -52,7 +52,7 @@ export default [
         tsconfig: './tsconfig.build.json',
         sourceMap: true,
         outDir: 'dist/esm',
-        sourceMap: true
+        outputToFilesystem: true // Explicitly set to true
       }),
       resolve({ 
         preferBuiltins: true,
@@ -82,7 +82,7 @@ export default [
         tsconfig: './tsconfig.json',
         sourceMap: true,
         outDir: 'dist/cjs',
-        sourceMap: true
+        outputToFilesystem: true // Explicitly set to true
       }),
       resolve({ 
         preferBuiltins: true,
