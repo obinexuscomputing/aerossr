@@ -27,7 +27,7 @@
   "module": "./dist/esm/index.js",
   "types": "./dist/types/index.d.ts",
   "scripts": {
-    "build": "npm run clean && rollup -c --bundleConfigAsCjs && node scripts/make-cli-executable.js",
+    "build": "npm run clean && rollup -c --bundleConfigAsCjs && node scripts/make-cli-executable.js && npm run link:internal",
     "clean": "rimraf dist coverage",
     "lint": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\" --fix",
@@ -35,13 +35,13 @@
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
-    "prepublishOnly": "npm run test:ci && npm run build && npm link",
+    "prepublishOnly": "npm run test:ci && npm run build && npm run lint:fix",
     "prepare": "npm run build ",
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags",
 "postbuild": "node -e \"require('fs').chmodSync('dist/cli/index.js', '755')\" ",
-"link": "npm link"
+"link:internal": "npm link @obinexuscomputing/aerossr"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
