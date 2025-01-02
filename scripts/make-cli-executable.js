@@ -1,7 +1,7 @@
 import { chmodSync } from 'fs';
 import { join } from 'path';
 
-const cliPath = join(__dirname, '../dist/cli/bin/index.cjs');
+const cliPath = join(process.cwd(), '../dist/cli/bin/index.cjs');
 
 try {
   chmodSync(cliPath, 0o755);
