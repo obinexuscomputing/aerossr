@@ -1,7 +1,7 @@
 'use strict';
 
-var fs = require('fs/promises');
-var require$$3 = require('fs');
+var fs$1 = require('fs/promises');
+var fs = require('fs');
 var path = require('path');
 
 function _interopNamespaceDefault(e) {
@@ -21,7 +21,7 @@ function _interopNamespaceDefault(e) {
     return Object.freeze(n);
 }
 
-var fs__namespace = /*#__PURE__*/_interopNamespaceDefault(fs);
+var fs__namespace = /*#__PURE__*/_interopNamespaceDefault(fs$1);
 
 class Logger {
     logFilePath;
@@ -43,8 +43,8 @@ class Logger {
     initializeLogFile() {
         try {
             const logDir = path.dirname(this.logFilePath);
-            if (!require$$3.existsSync(logDir)) {
-                require$$3.mkdirSync(logDir, { recursive: true });
+            if (!fs.existsSync(logDir)) {
+                fs.mkdirSync(logDir, { recursive: true });
             }
         }
         catch (error) {
@@ -85,7 +85,7 @@ class Logger {
         this.log(logMessage);
     }
     async clear() {
-        if (this.logFilePath && require$$3.existsSync(this.logFilePath)) {
+        if (this.logFilePath && fs.existsSync(this.logFilePath)) {
             try {
                 await fs__namespace.writeFile(this.logFilePath, '', 'utf-8');
             }

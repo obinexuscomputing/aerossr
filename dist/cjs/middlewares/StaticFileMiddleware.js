@@ -1,9 +1,9 @@
 'use strict';
 
-var require$$3 = require('fs');
-var fs = require('fs/promises');
+var fs = require('fs');
+var fs$1 = require('fs/promises');
 var path = require('path');
-var require$$4 = require('util');
+var util = require('util');
 var zlib = require('zlib');
 var etag = require('../utils/etag.js');
 
@@ -26,7 +26,7 @@ function _interopNamespaceDefault(e) {
 
 var path__namespace = /*#__PURE__*/_interopNamespaceDefault(path);
 
-const gzipAsync = require$$4.promisify(zlib.gzip);
+const gzipAsync = util.promisify(zlib.gzip);
 class StaticFileMiddleware {
     root;
     maxAge;
@@ -111,13 +111,13 @@ class StaticFileMiddleware {
                 res.writeHead(200, headers);
                 // Use streaming for large files
                 if (stats.size > 1024 * 1024) { // 1MB threshold
-                    const stream = require$$3.createReadStream(filepath).pipe(zlib.createGzip());
+                    const stream = fs.createReadStream(filepath).pipe(zlib.createGzip());
                     stream.pipe(res);
                     return;
                 }
                 else {
                     // Use buffer compression for smaller files
-                    const content = await fs.readFile(filepath);
+                    const content = await fs$1.readFile(filepath);
                     const compressed = await gzipAsync(content);
                     res.end(compressed);
                     return;
@@ -127,10 +127,10 @@ class StaticFileMiddleware {
         // Serve uncompressed
         res.writeHead(200, headers);
         if (stats.size > 1024 * 1024) { // 1MB threshold
-            require$$3.createReadStream(filepath).pipe(res);
+            fs.createReadStream(filepath).pipe(res);
         }
         else {
-            const content = await fs.readFile(filepath);
+            const content = await fs$1.readFile(filepath);
             res.end(content);
         }
     }
@@ -162,12 +162,12 @@ class StaticFileMiddleware {
                     return;
                 }
                 try {
-                    const stats = await fs.stat(fullPath);
+                    const stats = await fs$1.stat(fullPath);
                     if (stats.isDirectory()) {
                         for (const indexFile of this.index) {
                             const indexPath = path__namespace.join(fullPath, indexFile);
                             try {
-                                const indexStats = await fs.stat(indexPath);
+                                const indexStats = await fs$1.stat(indexPath);
                                 if (indexStats.isFile()) {
                                     await this.serveFile(indexPath, indexStats, _req, res);
                                     return;

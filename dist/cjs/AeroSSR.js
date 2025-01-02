@@ -3,11 +3,11 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 var http = require('http');
-var require$$3 = require('fs');
+var fs = require('fs');
 var url = require('url');
 var path = require('path');
 var zlib = require('zlib');
-var require$$4 = require('util');
+var util = require('util');
 var logger = require('./utils/logger.js');
 var cache = require('./utils/cache.js');
 var cors = require('./utils/cors.js');
@@ -16,7 +16,7 @@ var errorHandler = require('./utils/errorHandler.js');
 var html = require('./utils/html.js');
 var bundler = require('./utils/bundler.js');
 
-const gzipAsync = require$$4.promisify(zlib.gzip);
+const gzipAsync = util.promisify(zlib.gzip);
 class AeroSSR {
     config;
     logger;
@@ -133,7 +133,7 @@ class AeroSSR {
         const parsedUrl = url.parse(req.url || '', true);
         const pathname = parsedUrl.pathname || '/';
         const htmlPath = path.join(__dirname, 'index.html');
-        let html$1 = await require$$3.promises.readFile(htmlPath, 'utf-8');
+        let html$1 = await fs.promises.readFile(htmlPath, 'utf-8');
         const meta = {
             title: `Page - ${pathname}`,
             description: `Content for ${pathname}`,
