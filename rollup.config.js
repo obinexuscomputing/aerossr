@@ -103,11 +103,12 @@ const configs = [
 {
   input: 'src/cli/index.ts',
   output: {
+
     format: 'cjs',
     sourcemap: true,
     banner: '#!/usr/bin/env node\n' + banner,
     footer,
-    file: 'dist/cli/bin/index.js', // Ensure this aligns with outDir
+    file: 'dist/cli/bin/index.cjs', // Ensure this aligns with outDir
   },
   
   external,
