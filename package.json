@@ -36,7 +36,7 @@
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
     "prepublishOnly": "npm run test:ci && npm run build",
-    "prepare": "npm run build",
+    "prepare": "npm run build && npm link",
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags",
