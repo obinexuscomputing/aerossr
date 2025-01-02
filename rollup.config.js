@@ -78,8 +78,8 @@ const configs = [
       format: 'commonjs',
       banner: '#!/usr/bin/env node',
       sourcemap: true,
-      preserveModules: true,
-      preserveModulesRoot: 'src/cli'
+      exports: 'named',
+      preserveModules: true
     },
     external,
     plugins: [

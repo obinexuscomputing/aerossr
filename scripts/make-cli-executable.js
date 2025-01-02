@@ -1,5 +1,9 @@
-const fs = require('fs');
-const path = require('path');
+import { chmodSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-const cliPath = path.join(__dirname, '../dist/cli/index.js');
-fs.chmodSync(cliPath, 0o755);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const cliPath = join(__dirname, '../dist/cli/index.js');
+
+chmodSync(cliPath, 0o755);
