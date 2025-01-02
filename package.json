@@ -27,7 +27,7 @@
   "module": "./dist/esm/index.js",
   "types": "./dist/types/index.d.ts",
   "scripts": {
-    "build": "npm run clean && rollup -c --bundleConfigAsCjs && node scripts/make-cli-executable.js && npm run link:package",
+    "build": "npm run clean && rollup -c  && node scripts/make-cli-executable.js && npm run link:package",
     "clean": "rimraf dist coverage",
     "lint": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\" --fix",
