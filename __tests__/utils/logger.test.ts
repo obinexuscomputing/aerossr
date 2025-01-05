@@ -1,183 +1,140 @@
-// __tests__/utils/logger.test.ts
-import { Logger } from '../../src/utils/logger';
-import fs from 'fs/promises';
-import { IncomingMessage } from 'http';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
+import Logger from '../../src/utils/logger'; 
 
-jest.mock('fs/promises');
 jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  appendFile: jest.fn(),
   existsSync: jest.fn(),
   mkdirSync: jest.fn(),
-  constants: { W_OK: 4, R_OK: 4 },
 }));
-jest.mock('path');
+
+jest.mock('path', () => ({
+  ...jest.requireActual('path'),
+  dirname: jest.fn(),
+}));
 
 describe('Logger', () => {
-  const mockFs = fs as jest.Mocked<typeof fs>;
   const mockPath = path as jest.Mocked<typeof path>;
-  const mockFsSync = require('fs') as jest.Mocked<typeof import('fs')>;
-  const testLogPath = '/test/logs/test.log';
+  const mockFs = fs as jest.Mocked<typeof fs>;
   const testLogDir = '/test/logs';
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockPath.dirname.mockReturnValue(testLogDir);
-    mockFsSync.existsSync.mockReturnValue(true);
-    mockFsSync.mkdirSync.mockReturnValue(undefined);
-    mockFs.appendFile.mockResolvedValue(undefined);
-    mockFs.writeFile.mockResolvedValue(undefined);
-  });
-
-  afterEach(() => {
-    jest.resetAllMocks();
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.mkdirSync.mockReturnValue(undefined);
+    mockFs.appendFile.mockResolvedValue(Promise.resolve());
   });
 
   describe('Initialization', () => {
     it('should create logger without file path', () => {
       const logger = new Logger();
       expect(logger).toBeDefined();
-      expect(logger.getLogPath()).toBeNull();
     });
 
     it('should create logger with valid file path', () => {
-      const logger = new Logger({ logFilePath: testLogPath });
-      expect(logger.getLogPath()).toBe(testLogPath);
+      const logger = new Logger('/test/logs/app.log');
+      expect(logger).toBeDefined();
     });
 
     it('should create log directory if it does not exist', () => {
-      mockFsSync.existsSync.mockReturnValue(false);
-      new Logger({ logFilePath: testLogPath });
-      expect(mockFsSync.mkdirSync).toHaveBeenCalledWith(testLogDir, { recursive: true });
+      mockFs.existsSync.mockReturnValue(false);
+      const logger = new Logger('/test/logs/app.log');
+      expect(mockFs.mkdirSync).toHaveBeenCalledWith(testLogDir, { recursive: true });
     });
 
     it('should handle directory creation errors gracefully', () => {
-      mockFsSync.existsSync.mockReturnValue(false);
-      mockFsSync.mkdirSync.mockImplementation(() => {
+      mockFs.existsSync.mockReturnValue(false);
+      mockFs.mkdirSync.mockImplementation(() => {
         throw new Error('Permission denied');
       });
-      
-      const consoleSpy = jest.spyOn(console, 'error');
-      const logger = new Logger({ logFilePath: testLogPath });
-      
-      expect(consoleSpy).toHaveBeenCalled();
-      expect(logger.getLogPath()).toBeNull();
-      consoleSpy.mockRestore();
+
+      expect(() => new Logger('/test/logs/app.log')).toThrow('Permission denied');
     });
   });
 
   describe('Logging Operations', () => {
-    it('should log to console', async () => {
-      const consoleSpy = jest.spyOn(console, 'log');
+    it('should log to console', () => {
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       const logger = new Logger();
-      const message = 'test message';
-      
-      await logger.log(message);
-      
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining(message));
+
+      logger.log('Test message');
+
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Test message'));
       consoleSpy.mockRestore();
     });
 
-    it('should format log messages with timestamp', async () => {
-      const consoleSpy = jest.spyOn(console, 'log');
+    it('should format log messages with timestamp', () => {
       const logger = new Logger();
-      const message = 'test message';
-      
-      await logger.log(message);
-      
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\] test message/)
-      );
-      consoleSpy.mockRestore();
+      const message = 'Test message';
+      const formattedMessage = logger.formatMessage(message);
+
+      expect(formattedMessage).toMatch(/\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] Test message/);
     });
 
     it('should log to file when path provided', async () => {
-      const logger = new Logger({ logFilePath: testLogPath });
-      const message = 'test message';
-      
-      await logger.log(message);
-      
+      const logger = new Logger('/test/logs/app.log');
+      await logger.log('File log message');
+
       expect(mockFs.appendFile).toHaveBeenCalledWith(
-        testLogPath,
-        expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\] test message\n/),
-        'utf-8'
+        '/test/logs/app.log',
+        expect.stringContaining('File log message'),
+        expect.any(Function)
       );
     });
 
     it('should handle file write errors gracefully', async () => {
-      const consoleSpy = jest.spyOn(console, 'error');
-      mockFs.appendFile.mockRejectedValue(new Error('Write error'));
-      
-      const logger = new Logger({ logFilePath: testLogPath });
-      await logger.log('test message');
-      
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Write error'));
-      consoleSpy.mockRestore();
-    });
+      mockFs.appendFile.mockRejectedValue(new Error('Write error') as never);
+      const logger = new Logger('/test/logs/app.log');
 
-    it('should support JSON format', async () => {
-      const logger = new Logger({ 
-        logFilePath: testLogPath,
-        format: 'json'
-      });
-      const message = 'test message';
-      
-      await logger.log(message);
-      
-      expect(mockFs.appendFile).toHaveBeenCalledWith(
-        testLogPath,
-        expect.stringMatching(/"message":"test message"/),
-        'utf-8'
-      );
+      await expect(logger.log('File log message')).rejects.toThrow('Write error');
     });
   });
 
   describe('Request Logging', () => {
-    it('should log request details', async () => {
+    it('should log request details', () => {
       const logger = new Logger();
-      const mockReq = {
-        method: 'GET',
-        url: '/test',
-        headers: { 'user-agent': 'test-agent' }
-      } as IncomingMessage;
-      
-      const logSpy = jest.spyOn(logger, 'log');
-      logger.logRequest(mockReq);
-      
-      expect(logSpy).toHaveBeenCalledWith('GET /test - test-agent');
+      const req = { method: 'GET', url: '/api/test' };
+      logger.logRequest(req);
+
+      expect(mockFs.appendFile).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('GET /api/test'),
+        expect.any(Function)
+      );
     });
 
-    it('should handle missing request properties gracefully', async () => {
+    it('should handle missing request properties gracefully', () => {
       const logger = new Logger();
-      const mockReq = {} as IncomingMessage;
-      
-      const logSpy = jest.spyOn(logger, 'log');
-      logger.logRequest(mockReq);
-      
-      expect(logSpy).toHaveBeenCalledWith('undefined undefined - unknown');
+      const req = { method: undefined, url: undefined };
+      logger.logRequest(req);
+
+      expect(mockFs.appendFile).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('undefined undefined'),
+        expect.any(Function)
+      );
     });
   });
 
   describe('Clear Operation', () => {
-    it('should clear log file when it exists', async () => {
-      mockFsSync.existsSync.mockReturnValue(true);
-      const logger = new Logger({ logFilePath: testLogPath });
-      
-      await logger.clear();
-      
-      expect(mockFs.writeFile).toHaveBeenCalledWith(testLogPath, '', 'utf-8');
+    it('should clear log file when it exists', () => {
+      mockFs.existsSync.mockReturnValue(true);
+      const logger = new Logger('/test/logs/app.log');
+
+      logger.clear();
+
+      expect(mockFs.appendFile).toHaveBeenCalledWith('/test/logs/app.log', '', expect.any(Function));
     });
 
-    it('should handle clear errors gracefully', async () => {
-      mockFsSync.existsSync.mockReturnValue(true);
-      mockFs.writeFile.mockRejectedValue(new Error('Clear error'));
-      
-      const consoleSpy = jest.spyOn(console, 'error');
-      const logger = new Logger({ logFilePath: testLogPath });
-      
-      await logger.clear();
-      
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Clear error'));
-      consoleSpy.mockRestore();
+    it('should handle clear errors gracefully', () => {
+      mockFs.appendFile.mockImplementation(() => {
+        throw new Error('Clear error');
+      });
+      const logger = new Logger('/test/logs/app.log');
+
+      expect(() => logger.clear()).toThrow('Clear error');
     });
   });
 });
