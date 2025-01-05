@@ -48,7 +48,11 @@
     "dist",
     "src",
     "scripts",
-    "bin"
+    "bin",
+    "examples",
+    "README.md",
+    "LICENSE",
+    "docs"
   ],
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
