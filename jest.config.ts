@@ -22,7 +22,7 @@ const config: Config.InitialOptions = {
 
   testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/', '/.rollup/', '/buildcache/'],
   moduleDirectories: ['node_modules', 'src'],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node','test.ts'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node','test'],
 
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
