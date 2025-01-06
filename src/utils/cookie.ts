@@ -1,3 +1,4 @@
+// src/utils/cookie.ts
 export interface CookieOptions {
   domain?: string;
   path?: string;
@@ -7,177 +8,175 @@ export interface CookieOptions {
   maxAge?: number;
 }
 
-// Mock document object for testing environments
-let mockDocument: { cookie: string } | undefined;
+export class CookieManager {
+  private mockDocument?: { cookie: string };
 
-/**
- * Set mock document for testing
- */
-export function __setMockDocument(doc: { cookie: string }): void {
-  mockDocument = doc;
-}
+  constructor() {}
 
-/**
- * Clear mock document
- */
-export function __clearMockDocument(): void {
-  mockDocument = undefined;
-}
-
-/**
- * Check if we're in a browser environment or have a mock document
- */
-function getDocument(): { cookie: string } | null {
-  if (mockDocument) {
-    return mockDocument;
+  /**
+   * Sets mock document for testing
+   */
+  public __setMockDocument(doc: { cookie: string }): void {
+    this.mockDocument = doc;
   }
 
-  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-    return document;
+  /**
+   * Clears mock document
+   */
+  public __clearMockDocument(): void {
+    this.mockDocument = undefined;
   }
 
-  return null;
-}
-
-/**
- * Sets a cookie with the specified name, value and options
- */
-export function setCookie(
-  name: string,
-  value: string,
-  days: number,
-  options: CookieOptions = {}
-): void {
-  const doc = getDocument();
-  if (!doc) return;
-
-  const date = new Date();
-  date.setTime(date.getTime() + Math.max(0, days) * 24 * 60 * 60 * 1000);
-
-  const cookieParts = [];
-
-  // Main cookie part
-  cookieParts.push(`${encodeURIComponent(name)}=${encodeURIComponent(value.trim())}`);
-
-  // Expiration date
-  const expires = date.toUTCString();
-  cookieParts.push(`expires=${expires}`);
-
-  // Path
-  cookieParts.push(`path=${options.path || '/'}`);
-
-  if (options.domain) {
-    cookieParts.push(`domain=${options.domain}`);
+  /**
+   * Gets document object for browser or mock environment
+   */
+  private getDocument(): { cookie: string } | null {
+    if (this.mockDocument) {
+      return this.mockDocument;
+    }
+    
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      return document;
+    }
+    
+    return null;
   }
 
-  if (options.secure) {
-    cookieParts.push('secure');
+  /**
+   * Sets a cookie with the specified name, value and options
+   */
+  public setCookie(
+    name: string,
+    value: string,
+    days: number,
+    options: CookieOptions = {}
+  ): void {
+    const doc = this.getDocument();
+    if (!doc) return;
+
+    const date = new Date();
+    date.setTime(date.getTime() + (Math.max(0, days) * 24 * 60 * 60 * 1000));
+    
+    const cookieParts = [
+      `${encodeURIComponent(name)}=${encodeURIComponent(value.trim())}`,
+      `expires=${date.toUTCString()}`,
+      `path=${options.path || '/'}`
+    ];
+
+    if (options.domain) {
+      cookieParts.push(`domain=${options.domain}`);
+    }
+
+    if (options.secure) {
+      cookieParts.push('secure');
+    }
+
+    if (options.sameSite) {
+      cookieParts.push(`samesite=${options.sameSite}`);
+    }
+
+    if (options.httpOnly) {
+      cookieParts.push('httponly');
+    }
+
+    doc.cookie = cookieParts.join('; ');
   }
 
-  if (options.sameSite) {
-    cookieParts.push(`samesite=${options.sameSite}`);
+  /**
+   * Gets a cookie value by name
+   */
+  public getCookie(name: string): string | null {
+    const doc = this.getDocument();
+    if (!doc) return null;
+
+    const nameEQ = encodeURIComponent(name) + '=';
+    const cookies = doc.cookie.split(';');
+
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.indexOf(nameEQ) === 0) {
+        const value = cookie.substring(nameEQ.length).trim();
+        return decodeURIComponent(value);
+      }
+    }
+
+    return null;
   }
 
-  if (options.httpOnly) {
-    cookieParts.push('httponly');
+  /**
+   * Deletes a cookie by name
+   */
+  public deleteCookie(
+    name: string,
+    options: Omit<CookieOptions, 'maxAge' | 'expires'> = {}
+  ): void {
+    const doc = this.getDocument();
+    if (!doc) return;
+
+    const cookieParts = [
+      `${encodeURIComponent(name)}=`,
+      'expires=Thu, 01 Jan 1970 00:00:00 GMT',
+      `path=${options.path || '/'}`
+    ];
+
+    if (options.domain) {
+      cookieParts.push(`domain=${options.domain}`);
+    }
+
+    if (options.secure) {
+      cookieParts.push('secure');
+    }
+
+    if (options.sameSite) {
+      cookieParts.push(`samesite=${options.sameSite}`);
+    }
+
+    if (options.httpOnly) {
+      cookieParts.push('httponly');
+    }
+
+    doc.cookie = cookieParts.join('; ');
   }
 
-  // Join all parts and set the cookie
-  const cookieString = cookieParts.join('; ');
-  doc.cookie = cookieString;
-}
+  /**
+   * Gets all cookies as a key-value object
+   */
+  public getAllCookies(): Record<string, string> {
+    const doc = this.getDocument();
+    if (!doc) return {};
 
-/**
- * Gets a cookie value by name
- */
-export function getCookie(name: string): string | null {
-  const doc = getDocument();
-  if (!doc) return null;
+    return doc.cookie
+      .split(';')
+      .reduce((cookies: Record<string, string>, cookie) => {
+        const [name, value] = cookie.split('=').map(c => c.trim());
+        if (name && value) {
+          cookies[decodeURIComponent(name)] = decodeURIComponent(value);
+        }
+        return cookies;
+      }, {});
+  }
 
-  const nameEQ = encodeURIComponent(name) + '=';
-  const cookies = doc.cookie.split(';');
+  /**
+   * Checks if cookies are enabled
+   */
+  public areCookiesEnabled(): boolean {
+    const doc = this.getDocument();
+    if (!doc) return false;
 
-  for (let cookie of cookies) {
-    cookie = cookie.trim();
-    if (cookie.indexOf(nameEQ) === 0) {
-      const value = cookie.substring(nameEQ.length).trim();
-      return decodeURIComponent(value);
+    try {
+      const testKey = '__cookie_test__';
+      const testValue = 'test';
+      
+      this.setCookie(testKey, testValue, 1);
+      const result = this.getCookie(testKey) === testValue;
+      this.deleteCookie(testKey);
+      
+      return result;
+    } catch {
+      return false;
     }
   }
-
-  return null;
 }
 
-/**
- * Deletes a cookie by name
- */
-export function deleteCookie(
-  name: string,
-  options: Omit<CookieOptions, 'maxAge' | 'expires'> = {}
-): void {
-  const doc = getDocument();
-  if (!doc) return;
-
-  const cookieParts = [
-    `${encodeURIComponent(name)}=`,
-    'expires=Thu, 01 Jan 1970 00:00:00 GMT',
-    `path=${options.path || '/'}`
-  ];
-
-  if (options.domain) {
-    cookieParts.push(`domain=${options.domain}`);
-  }
-
-  if (options.secure) {
-    cookieParts.push('secure');
-  }
-
-  if (options.sameSite) {
-    cookieParts.push(`samesite=${options.sameSite}`);
-  }
-
-  if (options.httpOnly) {
-    cookieParts.push('httponly');
-  }
-
-  doc.cookie = cookieParts.join('; ');
-}
-
-/**
- * Checks if cookies are enabled
- */
-export function areCookiesEnabled(): boolean {
-  const doc = getDocument();
-  if (!doc) return false;
-
-  try {
-    const testKey = '__cookie_test__';
-    const testValue = 'test';
-
-    setCookie(testKey, testValue, 1);
-    const result = getCookie(testKey) === testValue;
-    deleteCookie(testKey);
-
-    return result;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Gets all cookies as a key-value object
- */
-export function getAllCookies(): Record<string, string> {
-  const doc = getDocument();
-  if (!doc) return {};
-
-  return doc.cookie
-    .split(';')
-    .reduce((cookies: Record<string, string>, cookie) => {
-      const [name, value] = cookie.split('=').map(c => c.trim());
-      if (name && value) {
-        cookies[decodeURIComponent(name)] = decodeURIComponent(value);
-      }
-      return cookies;
-    }, {});
-}
+// Export singleton instance
+export const cookieManager = new CookieManager();
