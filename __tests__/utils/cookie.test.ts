@@ -47,42 +47,40 @@ describe('Cookie Utilities', () => {
   afterEach(() => {
     __clearMockDocument();
   });
-
   describe('setCookie', () => {
     it('should set expiration date correctly', () => {
-      const mockDate = new Date('2025-01-01T00:00:00Z');
-      const nextDay = new Date('2025-01-02T00:00:00Z');
-      
-      // Mock Date constructor and now() method
-      const MockDate = class extends Date {
-        constructor() {
-          super();
-          return mockDate;
-        }
-      };
-      
-      const originalDate = global.Date;
-      global.Date = MockDate as DateConstructor;
-      global.Date.UTC = originalDate.UTC;
-      global.Date.now = () => mockDate.getTime();
-      global.Date.parse = originalDate.parse;
-      Object.setPrototypeOf(global.Date, originalDate);
+        const mockDate = new Date('2025-01-01T00:00:00Z');
+        const nextDay = new Date('2025-01-02T00:00:00Z');
 
-      // Set cookie and verify
-      setCookie('test', 'value', 1);
-      
-      const expectedCookie = `test=value; expires=${nextDay.toUTCString()}; path=/`;
-      const actualCookie = mockDoc.cookie;
-      
-      expect(actualCookie).toContain('test=value');
-      expect(actualCookie).toContain(`expires=${nextDay.toUTCString()}`);
-      expect(actualCookie).toContain('path=/');
+        // Mock Date constructor and now() method
+        const MockDate = class extends Date {
+            constructor() {
+                super();
+                return mockDate;
+            }
+        };
 
-      // Restore Date
-      global.Date = originalDate;
+        const originalDate = global.Date;
+        global.Date = MockDate as DateConstructor;
+        global.Date.UTC = originalDate.UTC;
+        global.Date.now = () => mockDate.getTime();
+        global.Date.parse = originalDate.parse;
+        Object.setPrototypeOf(global.Date, originalDate);
+
+        // Set cookie and verify
+        setCookie('test', 'value', 1);
+
+        const expectedCookie = `test=value; expires=${nextDay.toUTCString()}; path=/`;
+        const actualCookie = mockDoc?.cookie;
+
+        expect(actualCookie).toContain('test=value');
+        expect(actualCookie).toContain(`expires=${nextDay.toUTCString()}`);
+        expect(actualCookie).toContain('path=/');
+
+        // Restore Date
+        global.Date = originalDate;
     });
 });
-
   describe('getCookie', () => {
     it('should retrieve existing cookie value', () => {
       setCookie('test', 'value', 1);

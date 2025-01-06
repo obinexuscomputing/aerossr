@@ -31,11 +31,11 @@ function getDocument(): { cookie: string } | null {
   if (mockDocument) {
     return mockDocument;
   }
-  
+
   if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     return document;
   }
-  
+
   return null;
 }
 
@@ -52,20 +52,19 @@ export function setCookie(
   if (!doc) return;
 
   const date = new Date();
-  date.setTime(date.getTime() + (Math.max(0, days) * 24 * 60 * 60 * 1000));
-  
+  date.setTime(date.getTime() + Math.max(0, days) * 24 * 60 * 60 * 1000);
+
   const cookieParts = [];
-  
+
   // Main cookie part
   cookieParts.push(`${encodeURIComponent(name)}=${encodeURIComponent(value.trim())}`);
-  
+
   // Expiration date
   const expires = date.toUTCString();
   cookieParts.push(`expires=${expires}`);
-  
+
   // Path
   cookieParts.push(`path=${options.path || '/'}`);
-
 
   if (options.domain) {
     cookieParts.push(`domain=${options.domain}`);
@@ -154,11 +153,11 @@ export function areCookiesEnabled(): boolean {
   try {
     const testKey = '__cookie_test__';
     const testValue = 'test';
-    
+
     setCookie(testKey, testValue, 1);
     const result = getCookie(testKey) === testValue;
     deleteCookie(testKey);
-    
+
     return result;
   } catch {
     return false;
