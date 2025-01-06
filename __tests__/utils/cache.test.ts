@@ -1,5 +1,4 @@
-// __tests__/utils/cacheManager.test.ts
-import { CacheManager } from '../../src/utils/cacheManager';
+import { CacheManager } from '../../src/utils/CacheManager';
 
 describe('CacheManager', () => {
   let cache: CacheManager<string>;
