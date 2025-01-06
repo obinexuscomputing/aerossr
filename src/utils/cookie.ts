@@ -52,10 +52,10 @@ export function setCookie(
   if (!doc) return;
 
   const date = new Date();
-  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-
+  date.setTime(date.getTime() + (Math.max(0, days) * 24 * 60 * 60 * 1000));
+  
   const cookieParts = [
-    `${encodeURIComponent(name)}=${encodeURIComponent(value)}`,
+    `${encodeURIComponent(name)}=${encodeURIComponent(value.trim())}`,
     `expires=${date.toUTCString()}`,
     `path=${options.path || '/'}`
   ];
@@ -76,7 +76,9 @@ export function setCookie(
     cookieParts.push('httponly');
   }
 
-  doc.cookie = cookieParts.join('; ');
+  // Join all parts and set the cookie
+  const cookieString = cookieParts.join('; ');
+  doc.cookie = cookieString;
 }
 
 /**
@@ -92,7 +94,8 @@ export function getCookie(name: string): string | null {
   for (let cookie of cookies) {
     cookie = cookie.trim();
     if (cookie.indexOf(nameEQ) === 0) {
-      return decodeURIComponent(cookie.substring(nameEQ.length));
+      const value = cookie.substring(nameEQ.length).trim();
+      return decodeURIComponent(value);
     }
   }
 
