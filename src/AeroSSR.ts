@@ -8,9 +8,9 @@ import { Logger } from './utils/logger';
 import { createCache } from './utils/cache';
 import { setCorsHeaders } from './utils/cors';
 import { generateETag } from './utils/etag';
-import { handleError } from './utils/errorHandler';
+import { handleError } from './utils/ErrorHandler';
 import { injectMetaTags } from './utils/html';
-import { generateBundle } from './utils/bundler';
+import { generateBundle } from './utils/Bundler';
 import { AeroSSRConfig, CorsOptions, Middleware, RouteHandler, BundleHandler } from './types';
 
 const gzipAsync = promisify(gzip);

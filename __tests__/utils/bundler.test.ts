@@ -1,24 +1,30 @@
-import { AeroSSRBundler } from '../../src/utils/bundler';
+import { AeroSSRBundler } from '../../src/utils/Bundler';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
 // Mock external modules
 jest.mock('fs/promises');
-jest.mock('path');
-
-const mockFs = fs as jest.Mocked<typeof fs>;
-const mockPath = path as jest.Mocked<typeof path>;
+jest.mock('path', () => ({
+  resolve: jest.fn(),
+  dirname: jest.fn(),
+  relative: jest.fn(),
+  join: jest.fn()
+}));
 
 describe('AeroSSRBundler', () => {
   let bundler: AeroSSRBundler;
+  const mockFs = jest.mocked(fs);
+  const mockPath = jest.mocked(path);
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockPath.resolve.mockImplementation((...parts) => parts.join('/'));
-    mockPath.dirname.mockImplementation((p) => p.split('/').slice(0, -1).join('/'));
-    mockPath.relative.mockImplementation((from, to) => to.replace(from + '/', ''));
-    mockPath.join.mockImplementation((...parts) => parts.join('/'));
-    
+
+    // Set up path mock implementations
+    mockPath.resolve.mockImplementation((...parts: string[]) => parts.join('/'));
+    mockPath.dirname.mockImplementation((p: string) => p.split('/').slice(0, -1).join('/'));
+    mockPath.relative.mockImplementation((from: string, to: string) => to.replace(from + '/', ''));
+    mockPath.join.mockImplementation((...parts: string[]) => parts.join('/'));
+
     bundler = new AeroSSRBundler('./test-project');
   });
 
@@ -222,17 +228,15 @@ describe('AeroSSRBundler', () => {
       mockFs.readFile.mockResolvedValue(mockContent);
       mockFs.access.mockRejectedValue(new Error('Too deep'));
 
-      await expect(bundler.generateBundle('entry.js', { maxDepth: 1 }))
-        .rejects
-        .toThrow();
+      const result = bundler.generateBundle('entry.js', { maxDepth: 1 });
+      await expect(result).rejects.toThrow();
     });
 
     it('should handle invalid entry points', async () => {
       mockFs.access.mockRejectedValue(new Error('Invalid path'));
 
-      await expect(bundler.generateBundle(''))
-        .rejects
-        .toThrow();
+      const result = bundler.generateBundle('');
+      await expect(result).rejects.toThrow();
     });
   });
 });
