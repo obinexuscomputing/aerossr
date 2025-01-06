@@ -1,58 +1,39 @@
-// jest.config.ts
 import type { Config } from '@jest/types';
 import { defaults as tsjPreset } from 'ts-jest/presets';
-import { resolve } from 'path';
 
 const config: Config.InitialOptions = {
-  // Use ts-jest for TypeScript files
   ...tsjPreset,
   preset: 'ts-jest',
   testEnvironment: 'node',
-
-  // Root directories for test discovery
-  roots: [
-    '<rootDir>/src',
-    '<rootDir>/__tests__'
-  ],
-
-  // Test patterns
+  
+  roots: ['<rootDir>/src', '<rootDir>/__tests__'],
+  
   testMatch: [
     '**/__tests__/**/*.test.ts',
     '**/__tests__/**/*.spec.ts'
   ],
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    '/dist/',
-    '/coverage/',
-    '/.rollup/',
-    '/buildcache/'
-  ],
-
-  // Module resolution
+  
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^src/(.*)$': '<rootDir>/src/$1', // Add direct src mapping
+    '^src/(.*)$': '<rootDir>/src/$1',
     '\\.txt$': '<rootDir>/__mocks__/fileMock.js',
     '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/__mocks__/fileMock.js'
   },
+
+  testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/', '/.rollup/', '/buildcache/'],
   moduleDirectories: ['node_modules', 'src'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 
-  // Transform configuration
   transform: {
-    '^.+\\.tsx?$': [
-      'ts-jest',
-      {
-        tsconfig: 'tsconfig.test.json',
-        diagnostics: {
-          warnOnly: true,
-          ignoreCodes: [151001]
-        }
+    '^.+\\.tsx?$': ['ts-jest', {
+      tsconfig: 'tsconfig.test.json',
+      diagnostics: { 
+        warnOnly: true,
+        ignoreCodes: [151001]
       }
-    ]
+    }]
   },
 
-  // Coverage configuration
   collectCoverage: true,
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
@@ -60,12 +41,9 @@ const config: Config.InitialOptions = {
     '!src/**/*.d.ts',
     '!src/types/**',
     '!**/*.test.ts',
-    '!**/*.spec.ts',
-    '!**/node_modules/**',
-    '!dist/**',
-    '!coverage/**'
+    '!**/*.spec.ts'
   ],
-  coverageReporters: ['text', 'lcov', 'clover', 'html'],
+  
   coverageThreshold: {
     global: {
       statements: 80,
@@ -75,39 +53,41 @@ const config: Config.InitialOptions = {
     }
   },
 
-  // Setup and teardown
-  setupFilesAfterEnv: [
-    '<rootDir>/setupTests.ts'
-  ],
+  setupFilesAfterEnv: ['<rootDir>/setupTests.ts'],
 
-  // Environment configuration
-  testEnvironmentOptions: {
-    url: 'http://localhost'
-  },
-
-  // Global configuration
   globals: {
     'ts-jest': {
       isolatedModules: true
     }
   },
 
-  // Miscellaneous options
   verbose: true,
   testTimeout: 30000,
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
-  errorOnDeprecated: true,
-  notify: true,
-
-  // Important: Add these to fix path resolution
+  
   modulePaths: ['<rootDir>'],
   rootDir: './',
   modulePathIgnorePatterns: ['<rootDir>/dist/'],
-  
-  // Add resolver for ts-jest
-  resolver: 'ts-jest-resolver'
+  resolver: 'ts-jest-resolver',
+
+  // Project-specific settings
+  projects: [
+    {
+      displayName: 'node',
+      testEnvironment: 'node',
+      testMatch: ['**/__tests__/**/*.node.test.ts']
+    },
+    {
+      displayName: 'jsdom',
+      testEnvironment: 'jsdom',
+      testMatch: ['**/__tests__/**/*.dom.test.ts'],
+      testEnvironmentOptions: {
+        url: 'http://localhost'
+      }
+    }
+  ]
 };
 
 export default config;
