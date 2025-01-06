@@ -43,7 +43,7 @@
     }
   },
   "bin": {
-    "aerossr": "dist/cli/bin/index.cjs"
+    "aerossr": "./scripts/bin/aerossr.cmd"
   },
   "files": [
     "dist",
@@ -51,14 +51,15 @@
     "README.md",
     "src",
     "docs",
-    "scripts"
+    "scripts/bin"
   ],
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/types/index.d.ts",
   "scripts": {
     "build": "rimraf dist && rollup -c",
-    "prepare": "npm run build",
+    "build:cli": "node scripts/make-cli-executable.cjs",
+    "prepare": "npm run build && npm run build:cli",
     "clean": "rimraf dist coverage",
     "lint": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\" --fix",
@@ -66,14 +67,15 @@
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build && npm run build:cli",
+    "postinstall": "node scripts/chmod-cli.cjs"
   },
   "dependencies": {
     "commander": "^13.0.0"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
-    "@rollup/plugin-alias": "^5.1.1",
+    "@rollup/plugin-alias": "^5.1.1", 
     "@rollup/plugin-commonjs": "^28.0.2",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.0",
