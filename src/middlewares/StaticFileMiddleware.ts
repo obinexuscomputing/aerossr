@@ -37,15 +37,15 @@ export class StaticFileMiddleware {
 
   public middleware(): Middleware {
     return async (req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => {
-      try {
-        if (req.method !== 'GET' && req.method !== 'HEAD') {
-          await next();
-          return;
-        }
+      if (req.method !== 'GET' && req.method !== 'HEAD') {
+        await next();
+        return;
+      }
 
+      try {
         const urlPath = decodeURIComponent(req.url?.split('?')[0] || '/');
-        const normalizedPath = path.normalize(urlPath).replace(/^(\.\.(\/|\\|$))+/, '');
-        
+        const normalizedPath = path.normalize(urlPath);
+
         // Handle dotfiles
         if (this.isDotFile(normalizedPath)) {
           if (this.dotFiles === 'deny') {
@@ -60,9 +60,10 @@ export class StaticFileMiddleware {
         }
 
         const fullPath = path.join(this.root, normalizedPath);
-        
+
         // Prevent directory traversal
-        if (!fullPath.startsWith(this.root)) {
+        const relative = path.relative(this.root, fullPath);
+        if (relative.includes('..')) {
           res.writeHead(403, { 'Content-Type': 'text/plain' });
           res.end('Forbidden');
           return;
@@ -95,13 +96,11 @@ export class StaticFileMiddleware {
 
           await next();
         } catch (error) {
-          const err = error as NodeJS.ErrnoException;
-          if (err.code === 'ENOENT') {
+          if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
             await next();
             return;
           }
-          res.writeHead(500, { 'Content-Type': 'text/plain' });
-          res.end('Internal Server Error');
+          throw error;
         }
       } catch (error) {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
@@ -135,40 +134,53 @@ export class StaticFileMiddleware {
     return mimeTypes[ext.toLowerCase()] || 'application/octet-stream';
   }
 
+  private isCompressible(mimeType: string): boolean {
+    return /^(text|application)\/(javascript|json|html|xml|css|plain)/.test(mimeType);
+  }
+
   private async serveFile(
     filepath: string,
     stats: Stats,
-    req: IncomingMessage,
+    req: IncomingMessage, 
     res: ServerResponse
   ): Promise<void> {
     const mimeType = this.getMimeType(path.extname(filepath));
-    const lastModifiedUTC = stats.mtime.toUTCString();
-    const etag = this.etag ? generateETag(`${filepath}:${stats.mtime.toISOString()}`) : null;
+    const etag = this.etag ? generateETag(`${stats.mtime.toISOString()}`) : null;
 
     // Handle conditional requests
     const ifModifiedSince = req.headers['if-modified-since'];
     const ifNoneMatch = req.headers['if-none-match'];
 
-    if ((ifNoneMatch && etag && ifNoneMatch === etag) ||
-        (ifModifiedSince && new Date(ifModifiedSince) >= stats.mtime)) {
+    if (etag && ifNoneMatch === etag) {
       res.writeHead(304);
       res.end();
       return;
     }
 
+    if (ifModifiedSince) {
+      const clientDate = new Date(ifModifiedSince);
+      if (clientDate >= stats.mtime) {
+        res.writeHead(304);
+        res.end();
+        return;
+      }
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': mimeType,
       'Cache-Control': `public, max-age=${this.maxAge}`,
-      'Last-Modified': lastModifiedUTC
+      'Last-Modified': stats.mtime.toUTCString()
     };
 
     if (etag) {
       headers['ETag'] = etag;
     }
 
+    // Handle compression
+    const acceptEncoding = req.headers['accept-encoding'];
     const shouldCompress = this.compression && 
-                          this.isCompressible(mimeType) && 
-                          req.headers['accept-encoding']?.includes('gzip');
+                         this.isCompressible(mimeType) && 
+                         acceptEncoding?.includes('gzip');
 
     if (shouldCompress) {
       headers['Content-Encoding'] = 'gzip';
@@ -177,45 +189,36 @@ export class StaticFileMiddleware {
 
     res.writeHead(200, headers);
 
-    // Return only headers for HEAD requests
+    // Handle HEAD requests
     if (req.method === 'HEAD') {
       res.end();
       return;
     }
 
-    if (shouldCompress) {
+    try {
       if (stats.size > 1024 * 1024) { // 1MB threshold
-        const stream = createReadStream(filepath).pipe(createGzip());
-        stream.on('error', () => res.end());
-        stream.pipe(res);
+        const stream = createReadStream(filepath);
+        if (shouldCompress) {
+          const gzipStream = createGzip();
+          stream.on('error', () => res.end());
+          gzipStream.on('error', () => res.end());
+          stream.pipe(gzipStream).pipe(res);
+        } else {
+          stream.on('error', () => res.end());
+          stream.pipe(res);
+        }
       } else {
-        try {
-          const content = await readFile(filepath);
+        const content = await readFile(filepath);
+        if (shouldCompress) {
           const compressed = await gzipAsync(content);
           res.end(compressed);
-        } catch (error) {
-          res.end();
+        } else {
+          res.end(content);
         }
       }
-      return;
+    } catch (error) {
+      // If we encounter an error after headers are sent, just end the response
+      res.end();
     }
-
-    // Serve uncompressed
-    if (stats.size > 1024 * 1024) { // 1MB threshold
-      const stream = createReadStream(filepath);
-      stream.on('error', () => res.end());
-      stream.pipe(res);
-    } else {
-      try {
-        const content = await readFile(filepath);
-        res.end(content);
-      } catch (error) {
-        res.end();
-      }
-    }
-  }
-
-  private isCompressible(mimeType: string): boolean {
-    return /^(text|application)\/(javascript|json|html|xml|css|plain)/.test(mimeType);
   }
 }
