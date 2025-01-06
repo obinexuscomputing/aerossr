@@ -7,4 +7,4 @@ export * from './HtmlManager';
 export * from './Bundler';
 export * from './ETagGenerator';
 export * from './CookieManager';
-export * from './AsycUtils';
+export * from './AsyncUtils';
