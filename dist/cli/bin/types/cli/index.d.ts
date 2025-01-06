@@ -1,5 +1,5 @@
 import { MiddlewareConfig } from './commands';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/Logger';
 export interface AeroConfig {
     port: number;
     logPath: string;

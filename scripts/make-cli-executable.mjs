@@ -1,17 +1,39 @@
-import { chmodSync, existsSync } from 'fs';
-import { join } from 'path';
+#!/usr/bin/env node
+import { chmodSync, statSync, constants } from 'fs';
+import { fileURLToPath } from 'url';
+import { resolve, dirname, join } from 'path';
 
-const cliPath = join(__dirname, 'dist/cli/bin/index.mjs');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-if (existsSync(cliPath)) {
+function makeExecutable(filePath) {
+  if (process.platform === 'win32') {
+    return; // Skip chmod on Windows
+  }
+
   try {
-    chmodSync(cliPath, 0o755);
-    console.log(`Made ${cliPath} executable`);
+    const resolvedPath = resolve(__dirname, filePath);
+    const stats = statSync(resolvedPath);
+    
+    // Add executable permission if not present
+    if (!(stats.mode & constants.S_IXUSR)) {
+      chmodSync(resolvedPath, stats.mode | constants.S_IXUSR);
+      console.log(`Made ${resolvedPath} executable`);
+    }
   } catch (err) {
-    console.error(`Error making ${cliPath} executable:`, err.message);
+    if (err.code === 'ENOENT') {
+      console.error(`File not found: ${filePath}`);
+    } else {
+      console.error(`Error processing ${filePath}:`, err.message);
+    }
     process.exit(1);
   }
-} else {
-  console.error(`File not found: ${cliPath}`);
-  process.exit(1);
 }
+
+// Handle both CLI entry points
+const targets = [
+  'dist/cli/bin/index.mjs',
+  'dist/cli/bin/index.cjs'
+];
+
+targets.forEach(makeExecutable);

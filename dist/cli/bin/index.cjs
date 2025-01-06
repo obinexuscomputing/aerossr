@@ -35,7 +35,7 @@ var path__namespace = /*#__PURE__*/_interopNamespaceDefault(path);
 var fs__namespace = /*#__PURE__*/_interopNamespaceDefault(fs$1);
 var crypto__namespace = /*#__PURE__*/_interopNamespaceDefault(crypto);
 
-let Logger$1 = class Logger {
+class Logger {
     logFilePath;
     options;
     static DEFAULT_OPTIONS = {
@@ -106,7 +106,7 @@ let Logger$1 = class Logger {
             }
         }
     }
-};
+}
 
 // src/utils/cacheManager.ts
 function createCache() {
@@ -859,7 +859,7 @@ class AeroSSR {
                 ...config.defaultMeta,
             },
         };
-        this.logger = new Logger$1({ logFilePath: this.config.logFilePath });
+        this.logger = new Logger({ logFilePath: this.config.logFilePath });
         this.bundler = new AeroSSRBundler(projectPath);
         this.server = null;
         this.routes = new Map();
@@ -1430,7 +1430,7 @@ class StaticFileMiddleware {
 class AeroSSRCommands {
     logger;
     constructor(logger) {
-        this.logger = logger || new Logger$1();
+        this.logger = logger || new Logger();
     }
     /**
      * Find the project root directory by looking for package.json
@@ -1633,79 +1633,6 @@ h1 {
 // Export singleton instance
 const aeroCommands = new AeroSSRCommands();
 
-class Logger {
-    logFilePath;
-    options;
-    static DEFAULT_OPTIONS = {
-        logFilePath: null,
-        logLevel: 'info',
-        maxFileSize: 10 * 1024 * 1024,
-        maxFiles: 5,
-        format: 'text'
-    };
-    constructor(options = {}) {
-        this.options = { ...Logger.DEFAULT_OPTIONS, ...options };
-        this.logFilePath = this.options.logFilePath;
-        if (this.logFilePath) {
-            this.initializeLogFile();
-        }
-    }
-    initializeLogFile() {
-        try {
-            const logDir = path.dirname(this.logFilePath);
-            if (!fs.existsSync(logDir)) {
-                fs.mkdirSync(logDir, { recursive: true });
-            }
-        }
-        catch (error) {
-            console.error(`Logger initialization failed for path: ${this.logFilePath} - ${error.message}`);
-            this.logFilePath = null;
-        }
-    }
-    getLogPath() {
-        return this.logFilePath;
-    }
-    formatMessage(message) {
-        const timestamp = new Date().toISOString();
-        if (this.options.format === 'json') {
-            return JSON.stringify({
-                timestamp,
-                message,
-                level: this.options.logLevel
-            }) + '\n';
-        }
-        return `[${timestamp}] ${message}\n`;
-    }
-    async log(message) {
-        const formattedMessage = this.formatMessage(message);
-        console.log(formattedMessage.trim());
-        if (this.logFilePath) {
-            try {
-                await fs__namespace.appendFile(this.logFilePath, formattedMessage, 'utf-8');
-            }
-            catch (error) {
-                console.error(`Failed to write to log file: ${error.message}`);
-            }
-        }
-    }
-    logRequest(req) {
-        const { method = 'undefined', url = 'undefined', headers = {} } = req;
-        const userAgent = headers['user-agent'] || 'unknown';
-        const logMessage = `${method} ${url} - ${userAgent}`;
-        this.log(logMessage);
-    }
-    async clear() {
-        if (this.logFilePath && fs.existsSync(this.logFilePath)) {
-            try {
-                await fs__namespace.writeFile(this.logFilePath, '', 'utf-8');
-            }
-            catch (error) {
-                console.error(`Failed to clear log file: ${error.message}`);
-            }
-        }
-    }
-}
-
 // src/cli/index.ts
 class AeroSSRCLI {
     static CONFIG_FILE = 'aerossr.config.json';
@@ -1813,6 +1740,7 @@ class AeroSSRCLI {
                 const app = new AeroSSR({
                     port: config.port,
                     logFilePath: config.logPath,
+                    projectPath: process.cwd()
                 });
                 const middlewareConfig = {
                     name: options.name,

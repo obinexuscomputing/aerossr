@@ -1,14 +1,35 @@
-
+#!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
 
-// Resolve the target path
-const target = path.resolve(__dirname, '../dist/cli/bin/index.cjs');
+function makeExecutable(filePath) {
+  if (process.platform === 'win32') {
+    return; // Skip chmod on Windows
+  }
 
-try {
-  fs.chmodSync(target, '755'); // Set the file as executable
-  console.log(`Made ${target} executable`);
-} catch (err) {
-  console.error(`Error making ${target} executable:`, err.message);
-  process.exit(1);
+  try {
+    const resolvedPath = path.resolve(__dirname, filePath);
+    const stats = fs.statSync(resolvedPath);
+    
+    // Add executable permission if not present
+    if (!(stats.mode & fs.constants.S_IXUSR)) {
+      fs.chmodSync(resolvedPath, stats.mode | fs.constants.S_IXUSR);
+      console.log(`Made ${resolvedPath} executable`);
+    }
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      console.error(`File not found: ${filePath}`);
+    } else {
+      console.error(`Error processing ${filePath}:`, err.message);
+    }
+    process.exit(1);
+  }
 }
+
+// Handle both CJS and MJS CLI files
+const targets = [
+  '../dist/cli/bin/index.cjs',
+  '../dist/cli/bin/index.mjs'
+];
+
+targets.forEach(makeExecutable);

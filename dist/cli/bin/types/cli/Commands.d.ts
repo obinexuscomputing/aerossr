@@ -46,4 +46,4 @@ export declare class AeroSSRCommands {
     cleanup(): Promise<void>;
 }
 export declare const aeroCommands: AeroSSRCommands;
-//# sourceMappingURL=Commands.d.ts.map
+//# sourceMappingURL=commands.d.ts.map
