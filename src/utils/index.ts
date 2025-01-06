@@ -3,7 +3,7 @@ export * from './CacheManager';
 export * from './CorsManager';
 export * from './ErrorHandler';
 export * from './etag';
-export * from './html';
+export * from './HtmlManager';
 export * from './Bundler';
 export * from './etag';
 export * from './CookieManager';

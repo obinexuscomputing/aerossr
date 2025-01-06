@@ -125,7 +125,7 @@ export type AsyncHandler<T> = (...args: any[]) => Promise<AsyncResult<T>>;
 export type { ServerResponse, IncomingMessage } from 'http';
 export * from '../utils/CacheManager';
 export * from '../utils/CorsManager';
-export * from '../utils/html';
+export * from '../utils/HtmlManager';
 export * from '../utils/Logger';
 export * from '../utils/ErrorHandler';
 export * from '../utils/etag';
