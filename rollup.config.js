@@ -4,9 +4,8 @@ import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
 import alias from '@rollup/plugin-alias';
-import copy from 'rollup-plugin-copy';
 import { resolve as _resolve } from 'path';
-import { readFileSync } from 'fs';
+import { readFileSync, copyFileSync } from 'fs';
 import { mkdir, chmod } from 'fs/promises';
 
 const pkg = JSON.parse(readFileSync('./package.json'));
@@ -107,21 +106,35 @@ const configs = [
           await mkdir('dist/cli/bin', { recursive: true });
         }
       },
-      copy({
-        targets: [{ src: 'package.json', dest: 'dist' }],
-        hook: 'writeBundle',
-        flatten: false
-      }),
+      {
+        name: 'copy-package',
+        writeBundle: async () => {
+          try {
+            await mkdir('dist', { recursive: true });
+            copyFileSync('package.json', 'dist/package.json');
+            console.log('Copied package.json to dist/');
+          } catch (err) {
+            console.warn('Failed to copy package.json:', err.message);
+          }
+        }
+      },
       {
         name: 'make-executable',
         async writeBundle() {
           if (process.platform === 'win32') return;
-          try {
-            await chmod('dist/cli/bin/index.cjs', '755');
-            await chmod('dist/cli/bin/index.mjs', '755');
-            console.log('Made CLI files executable');
-          } catch (err) {
-            console.warn('Failed to make CLI files executable:', err);
+          
+          const files = [
+            'dist/cli/bin/index.cjs',
+            'dist/cli/bin/index.mjs'
+          ];
+
+          for (const file of files) {
+            try {
+              await chmod(file, '755');
+              console.log(`Made ${file} executable`);
+            } catch (err) {
+              console.warn(`Failed to make ${file} executable:`, err.message);
+            }
           }
         }
       }

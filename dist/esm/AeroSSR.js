@@ -16,6 +16,7 @@ import { etagGenerator } from './utils/ETagGenerator.js';
 import { ErrorHandler } from './utils/ErrorHandler.js';
 import { htmlManager } from './utils/HtmlManager.js';
 import { AeroSSRBundler } from './utils/Bundler.js';
+import './utils/AsyncUtils.js';
 
 // src/AeroSSR.ts
 const gzipAsync = promisify(gzip);

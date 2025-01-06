@@ -20,6 +20,7 @@ var ETagGenerator = require('./utils/ETagGenerator.js');
 var ErrorHandler = require('./utils/ErrorHandler.js');
 var HtmlManager = require('./utils/HtmlManager.js');
 var Bundler = require('./utils/Bundler.js');
+require('./utils/AsyncUtils.js');
 
 // src/AeroSSR.ts
 const gzipAsync = util.promisify(zlib.gzip);
