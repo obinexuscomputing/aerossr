@@ -1,55 +1,60 @@
-import { StaticFileMiddleware } from '../../src/middlewares/';
+import { StaticFileMiddleware } from '../../src/middlewares/StaticFileMiddleware';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Readable, Transform } from 'stream';
 import { stat, readFile } from 'fs/promises';
-import * as path from 'path';
+import * as fs from 'fs';
 import { gzip, createGzip } from 'zlib';
 import { promisify } from 'util';
-import * as fs from 'fs';
 
+// Configure path mock
+const mockPath = {
+  resolve: jest.fn((...paths) => {
+    const rootDir = process.cwd();
+    return paths.reduce((acc, curr) => `${acc}/${curr}`, rootDir);
+  }),
+  normalize: jest.fn(p => p),
+  join: jest.fn((...parts) => parts.join('/')),
+  relative: jest.fn((from, to) => {
+    const fromArray = from.split('/').filter(Boolean);
+    const toArray = to.split('/').filter(Boolean);
+    if (to.includes('..')) return '../' + toArray.join('/');
+    return toArray.slice(fromArray.length).join('/');
+  }),
+  dirname: jest.fn(p => p.split('/').slice(0, -1).join('/')),
+  isAbsolute: jest.fn(p => p.startsWith('/')),
+  extname: jest.fn(p => '.' + p.split('.').pop())
+};
+
+jest.mock('path', () => mockPath);
 jest.mock('fs/promises');
-jest.mock('path');
 jest.mock('zlib');
 jest.mock('fs');
 
 describe('StaticFileMiddleware', () => {
   let middleware: StaticFileMiddleware;
+  let mockFs: jest.Mocked<typeof fs>;
   const mockStat = stat as jest.MockedFunction<typeof stat>;
   const mockReadFile = readFile as jest.MockedFunction<typeof readFile>;
-  const mockPath = path as jest.Mocked<typeof path>;
   const mockCreateReadStream = jest.spyOn(fs, 'createReadStream');
   const mockCreateGzip = createGzip as jest.MockedFunction<typeof createGzip>;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Mock path operations
-    mockPath.resolve.mockImplementation((...paths) => paths[paths.length - 1]);
-    mockPath.normalize.mockImplementation(p => p);
-    mockPath.join.mockImplementation((...parts) => parts.join('/'));
-    mockPath.relative.mockImplementation((from, to) => {
-      // Handle directory traversal detection
-      if (to.includes('..')) return '../' + to;
-      // Handle normal paths
-      const fromParts = from.split('/').filter(Boolean);
-      const toParts = to.split('/').filter(Boolean);
-      const relativeParts = toParts.slice(fromParts.length);
-      return relativeParts.join('/');
-    });
-    mockPath.isAbsolute.mockImplementation(p => p.startsWith('/'));
-    mockPath.extname.mockImplementation(p => '.' + p.split('.').pop());
-
-    // Mock file operations
+    // Setup stream mocks
     const mockStream = new Transform({
       transform(chunk, encoding, callback) {
         callback(null, chunk);
       }
     });
+    mockStream.pipe = jest.fn().mockReturnThis();
+    mockStream.on = jest.fn().mockReturnThis();
+
+    mockFs = fs as jest.Mocked<typeof fs>;
     mockCreateReadStream.mockReturnValue(mockStream as any);
     (mockCreateGzip as jest.Mock).mockReturnValue(mockStream);
-    (gzip as any).mockImplementation((buffer, callback) => callback(null, Buffer.from('compressed')));
-
-    // Mock file stat
+    
+    // Setup file operation mocks
     mockStat.mockResolvedValue({
       isFile: () => true,
       isDirectory: () => false,
@@ -57,12 +62,11 @@ describe('StaticFileMiddleware', () => {
       size: 500,
     } as any);
 
-    // Mock file read
     mockReadFile.mockResolvedValue(Buffer.from('test content'));
-
-    // Create middleware instance
+    
+    // Create middleware instance with root path
     middleware = new StaticFileMiddleware({
-      root: '/test/public',
+      root: path.join(process.cwd(), 'public'),
       maxAge: 3600,
       compression: true
     });

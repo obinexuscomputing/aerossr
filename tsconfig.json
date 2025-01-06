@@ -15,6 +15,7 @@
       "@utils/*": ["src/utils/*"],
       "@types/*": ["src/types/*"],
       "@middlewares/*": ["src/middlewares/*"]
+      
     },
     "declaration": true,
     "declarationMap": true,
