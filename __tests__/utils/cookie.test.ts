@@ -1,4 +1,4 @@
-import { CookieManager } from '../../src/utils/CookieManager';
+import { cookieManager, CookieManager } from '../../src/utils/CookieManager';
 describe('Cookie Manager', () => {
   let cookieManager: CookieManager;
   let documentCookies: string[] = [];
@@ -142,6 +142,55 @@ describe('Cookie Manager', () => {
       });
 
       expect(cookieManager.areCookiesEnabled()).toBe(false);
+    });
+  });
+});
+
+
+describe('Cookie Manager', () => {
+  let documentCookies: string[] = [];
+  
+  beforeEach(() => {
+    documentCookies = [];
+    const mockDoc = {
+      get cookie() { return documentCookies.join('; '); },
+      set cookie(value: string) {
+        if (value.includes('=')) {
+          documentCookies.push(value);
+        } else {
+          const cookieName = value.split('=')[0];
+          documentCookies = documentCookies.filter(c => !c.startsWith(cookieName + '='));
+        }
+      }
+    };
+    cookieManager.__setMockDocument(mockDoc);
+  });
+
+  afterEach(() => {
+    cookieManager.__clearMockDocument();
+  });
+
+  describe('setCookie', () => {
+    test('should set cookie with correct attributes', () => {
+      cookieManager.setCookie('test', 'value', 1, { path: '/test' });
+      expect(documentCookies[0]).toMatch(/^test=value/);
+      expect(documentCookies[0]).toMatch(/path=\/test/);
+    });
+
+    test('should handle special characters', () => {
+      cookieManager.setCookie('test', 'value with spaces', 1);
+      expect(documentCookies[0]).toContain('test=value%20with%20spaces');
+    });
+  });
+
+  describe('getCookie', () => {
+    test('should retrieve existing cookie', () => {
+      cookieManager.setCookie('test', 'value', 1);
+      expect(cookieManager.getCookie('test')).toBe('value');
+    });
+
+    test('should return null for non-existent cookie', () => {
+      expect(cookieManager.getCookie('nonexistent')).toBeNull();
     });
   });
 });
