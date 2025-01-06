@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import type { IncomingMessage, ServerResponse } from 'http';
 export interface CacheStoreBase<T> {
+    size: number;
     get(key: string): T | undefined;
     set(key: string, value: T): void;
     clear(): void;
@@ -57,6 +58,7 @@ export interface MetaTags extends MetaTagsBase {
 export interface LoggerOptions extends LoggerOptionsBase {
 }
 export interface AeroSSRConfig {
+    projectPath: string;
     port?: number;
     cacheMaxAge?: number;
     corsOrigins?: string | CorsOptions;

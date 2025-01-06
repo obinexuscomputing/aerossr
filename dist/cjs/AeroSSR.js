@@ -30,10 +30,14 @@ class AeroSSR {
     server;
     routes;
     middlewares;
-    constructor(config = {}) {
+    constructor(config = {
+        projectPath: ''
+    }) {
         // Normalize CORS options
         const corsOptions = CorsManager.corsManager.normalizeCorsOptions(config.corsOrigins);
+        const projectPath = this.config.projectPath;
         this.config = {
+            projectPath,
             loggerOptions: config.loggerOptions || {},
             errorHandler: config.errorHandler || ErrorHandler.ErrorHandler.handleError,
             staticFileHandler: config.staticFileHandler || this.handleDefaultRequest.bind(this),
@@ -54,7 +58,7 @@ class AeroSSR {
             },
         };
         this.logger = new Logger.Logger({ logFilePath: this.config.logFilePath });
-        this.bundler = new Bundler.AeroSSRBundler();
+        this.bundler = new Bundler.AeroSSRBundler(projectPath);
         this.server = null;
         this.routes = new Map();
         this.middlewares = [];

@@ -5,7 +5,7 @@ import { aeroCommands, MiddlewareConfig } from './commands';
 import { existsSync } from 'fs';
 import { promises as fs } from 'fs';
 import { join, resolve } from 'path';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/Logger';
 
 export interface AeroConfig {
   port: number;
@@ -127,6 +127,7 @@ export class AeroSSRCLI {
           const app = new AeroSSR({
             port: config.port,
             logFilePath: config.logPath,
+            projectPath: process.cwd()
           });
 
           const middlewareConfig: MiddlewareConfig = {
