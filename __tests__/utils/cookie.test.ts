@@ -1,6 +1,4 @@
-// __tests__/utils/cookieManager.test.ts
-import { CookieManager } from '../../src/utils/cookie';
-
+import { CookieManager } from '../../src/utils/CookieManager';
 describe('Cookie Manager', () => {
   let cookieManager: CookieManager;
   let documentCookies: string[] = [];
