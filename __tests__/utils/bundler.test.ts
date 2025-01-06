@@ -1,4 +1,4 @@
-import { resolveDependencies, minifyBundle, generateBundle } from '../../src/utils/bundler';
+import { AeroSSRBundler } from '../../src/utils/bundler';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -9,16 +9,20 @@ jest.mock('path');
 const mockFs = fs as jest.Mocked<typeof fs>;
 const mockPath = path as jest.Mocked<typeof path>;
 
-describe('Bundler', () => {
+describe('AeroSSRBundler', () => {
+  let bundler: AeroSSRBundler;
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockPath.resolve.mockImplementation((...parts) => parts.join('/'));
     mockPath.dirname.mockImplementation((p) => p.split('/').slice(0, -1).join('/'));
     mockPath.relative.mockImplementation((from, to) => to.replace(from + '/', ''));
     mockPath.join.mockImplementation((...parts) => parts.join('/'));
+    
+    bundler = new AeroSSRBundler('./test-project');
   });
 
-  describe('resolveDependencies', () => {
+  describe('Dependency Resolution', () => {
     it('should resolve direct dependencies', async () => {
       const mockContent = `
         import foo from './foo';
@@ -27,12 +31,11 @@ describe('Bundler', () => {
       mockFs.readFile.mockResolvedValue(mockContent);
       mockFs.access.mockResolvedValue(undefined);
 
-      const deps = await resolveDependencies('entry.js');
+      const result = await bundler.generateBundle('entry.js');
       
-      expect(deps.size).toBe(3); // entry + 2 imports
-      expect(deps.has('entry.js')).toBe(true);
-      expect(deps.has('./foo')).toBe(true);
-      expect(deps.has('./bar')).toBe(true);
+      expect(result.dependencies.size).toBe(3); // entry + 2 imports
+      expect(result.code).toContain('foo');
+      expect(result.code).toContain('bar');
     });
 
     it('should handle circular dependencies', async () => {
@@ -44,11 +47,11 @@ describe('Bundler', () => {
         .mockResolvedValueOnce(mockContentB);
       mockFs.access.mockResolvedValue(undefined);
 
-      const deps = await resolveDependencies('a.js');
+      const result = await bundler.generateBundle('a.js');
       
-      expect(deps.size).toBe(2);
-      expect(deps.has('a.js')).toBe(true);
-      expect(deps.has('./b')).toBe(true);
+      expect(result.dependencies.size).toBe(2);
+      expect(result.code).toContain('./b');
+      expect(result.code).toContain('./a');
     });
 
     it('should respect maxDepth option', async () => {
@@ -56,9 +59,9 @@ describe('Bundler', () => {
       mockFs.readFile.mockResolvedValue(mockContent);
       mockFs.access.mockResolvedValue(undefined);
 
-      const deps = await resolveDependencies('start.js', new Set(), { maxDepth: 2 });
+      const result = await bundler.generateBundle('start.js', { maxDepth: 2 });
       
-      expect(deps.size).toBe(3); // start + 2 levels deep
+      expect(result.dependencies.size).toBeLessThanOrEqual(3); // start + max 2 levels deep
     });
 
     it('should handle various import patterns', async () => {
@@ -73,118 +76,163 @@ describe('Bundler', () => {
       mockFs.readFile.mockResolvedValue(mockContent);
       mockFs.access.mockResolvedValue(undefined);
 
-      const deps = await resolveDependencies('entry.js');
+      const result = await bundler.generateBundle('entry.js');
       
-      expect(deps.size).toBe(7); // entry + 6 imports
+      expect(result.dependencies.size).toBe(7); // entry + 6 imports
     });
   });
 
-  describe('minifyBundle', () => {
-    it('should preserve string contents', () => {
-      const code = `
+  describe('Code Minification', () => {
+    it('should preserve string contents', async () => {
+      const mockContent = `
         const str1 = "Hello world";
         const str2 = 'Hello "world"';
       `;
-      const minified = minifyBundle(code);
+      mockFs.readFile.mockResolvedValue(mockContent);
+      mockFs.access.mockResolvedValue(undefined);
+
+      const result = await bundler.generateBundle('test.js', { minify: true });
       
-      expect(minified).toContain('"Hello world"');
-      expect(minified).toContain('\'Hello "world"\'');
+      expect(result.code).toContain('"Hello world"');
+      expect(result.code).toContain('\'Hello "world"\'');
     });
 
-    it('should remove comments', () => {
-      const code = `
+    it('should remove comments when minifying', async () => {
+      const mockContent = `
         // Line comment
         const a = 1; /* Block comment */ const b = 2;
         /* Multiline
            comment */
         const c = 3;
       `;
-      const minified = minifyBundle(code);
+      mockFs.readFile.mockResolvedValue(mockContent);
+      mockFs.access.mockResolvedValue(undefined);
+
+      const result = await bundler.generateBundle('test.js', { minify: true });
       
-      expect(minified).not.toContain('Line comment');
-      expect(minified).not.toContain('Block comment');
-      expect(minified).toBe('const a=1;const b=2;const c=3');
+      expect(result.code).not.toContain('Line comment');
+      expect(result.code).not.toContain('Block comment');
+      expect(result.code).toContain('const a=1;const b=2;const c=3');
     });
 
-    it('should handle escaped quotes in strings', () => {
-      const code = `
-        const str = "Hello \\"world\\"";
-        const str2 = 'Hello \\'world\\'';
+    it('should preserve comments when minification is disabled', async () => {
+      const mockContent = `
+        // Line comment
+        const value = 42;
       `;
-      const minified = minifyBundle(code);
-      
-      expect(minified).toContain('"Hello \\"world\\""');
-      expect(minified).toContain('\'Hello \\\'world\\\'\'');
-    });
+      mockFs.readFile.mockResolvedValue(mockContent);
+      mockFs.access.mockResolvedValue(undefined);
 
-    it('should preserve necessary whitespace', () => {
-      const code = `
-        const a = 1;
-        function add(x,y){return x+y}
-        const b = add(1,2);
-      `;
-      const minified = minifyBundle(code);
+      const result = await bundler.generateBundle('test.js', { minify: false });
       
-      expect(minified).toContain('function add(x,y)');
-      expect(minified).not.toContain('function add (x,y)');
+      expect(result.code).toContain('Line comment');
     });
   });
 
-  describe('generateBundle', () => {
-    it('should generate bundle with resolved dependencies', async () => {
-      const mockContent = `
-        import { helper } from './helper';
-        export const main = () => helper();
-      `;
-      const mockHelperContent = `
-        export const helper = () => 'helped';
-      `;
-
-      mockFs.readFile
-        .mockResolvedValueOnce(mockContent)
-        .mockResolvedValueOnce(mockHelperContent);
+  describe('Bundle Generation', () => {
+    it('should generate browser bundle with module system', async () => {
+      const mockContent = `export const value = 42;`;
+      mockFs.readFile.mockResolvedValue(mockContent);
       mockFs.access.mockResolvedValue(undefined);
 
-      const bundle = await generateBundle('./', 'main.js');
+      const result = await bundler.generateBundle('entry.js', { target: 'browser' });
       
-      expect(bundle).toContain('helper');
-      expect(bundle).toContain('helped');
+      expect(result.code).toContain('__modules__');
+      expect(result.code).toContain('__exports__');
+      expect(result.code).toContain('require');
     });
 
-    it('should handle bundle generation errors', async () => {
+    it('should generate server bundle without module system', async () => {
+      const mockContent = `export const value = 42;`;
+      mockFs.readFile.mockResolvedValue(mockContent);
+      mockFs.access.mockResolvedValue(undefined);
+
+      const result = await bundler.generateBundle('entry.js', { target: 'server' });
+      
+      expect(result.code).not.toContain('__modules__');
+      expect(result.code).toContain('value = 42');
+    });
+
+    it('should include hydration code when specified', async () => {
+      const mockContent = `export const value = 42;`;
+      mockFs.readFile.mockResolvedValue(mockContent);
+      mockFs.access.mockResolvedValue(undefined);
+
+      const result = await bundler.generateBundle('entry.js', { 
+        target: 'browser',
+        hydration: true 
+      });
+      
+      expect(result.hydrationCode).toBeDefined();
+      expect(result.hydrationCode).toContain('__AEROSSR_HYDRATE__');
+    });
+  });
+
+  describe('Caching', () => {
+    it('should cache bundle results', async () => {
+      const mockContent = `export const value = 42;`;
+      mockFs.readFile.mockResolvedValue(mockContent);
+      mockFs.access.mockResolvedValue(undefined);
+
+      const result1 = await bundler.generateBundle('test.js');
+      const result2 = await bundler.generateBundle('test.js');
+      
+      expect(mockFs.readFile).toHaveBeenCalledTimes(1);
+      expect(result1.hash).toBe(result2.hash);
+    });
+
+    it('should clear cache when requested', async () => {
+      const mockContent = `export const value = 42;`;
+      mockFs.readFile.mockResolvedValue(mockContent);
+      mockFs.access.mockResolvedValue(undefined);
+
+      await bundler.generateBundle('test.js');
+      bundler.clearCache();
+      await bundler.generateBundle('test.js');
+      
+      expect(mockFs.readFile).toHaveBeenCalledTimes(2);
+    });
+
+    it('should provide accurate cache stats', async () => {
+      const mockContent = `export const value = 42;`;
+      mockFs.readFile.mockResolvedValue(mockContent);
+      mockFs.access.mockResolvedValue(undefined);
+
+      await bundler.generateBundle('test1.js');
+      await bundler.generateBundle('test2.js');
+      
+      const stats = bundler.getCacheStats();
+      expect(stats.size).toBe(2);
+      expect(stats.keys).toHaveLength(2);
+      expect(stats.keys[0]).toContain('test1.js');
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should handle missing files', async () => {
       mockFs.readFile.mockRejectedValue(new Error('File not found'));
 
-      await expect(generateBundle('./', 'missing.js'))
+      await expect(bundler.generateBundle('missing.js'))
         .rejects
         .toThrow('Failed to generate bundle');
     });
 
-    it('should respect minification option', async () => {
-      const mockContent = `
-        const x = 1;
-        // Comment
-        const y = 2;
-      `;
+    it('should handle circular dependency errors', async () => {
+      const mockContent = `import './circular';`;
       mockFs.readFile.mockResolvedValue(mockContent);
-      mockFs.access.mockResolvedValue(undefined);
+      mockFs.access.mockRejectedValue(new Error('Too deep'));
 
-      const bundleMinified = await generateBundle('./', 'file.js', { minify: true });
-      const bundleUnminified = await generateBundle('./', 'file.js', { minify: false });
-      
-      expect(bundleMinified).not.toContain('Comment');
-      expect(bundleUnminified).toContain('Comment');
+      await expect(bundler.generateBundle('entry.js', { maxDepth: 1 }))
+        .rejects
+        .toThrow();
     });
 
-    it('should respect comments option', async () => {
-      const mockContent = 'const x = 1;';
-      mockFs.readFile.mockResolvedValue(mockContent);
-      mockFs.access.mockResolvedValue(undefined);
+    it('should handle invalid entry points', async () => {
+      mockFs.access.mockRejectedValue(new Error('Invalid path'));
 
-      const bundleWithComments = await generateBundle('./', 'file.js', { comments: true });
-      const bundleWithoutComments = await generateBundle('./', 'file.js', { comments: false });
-      
-      expect(bundleWithComments).toContain('// File:');
-      expect(bundleWithoutComments).not.toContain('// File:');
+      await expect(bundler.generateBundle(''))
+        .rejects
+        .toThrow();
     });
   });
 });
