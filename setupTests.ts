@@ -1,5 +1,6 @@
 // setupTests.ts
 import { jest } from '@jest/globals';
+import { SpyInstance } from 'jest-mock';
 import { TextDecoder, TextEncoder } from 'util';
 import { Buffer } from 'buffer';
 import { EventEmitter } from 'events';
@@ -43,7 +44,7 @@ jest.mock('path', () => ({
 }));
 
 // Setup console spies
-let consoleSpies: { [key: string]: jest.SpyInstance } = {};
+let consoleSpies: { [key: string]: SpyInstance } = {};
 
 // Configure Jest timeouts and setup
 beforeAll(() => {
