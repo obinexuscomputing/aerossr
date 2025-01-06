@@ -8,6 +8,7 @@ export interface AeroSSRConfig {
   cacheMaxAge?: number;
   logFilePath?: string | null;
   logger?: Logger;
+  projectPath?: string;
 }
 
 export type Middleware = (

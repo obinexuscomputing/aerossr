@@ -24,11 +24,15 @@ export class AeroSSR {
   public readonly routes: Map<string, RouteHandler>;
   private readonly middlewares: Middleware[];
   
-  constructor(config: AeroSSRConfig = {}) {
+  constructor(config: AeroSSRConfig = {
+    projectPath: ''
+  }) {
     // Normalize CORS options
     const corsOptions = corsManager.normalizeCorsOptions(config.corsOrigins);
 
+    const projectPath = this.config.projectPath;
     this.config = {
+      projectPath,
       loggerOptions: config.loggerOptions || {},
       errorHandler: config.errorHandler || ErrorHandler.handleError,
       staticFileHandler: config.staticFileHandler || this.handleDefaultRequest.bind(this),
@@ -50,7 +54,6 @@ export class AeroSSR {
     };
 
     this.logger = new Logger({ logFilePath: this.config.logFilePath });
-    const projectPath = config.projectPath || './';
     this.bundler = new AeroSSRBundler(projectPath);
     this.server = null;
     this.routes = new Map();

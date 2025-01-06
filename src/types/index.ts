@@ -99,6 +99,7 @@ export interface MetaTags extends MetaTagsBase {}
 export interface LoggerOptions extends LoggerOptionsBase {}
 
 export interface AeroSSRConfig {
+  projectPath: string;
   port?: number;
   cacheMaxAge?: number;
   corsOrigins?: string | CorsOptions;
