@@ -7,14 +7,43 @@ export interface CookieOptions {
   maxAge?: number;
 }
 
-// Mock document object for testing environments
-let mockDocument: { cookie: string } | undefined;
+// Mock document for testing
+interface MockDocument {
+  _cookies: string[];
+  cookie: string;
+}
+
+let mockDocument: MockDocument | undefined;
 
 /**
  * Set mock document for testing
  */
 export function __setMockDocument(doc: { cookie: string }): void {
-  mockDocument = doc;
+  mockDocument = {
+    _cookies: [],
+    get cookie() {
+      return this._cookies.join('; ');
+    },
+    set cookie(value: string) {
+      const cookieParts = value.split(';');
+      const mainPart = cookieParts[0];
+      const cookieName = mainPart.split('=')[0].trim();
+
+      // Handle deletion
+      if (value.includes('expires=Thu, 01 Jan 1970 00:00:00 GMT')) {
+        this._cookies = this._cookies.filter(c => !c.startsWith(cookieName + '='));
+        return;
+      }
+
+      // Update or add cookie
+      const existingIndex = this._cookies.findIndex(c => c.startsWith(cookieName + '='));
+      if (existingIndex >= 0) {
+        this._cookies[existingIndex] = mainPart;
+      } else {
+        this._cookies.push(mainPart);
+      }
+    }
+  };
 }
 
 /**
@@ -56,12 +85,11 @@ export function setCookie(
 
   const cookieParts = [];
 
-  // Main cookie part
-  cookieParts.push(`${encodeURIComponent(name)}=${encodeURIComponent(value.trim())}`);
+  // Main cookie part (trim both name and value)
+  cookieParts.push(`${encodeURIComponent(name.trim())}=${encodeURIComponent(value.trim())}`);
 
   // Expiration date
-  const expires = date.toUTCString();
-  cookieParts.push(`expires=${expires}`);
+  cookieParts.push(`expires=${date.toUTCString()}`);
 
   // Path
   cookieParts.push(`path=${options.path || '/'}`);
@@ -82,9 +110,7 @@ export function setCookie(
     cookieParts.push('httponly');
   }
 
-  // Join all parts and set the cookie
-  const cookieString = cookieParts.join('; ');
-  doc.cookie = cookieString;
+  doc.cookie = cookieParts.join('; ');
 }
 
 /**
@@ -94,14 +120,18 @@ export function getCookie(name: string): string | null {
   const doc = getDocument();
   if (!doc) return null;
 
-  const nameEQ = encodeURIComponent(name) + '=';
+  const nameEQ = encodeURIComponent(name.trim()) + '=';
   const cookies = doc.cookie.split(';');
 
   for (let cookie of cookies) {
     cookie = cookie.trim();
     if (cookie.indexOf(nameEQ) === 0) {
-      const value = cookie.substring(nameEQ.length).trim();
-      return decodeURIComponent(value);
+      const value = cookie.substring(nameEQ.length);
+      try {
+        return decodeURIComponent(value);
+      } catch {
+        return value; // Return raw value if decoding fails
+      }
     }
   }
 
@@ -119,7 +149,7 @@ export function deleteCookie(
   if (!doc) return;
 
   const cookieParts = [
-    `${encodeURIComponent(name)}=`,
+    `${encodeURIComponent(name.trim())}=`,
     'expires=Thu, 01 Jan 1970 00:00:00 GMT',
     `path=${options.path || '/'}`
   ];
@@ -176,7 +206,11 @@ export function getAllCookies(): Record<string, string> {
     .reduce((cookies: Record<string, string>, cookie) => {
       const [name, value] = cookie.split('=').map(c => c.trim());
       if (name && value) {
-        cookies[decodeURIComponent(name)] = decodeURIComponent(value);
+        try {
+          cookies[decodeURIComponent(name)] = decodeURIComponent(value);
+        } catch {
+          cookies[name] = value; // Use raw values if decoding fails
+        }
       }
       return cookies;
     }, {});
