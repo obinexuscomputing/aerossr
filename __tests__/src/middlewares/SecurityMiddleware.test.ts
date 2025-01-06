@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { SecurityMiddleware } from '..rc/middlewares/SecurityMiddleware';
+import { SecurityMiddleware } from '../../../src/middlewares/SecurityMiddleware';
 import { EventEmitter } from 'events';
 
 describe('SecurityMiddleware', () => {
