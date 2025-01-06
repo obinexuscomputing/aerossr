@@ -12,8 +12,6 @@ jest.mock('path');
 jest.mock('zlib');
 jest.mock('fs');
 
-const gzipAsync = promisify(gzip) as unknown as jest.MockedFunction<typeof promisify>;
-
 describe('StaticFileMiddleware', () => {
   let middleware: StaticFileMiddleware;
   const mockStat = stat as jest.MockedFunction<typeof stat>;
@@ -24,24 +22,36 @@ describe('StaticFileMiddleware', () => {
   
   beforeEach(() => {
     jest.clearAllMocks();
-    middleware = new StaticFileMiddleware({
-      root: '/test/public',
-      maxAge: 3600,
-      compression: true
-    });
-
+    
+    // Setup basic path mocking
+    mockPath.resolve.mockImplementation((...args) => args[args.length - 1]);
     mockPath.normalize.mockImplementation(p => p);
     mockPath.join.mockImplementation((...parts) => parts.join('/'));
     mockPath.extname.mockImplementation(p => '.' + p.split('.').pop());
+    mockPath.relative.mockImplementation((from, to) => {
+      // Simulate path.relative logic for directory traversal detection
+      const fromParts = from.split('/').filter(Boolean);
+      const toParts = to.split('/').filter(Boolean);
+      if (toParts.includes('..')) return '../' + toParts.join('/');
+      return toParts.slice(fromParts.length).join('/');
+    });
     
-    // Setup mock stream
+    // Setup stream mocking
     const mockStream = new Transform({
       transform(chunk, encoding, callback) {
         callback(null, chunk);
       }
     });
+    
     mockCreateReadStream.mockReturnValue(mockStream as any);
     (mockCreateGzip as jest.Mock).mockReturnValue(mockStream);
+    
+    // Create middleware instance
+    middleware = new StaticFileMiddleware({
+      root: '/test/public',
+      maxAge: 3600,
+      compression: true
+    });
   });
 
   const createMockRequest = (method: string = 'GET', url: string = '/', headers = {}): IncomingMessage => {
@@ -49,6 +59,7 @@ describe('StaticFileMiddleware', () => {
     req.method = method;
     req.url = url;
     req.headers = headers;
+    req._read = () => {}; // Add required _read method
     return req;
   };
 
@@ -109,14 +120,13 @@ describe('StaticFileMiddleware', () => {
       const res = createMockResponse();
       const next = jest.fn();
 
+      const now = new Date();
       mockStat.mockResolvedValueOnce({
         isFile: () => true,
         isDirectory: () => false,
-        mtime: new Date(),
-        size: 500, // Small file
+        mtime: now,
+        size: 500,
       } as any);
-
-      mockReadFile.mockResolvedValueOnce(Buffer.from('content'));
 
       await middleware.middleware()(req, res, next);
       expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object));
@@ -132,7 +142,7 @@ describe('StaticFileMiddleware', () => {
         isFile: () => true,
         isDirectory: () => false,
         mtime: new Date(),
-        size: 2 * 1024 * 1024, // 2MB file
+        size: 2 * 1024 * 1024,
       } as any);
 
       await middleware.middleware()(req, res, next);
