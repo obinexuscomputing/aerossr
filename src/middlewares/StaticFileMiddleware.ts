@@ -43,9 +43,9 @@ export class StaticFileMiddleware {
           return;
         }
 
-        const urlPath = decodeURIComponent(req.url?.split('?')[0] || '');
-        const normalizedPath = path.normalize(urlPath);
-
+        const urlPath = decodeURIComponent(req.url?.split('?')[0] || '/');
+        const normalizedPath = path.normalize(urlPath).replace(/^(\.\.(\/|\\|$))+/, '');
+        
         // Handle dotfiles
         if (this.isDotFile(normalizedPath)) {
           if (this.dotFiles === 'deny') {
@@ -59,8 +59,9 @@ export class StaticFileMiddleware {
           }
         }
 
-        // Prevent directory traversal
         const fullPath = path.join(this.root, normalizedPath);
+        
+        // Prevent directory traversal
         if (!fullPath.startsWith(this.root)) {
           res.writeHead(403, { 'Content-Type': 'text/plain' });
           res.end('Forbidden');
@@ -91,12 +92,16 @@ export class StaticFileMiddleware {
             await this.serveFile(fullPath, stats, req, res);
             return;
           }
+
+          await next();
         } catch (error) {
-          if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+          const err = error as NodeJS.ErrnoException;
+          if (err.code === 'ENOENT') {
             await next();
             return;
           }
-          throw error;
+          res.writeHead(500, { 'Content-Type': 'text/plain' });
+          res.end('Internal Server Error');
         }
       } catch (error) {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
@@ -137,10 +142,15 @@ export class StaticFileMiddleware {
     res: ServerResponse
   ): Promise<void> {
     const mimeType = this.getMimeType(path.extname(filepath));
+    const lastModifiedUTC = stats.mtime.toUTCString();
     const etag = this.etag ? generateETag(`${filepath}:${stats.mtime.toISOString()}`) : null;
 
     // Handle conditional requests
-    if (etag && req.headers['if-none-match'] === etag) {
+    const ifModifiedSince = req.headers['if-modified-since'];
+    const ifNoneMatch = req.headers['if-none-match'];
+
+    if ((ifNoneMatch && etag && ifNoneMatch === etag) ||
+        (ifModifiedSince && new Date(ifModifiedSince) >= stats.mtime)) {
       res.writeHead(304);
       res.end();
       return;
@@ -149,28 +159,34 @@ export class StaticFileMiddleware {
     const headers: Record<string, string> = {
       'Content-Type': mimeType,
       'Cache-Control': `public, max-age=${this.maxAge}`,
-      'Last-Modified': stats.mtime.toUTCString()
+      'Last-Modified': lastModifiedUTC
     };
 
     if (etag) {
       headers['ETag'] = etag;
     }
 
-    // Handle compression
-    if (this.compression && 
-        this.isCompressible(mimeType) && 
-        req.headers['accept-encoding']?.includes('gzip')) {
-      
+    const shouldCompress = this.compression && 
+                          this.isCompressible(mimeType) && 
+                          req.headers['accept-encoding']?.includes('gzip');
+
+    if (shouldCompress) {
       headers['Content-Encoding'] = 'gzip';
       headers['Vary'] = 'Accept-Encoding';
-      res.writeHead(200, headers);
+    }
 
+    res.writeHead(200, headers);
+
+    // Return only headers for HEAD requests
+    if (req.method === 'HEAD') {
+      res.end();
+      return;
+    }
+
+    if (shouldCompress) {
       if (stats.size > 1024 * 1024) { // 1MB threshold
         const stream = createReadStream(filepath).pipe(createGzip());
-        stream.on('error', (error) => {
-          console.error('Stream error:', error);
-          res.end();
-        });
+        stream.on('error', () => res.end());
         stream.pipe(res);
       } else {
         try {
@@ -178,7 +194,6 @@ export class StaticFileMiddleware {
           const compressed = await gzipAsync(content);
           res.end(compressed);
         } catch (error) {
-          console.error('Compression error:', error);
           res.end();
         }
       }
@@ -186,20 +201,15 @@ export class StaticFileMiddleware {
     }
 
     // Serve uncompressed
-    res.writeHead(200, headers);
     if (stats.size > 1024 * 1024) { // 1MB threshold
       const stream = createReadStream(filepath);
-      stream.on('error', (error) => {
-        console.error('Stream error:', error);
-        res.end();
-      });
+      stream.on('error', () => res.end());
       stream.pipe(res);
     } else {
       try {
         const content = await readFile(filepath);
         res.end(content);
       } catch (error) {
-        console.error('File read error:', error);
         res.end();
       }
     }
