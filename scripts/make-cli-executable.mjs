@@ -16,4 +16,4 @@ function makeExecutable(filepath) {
   }
 }
 
-['dist/cli/bin/index.cjs', 'dist/cli/bin/index.mjs'].forEach(makeExecutable);
+['../dist/cli/bin/index.cjs', '../dist/cli/bin/index.mjs'].forEach(makeExecutable);
