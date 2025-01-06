@@ -98,19 +98,20 @@ const configs = [
   input: 'src/cli/index.ts',
   output: [
     {
+      file: 'dist/cli/bin/index.cjs',
       format: 'cjs',
       sourcemap: true,
+      exports: 'named',
       banner: '#!/usr/bin/env node\n',
-      file: 'dist/cli/bin/index.cjs',
     },
     {
+      file: 'dist/cli/bin/index.mjs',
       format: 'esm',
       sourcemap: true,
+      exports: 'named',
       banner: '#!/usr/bin/env node\n',
-      file: 'dist/cli/bin/index.mjs',
-    },
+    }
   ],
-  
   external,
   plugins: [
     ...basePlugins,
@@ -120,24 +121,40 @@ const configs = [
       declarationMap: true,
       sourceMap: true,
       outputToFilesystem: true,
-      outDir: 'dist/cli/bin', // Ensure this is a valid directory
-      declarationDir: 'dist/cli/bin/types', // Explicitly set declaration directory
-    })
-    ,
-    
-    {
-      name: 'log-output',
-      writeBundle(options, bundle) {
-        console.log('Bundle:', bundle);
-      },
-
-    },
-    copy({
-      targets: [{ src: './package.json', dest: 'dist/' }], // Match the correct destination
-      hook: 'writeBundle',
+      outDir: 'dist/cli/bin',
+      declarationDir: 'dist/cli/bin/types'
     }),
-    
-  ],
+    copy({
+      targets: [
+        { src: './package.json', dest: 'dist/' },
+        { 
+          src: './scripts/make-cli-executable.cjs',
+          dest: 'dist/cli/bin/',
+          transform: (contents) => contents
+        }
+      ],
+      hook: 'writeBundle'
+    }),
+    {
+      name: 'make-executable',
+      writeBundle() {
+        const files = [
+          'dist/cli/bin/index.cjs',
+          'dist/cli/bin/index.mjs'
+        ];
+        if (process.platform !== 'win32') {
+          files.forEach(file => {
+            try {
+              chmodSync(file, '755');
+              console.log(`Made ${file} executable`);
+            } catch (err) {
+              console.error(`Failed to make ${file} executable:`, err);
+            }
+          });
+        }
+      }
+    }
+  ]
 },
 
 ];
