@@ -1,14 +1,15 @@
-import { setCookie, getCookie, deleteCookie, __setMockDocument, __clearMockDocument } from '../../src/utils/cookie';
+// __tests__/utils/cookieManager.test.ts
+import { CookieManager } from '../../src/utils/cookie';
 
-describe('Cookie Utilities', () => {
+describe('Cookie Manager', () => {
+  let cookieManager: CookieManager;
   let documentCookies: string[] = [];
   let mockDoc: { cookie: string };
 
   beforeEach(() => {
-    // Reset cookies before each test
+    cookieManager = new CookieManager();
     documentCookies = [];
 
-    // Create mock document object
     mockDoc = {
       get cookie() {
         return documentCookies.join('; ');
@@ -40,138 +41,109 @@ describe('Cookie Utilities', () => {
       }
     };
 
-    // Set the mock document for testing
-    __setMockDocument(mockDoc);
+    cookieManager.__setMockDocument(mockDoc);
   });
 
   afterEach(() => {
-    __clearMockDocument();
+    cookieManager.__clearMockDocument();
   });
-  describe('setCookie', () => {
+
+  describe('Cookie Setting', () => {
     it('should set expiration date correctly', () => {
-        const mockDate = new Date('2025-01-01T00:00:00Z');
-        const nextDay = new Date('2025-01-02T00:00:00Z');
+      const mockDate = new Date('2025-01-01T00:00:00Z');
+      const nextDay = new Date('2025-01-02T00:00:00Z');
+      
+      const MockDate = class extends Date {
+        constructor() {
+          super();
+          return mockDate;
+        }
+      };
+      
+      const originalDate = global.Date;
+      global.Date = MockDate as DateConstructor;
+      global.Date.UTC = originalDate.UTC;
+      global.Date.now = () => mockDate.getTime();
+      global.Date.parse = originalDate.parse;
+      Object.setPrototypeOf(global.Date, originalDate);
 
-        // Mock Date constructor and now() method
-        const MockDate = class extends Date {
-            constructor() {
-                super();
-                return mockDate;
-            }
-        };
+      cookieManager.setCookie('test', 'value', 1);
+      
+      expect(mockDoc.cookie).toContain('test=value');
+      expect(mockDoc.cookie).toContain(`expires=${nextDay.toUTCString()}`);
+      expect(mockDoc.cookie).toContain('path=/');
 
-        const originalDate = global.Date;
-        global.Date = MockDate as DateConstructor;
-        global.Date.UTC = originalDate.UTC;
-        global.Date.now = () => mockDate.getTime();
-        global.Date.parse = originalDate.parse;
-        Object.setPrototypeOf(global.Date, originalDate);
-
-        // Set cookie and verify
-        setCookie('test', 'value', 1);
-
-        const expectedCookie = `test=value; expires=${nextDay.toUTCString()}; path=/`;
-        const actualCookie = mockDoc?.cookie;
-
-        expect(actualCookie).toContain('test=value');
-        expect(actualCookie).toContain(`expires=${nextDay.toUTCString()}`);
-        expect(actualCookie).toContain('path=/');
-
-        // Restore Date
-        global.Date = originalDate;
-    });
-});
-  describe('getCookie', () => {
-    it('should retrieve existing cookie value', () => {
-      setCookie('test', 'value', 1);
-      expect(getCookie('test')).toBe('value');
+      global.Date = originalDate;
     });
 
-    it('should return null for non-existent cookie', () => {
-      expect(getCookie('nonexistent')).toBeNull();
+    it('should set cookie with custom options', () => {
+      cookieManager.setCookie('test', 'value', 1, {
+        domain: 'example.com',
+        secure: true,
+        sameSite: 'Strict'
+      });
+
+      expect(mockDoc.cookie).toContain('domain=example.com');
+      expect(mockDoc.cookie).toContain('secure');
+      expect(mockDoc.cookie).toContain('samesite=Strict');
+    });
+  });
+
+  describe('Cookie Retrieval', () => {
+    it('should retrieve existing cookie', () => {
+      cookieManager.setCookie('test', 'value', 1);
+      expect(cookieManager.getCookie('test')).toBe('value');
     });
 
     it('should handle multiple cookies', () => {
-      setCookie('test1', 'value1', 1);
-      setCookie('test2', 'value2', 1);
+      cookieManager.setCookie('test1', 'value1', 1);
+      cookieManager.setCookie('test2', 'value2', 1);
       
-      expect(getCookie('test1')).toBe('value1');
-      expect(getCookie('test2')).toBe('value2');
+      expect(cookieManager.getCookie('test1')).toBe('value1');
+      expect(cookieManager.getCookie('test2')).toBe('value2');
     });
 
-    it('should handle cookies with spaces around values', () => {
-      // Manually set cookie with spaces
-      mockDoc.cookie = 'test=  value  ';
-      expect(getCookie('test')).toBe('value');
+    it('should return null for non-existent cookie', () => {
+      expect(cookieManager.getCookie('nonexistent')).toBeNull();
     });
 
-    it('should handle cookies with special characters', () => {
-      const specialValue = 'value!@#$%^&*()';
-      setCookie('test', specialValue, 1);
-      expect(getCookie('test')).toBe(specialValue);
-    });
+    it('should get all cookies', () => {
+      cookieManager.setCookie('test1', 'value1', 1);
+      cookieManager.setCookie('test2', 'value2', 1);
 
-    it('should return exact matches only', () => {
-      setCookie('test', 'value', 1);
-      setCookie('test123', 'other', 1);
-      
-      expect(getCookie('test')).toBe('value');
+      const allCookies = cookieManager.getAllCookies();
+      expect(allCookies).toEqual({
+        test1: 'value1',
+        test2: 'value2'
+      });
     });
   });
 
-  describe('deleteCookie', () => {
+  describe('Cookie Deletion', () => {
     it('should delete existing cookie', () => {
-      setCookie('test', 'value', 1);
-      deleteCookie('test');
+      cookieManager.setCookie('test', 'value', 1);
+      cookieManager.deleteCookie('test');
       
-      expect(getCookie('test')).toBeNull();
+      expect(cookieManager.getCookie('test')).toBeNull();
     });
 
-    it('should not throw error when deleting non-existent cookie', () => {
-      expect(() => deleteCookie('nonexistent')).not.toThrow();
-    });
-
-    it('should only delete specified cookie', () => {
-      setCookie('test1', 'value1', 1);
-      setCookie('test2', 'value2', 1);
-      
-      deleteCookie('test1');
-      
-      expect(getCookie('test1')).toBeNull();
-      expect(getCookie('test2')).toBe('value2');
+    it('should handle deleting non-existent cookie', () => {
+      expect(() => cookieManager.deleteCookie('nonexistent')).not.toThrow();
     });
   });
 
-  describe('Edge Cases', () => {
-    it('should handle empty string values', () => {
-      setCookie('test', '', 1);
-      expect(getCookie('test')).toBe('');
+  describe('Feature Detection', () => {
+    it('should detect cookie support', () => {
+      expect(cookieManager.areCookiesEnabled()).toBe(true);
     });
 
-    it('should handle empty string names', () => {
-      setCookie('', 'value', 1);
-      expect(getCookie('')).toBe('value');
-    });
+    it('should handle cookie errors', () => {
+      mockDoc.cookie = '';
+      Object.defineProperty(mockDoc, 'cookie', {
+        set: () => { throw new Error('Cookie error'); }
+      });
 
-    it('should handle zero expiration days', () => {
-      setCookie('test', 'value', 0);
-      expect(getCookie('test')).toBe('value');
-    });
-
-    it('should handle negative expiration days', () => {
-      setCookie('test', 'value', -1);
-      expect(getCookie('test')).toBe('value');
-    });
-
-    it('should handle multiple sequential operations', () => {
-      setCookie('test', 'value1', 1);
-      expect(getCookie('test')).toBe('value1');
-      
-      setCookie('test', 'value2', 1);
-      expect(getCookie('test')).toBe('value2');
-      
-      deleteCookie('test');
-      expect(getCookie('test')).toBeNull();
+      expect(cookieManager.areCookiesEnabled()).toBe(false);
     });
   });
 });

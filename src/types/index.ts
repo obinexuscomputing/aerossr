@@ -123,15 +123,15 @@ export type AsyncHandler<T> = (...args: any[]) => Promise<AsyncResult<T>>;
 
 // Re-export utility types
 export type { ServerResponse, IncomingMessage } from 'http';
-export * from '../utils/cache';
-export * from '../utils/Cors';
+export * from '../utils/CacheManager';
+export * from '../utils/CorsManager';
 export * from '../utils/html';
 export * from '../utils/Logger';
 export * from '../utils/ErrorHandler';
 export * from '../utils/etag';
 export * from '../utils/Bundler';
 export * from '../utils/async';
-export * from '../utils/Cookie';
+export * from '../utils/CookieManager';
 export * from '../utils/async';
 
 // Create union type for all possible HTTP methods
