@@ -1,4 +1,4 @@
-import { StaticFileMiddleware } from '../../src/middlewares/StaticFileMiddleware';
+import { StaticFileMiddleware } from '../../../src/middlewares/StaticFileMiddleware';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Readable, Transform } from 'stream';
 import { stat, readFile } from 'fs/promises';
