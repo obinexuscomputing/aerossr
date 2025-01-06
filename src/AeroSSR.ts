@@ -50,7 +50,8 @@ export class AeroSSR {
     };
 
     this.logger = new Logger({ logFilePath: this.config.logFilePath });
-    this.bundler = new AeroSSRBundler();
+    const projectPath = config.projectPath || './';
+    this.bundler = new AeroSSRBundler(projectPath);
     this.server = null;
     this.routes = new Map();
     this.middlewares = [];

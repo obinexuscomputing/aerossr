@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 
 // Core Base Interfaces
 export interface CacheStoreBase<T> {
+  size: number;
   get(key: string): T | undefined;
   set(key: string, value: T): void;
   clear(): void;
