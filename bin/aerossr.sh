@@ -1,21 +1,18 @@
-#!/usr/bin/env pwsh
-$basedir = Split-Path $MyInvocation.MyCommand.Definition -Parent
+#!/usr/bin/env bash
 
-$exe = ""
-$nodeArgs = @()
-$args = @()
-$split = $myinvocation.line.Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries)
-if ($split.length -gt 1) {
-    $args = $split[1..($split.length-1)]
-}
+basedir=$(dirname "$(readlink -f "$0")")
 
-if ($PSVersionTable.PSVersion -lt "6.0") {
+exe=""
+nodeArgs=()
+args=("$@")
+
+if [ "${BASH_VERSINFO:-0}" -lt 4 ]; then
     # Fix case when both the Windows and Linux builds of Node
     # are installed in the same directory
-    $exe = "..\dist\cli\bin\index.cjs"
-} else {
-    $exe = "..\dist\cli\bin\index.mjs"
-}
+    exe="../dist/cli/bin/index.cjs"
+else
+    exe="../dist/cli/bin/index.mjs"
+fi
 
-& "$basedir\$exe" $nodeArgs $args
-exit $LASTEXITCODE
+"$basedir/$exe" "${nodeArgs[@]}" "${args[@]}"
+exit $?
