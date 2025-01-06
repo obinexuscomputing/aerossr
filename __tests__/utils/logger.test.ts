@@ -138,3 +138,66 @@ describe('Logger', () => {
     });
   });
 });
+
+
+describe('Logger', () => {
+  let mockFs: jest.Mocked<typeof fs>;
+  
+  beforeEach(() => {
+    mockFs = fs as jest.Mocked<typeof fs>;
+    mockFs.appendFile.mockResolvedValue(undefined);
+  });
+
+  it('should initialize without file path', () => {
+    const logger = new Logger();
+    expect(logger.getLogPath()).toBeNull();
+  });
+
+  it('should write to file when path provided', async () => {
+    const logger = new Logger({ logFilePath: '/test.log' });
+    await logger.log('test message');
+    expect(mockFs.appendFile).toHaveBeenCalled();
+  });
+
+  it('should format messages with timestamp', async () => {
+    const logger = new Logger();
+    const consoleSpy = jest.spyOn(console, 'log');
+    await logger.log('test');
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
+    );
+  });
+});
+
+// Priority 4: Cookie Tests
+describe('Cookie Utils', () => {
+  beforeEach(() => {
+    // Mock document.cookie
+    Object.defineProperty(window.document, 'cookie', {
+      writable: true,
+      value: '',
+    });
+  });
+
+  it('should set cookie with correct attributes', () => {
+    setCookie('test', 'value', 1, {
+      path: '/test',
+      secure: true
+    });
+    
+    expect(document.cookie).toContain('test=value');
+    expect(document.cookie).toContain('path=/test');
+    expect(document.cookie).toContain('secure');
+  });
+
+  it('should get cookie value', () => {
+    document.cookie = 'test=value';
+    expect(getCookie('test')).toBe('value');
+  });
+
+  it('should delete cookie', () => {
+    setCookie('test', 'value', 1);
+    deleteCookie('test');
+    expect(getCookie('test')).toBeNull();
+  });
+});

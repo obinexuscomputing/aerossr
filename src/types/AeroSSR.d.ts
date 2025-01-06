@@ -1,5 +1,5 @@
 import { Server, IncomingMessage, ServerResponse } from 'http';
-import { CorsOptions, CacheStore, MetaTags } from './types';
+import { CorsOptions, CacheStore, MetaTags, Logger } from './types';
 
 export interface AeroSSRConfig {
   port?: number;

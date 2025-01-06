@@ -26,3 +26,26 @@ describe('Cache Store', () => {
     expect(cache.get('key3')).toBe('value3');
   });
 });
+describe('Cache Utility', () => {
+  describe('createCache', () => {
+    it('should create empty cache', () => {
+      const cache = createCache<string>();
+      expect(cache.get('test')).toBeUndefined();
+    });
+
+    it('should set and get values', () => {
+      const cache = createCache<string>();
+      cache.set('key', 'value');
+      expect(cache.get('key')).toBe('value');
+    });
+
+    it('should clear all values', () => {
+      const cache = createCache<string>();
+      cache.set('key1', 'value1');
+      cache.set('key2', 'value2');
+      cache.clear();
+      expect(cache.get('key1')).toBeUndefined();
+      expect(cache.get('key2')).toBeUndefined();
+    });
+  });
+});

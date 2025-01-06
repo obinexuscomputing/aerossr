@@ -213,3 +213,95 @@ describe('Integration Tests', () => {
     expect(logSpy).toHaveBeenCalledWith('Server stopped');
   });
 });
+
+describe('AeroSSR Core', () => {
+  let aerossr: AeroSSR;
+  
+  beforeEach(() => {
+    aerossr = new AeroSSR();
+  });
+
+  afterEach(async () => {
+    await aerossr.stop();
+  });
+
+  describe('Configuration', () => {
+    it('should initialize with default config', () => {
+      expect(aerossr.config.port).toBe(3000);
+      expect(aerossr.config.compression).toBe(true);
+    });
+
+    it('should override defaults with custom config', () => {
+      const customAero = new AeroSSR({
+        port: 4000,
+        compression: false
+      });
+      expect(customAero.config.port).toBe(4000);
+      expect(customAero.config.compression).toBe(false);
+    });
+  });
+
+  describe('Server Lifecycle', () => {
+    it('should start and stop server', async () => {
+      const server = await aerossr.start();
+      expect(server.listening).toBe(true);
+      await aerossr.stop();
+      expect(server.listening).toBe(false);
+    });
+
+    it('should handle start errors', async () => {
+      // Start server on same port to cause conflict
+      const server1 = new AeroSSR({ port: 5000 });
+      const server2 = new AeroSSR({ port: 5000 });
+      
+      await server1.start();
+      await expect(server2.start()).rejects.toThrow();
+      await server1.stop();
+    });
+  });
+
+  describe('Request Handling', () => {
+    it('should handle GET requests', async () => {
+      aerossr.route('/test', async (req, res) => {
+        res.writeHead(200);
+        res.end('success');
+      });
+
+      const server = await aerossr.start();
+      const address = server.address() as AddressInfo | null;
+      if (address) {
+        const response = await fetch(`http://localhost:${address.port}/test`);
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe('success');
+      } else {
+        throw new Error('Server address is null');
+      }
+      expect(response.status).toBe(200);
+      expect(await response.text()).toBe('success');
+    });
+
+    it('should handle 404s', async () => {
+      const server = await aerossr.start();
+      const response = await fetch(`http://localhost:${server.address().port}/notfound`);
+      expect(response.status).toBe(404);
+    });
+
+    it('should execute middleware chain', async () => {
+      const order: number[] = [];
+      
+      aerossr.use(async (req, res, next) => {
+        order.push(1);
+        await next();
+      });
+
+      aerossr.use(async (req, res, next) => {
+        order.push(2);
+        await next();
+      });
+
+      const server = await aerossr.start();
+      await fetch(`http://localhost:${server.address().port}/`);
+      expect(order).toEqual([1, 2]);
+    });
+  });
+});
