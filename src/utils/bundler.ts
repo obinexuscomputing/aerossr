@@ -1,3 +1,4 @@
+// src/utils/bundler.ts
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -15,67 +16,6 @@ export interface BundleOptions extends DependencyOptions {
 }
 
 /**
- * Resolves all dependencies for a given file
- */
-export async function resolveDependencies(
-  filePath: string,
-  deps: Set<string> = new Set(),
-  options: DependencyOptions = {}
-): Promise<Set<string>> {
-  const {
-    extensions = ['.js', '.ts', '.jsx', '.tsx'],
-    maxDepth = 100,
-    ignorePatterns = ['node_modules']
-  } = options;
-
-  async function resolve(currentPath: string, depth = 0): Promise<void> {
-    if (depth > maxDepth || ignorePatterns.some(pattern => currentPath.includes(pattern))) {
-      return;
-    }
-
-    // Add the file to dependencies before processing to handle circular dependencies
-    deps.add(currentPath);
-
-    try {
-      const content = await fs.readFile(currentPath, 'utf-8');
-
-      // Match different import patterns
-      const importPatterns = [
-        /require\s*\(['"]([^'"]+)['"]\)/g,                    // require('...')
-        /import\s+.*?from\s+['"]([^'"]+)['"]/g,              // import ... from '...'
-        /import\s*['"]([^'"]+)['"]/g,                        // import '...'
-        /import\s*\(.*?['"]([^'"]+)['"]\s*\)/g,              // import('...')
-        /export\s+.*?from\s+['"]([^'"]+)['"]/g               // export ... from '...'
-      ];
-
-      for (const pattern of importPatterns) {
-        let match;
-        while ((match = pattern.exec(content)) !== null) {
-          const importPath = match[1];
-          if (!importPath) continue;
-
-          try {
-            const fullPath = await resolveFilePath(importPath, currentPath, extensions);
-            if (fullPath && !deps.has(fullPath)) {
-              await resolve(fullPath, depth + 1);
-            }
-          } catch (err) {
-            if (process.env.NODE_ENV !== 'test') {
-              console.warn(`Warning: Could not resolve dependency ${importPath} in ${currentPath}`);
-            }
-          }
-        }
-      }
-    } catch (err) {
-      throw new Error(`Error processing ${currentPath}: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }
-
-  await resolve(filePath);
-  return deps;
-}
-
-/**
  * Resolves the full path of an import
  */
 async function resolveFilePath(
@@ -83,14 +23,14 @@ async function resolveFilePath(
   fromPath: string,
   extensions: string[],
 ): Promise<string | null> {
-  // Handle package imports
+  // Handle non-relative imports (e.g. package imports)
   if (!importPath.startsWith('.') && !importPath.startsWith('/')) {
     return null;
   }
 
   const basePath = path.resolve(path.dirname(fromPath), importPath);
 
-  // Check if path has extension
+  // Check if path already has valid extension
   if (extensions.some(ext => importPath.endsWith(ext))) {
     try {
       await fs.access(basePath);
@@ -102,7 +42,7 @@ async function resolveFilePath(
 
   // Try adding extensions
   for (const ext of extensions) {
-    const fullPath = basePath + ext;
+    const fullPath = `${basePath}${ext}`;
     try {
       await fs.access(fullPath);
       return fullPath;
@@ -126,49 +66,144 @@ async function resolveFilePath(
 }
 
 /**
+ * Resolves all dependencies for a given file
+ */
+export async function resolveDependencies(
+  filePath: string,
+  deps: Set<string> = new Set(),
+  options: DependencyOptions = {}
+): Promise<Set<string>> {
+  const {
+    extensions = ['.js', '.ts', '.jsx', '.tsx'],
+    maxDepth = 100,
+    ignorePatterns = ['node_modules']
+  } = options;
+
+  if (ignorePatterns.some(pattern => filePath.includes(pattern))) {
+    return deps;
+  }
+
+  async function resolve(currentPath: string, depth = 0): Promise<void> {
+    if (depth > maxDepth || deps.has(currentPath)) {
+      return;
+    }
+
+    deps.add(currentPath);
+
+    try {
+      const content = await fs.readFile(currentPath, 'utf-8');
+      const importPatterns = [
+        /require\s*\(['"]([^'"]+)['"]\)/g,                    // require('...')
+        /import\s+.*?from\s+['"]([^'"]+)['"]/g,              // import ... from '...'
+        /import\s*['"]([^'"]+)['"]/g,                        // import '...'
+        /import\s*\(.*?['"]([^'"]+)['"]\s*\)/g,              // import('...')
+        /export\s+.*?from\s+['"]([^'"]+)['"]/g               // export ... from '...'
+      ];
+
+      const promises: Promise<void>[] = [];
+
+      for (const pattern of importPatterns) {
+        let match;
+        while ((match = pattern.exec(content)) !== null) {
+          const importPath = match[1];
+          if (!importPath) continue;
+
+          promises.push((async () => {
+            try {
+              const fullPath = await resolveFilePath(importPath, currentPath, extensions);
+              if (fullPath) {
+                await resolve(fullPath, depth + 1);
+              }
+            } catch (err) {
+              if (process.env.NODE_ENV !== 'test') {
+                console.warn(`Warning: Could not resolve dependency ${importPath} in ${currentPath}`);
+              }
+            }
+          })());
+        }
+      }
+
+      await Promise.all(promises);
+    } catch (err) {
+      throw new Error(`Error processing ${currentPath}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  await resolve(filePath);
+  return deps;
+}
+
+/**
  * Minifies JavaScript code while preserving important structures
  */
 export function minifyBundle(code: string): string {
   if (!code.trim()) return '';
 
-  // Replace all line comments
-  code = code.replace(/\/\/[^\n]*/g, '');
-  
-  // Replace all multiline comments
-  code = code.replace(/\/\*[\s\S]*?\*\//g, '');
-
-  // Handle string literals and operators
+  // State tracking
   let result = '';
   let inString = false;
   let stringChar = '';
-  let lastChar: string | undefined = '';
+  let inComment = false;
+  let inMultilineComment = false;
+  let lastChar = '';
 
   for (let i = 0; i < code.length; i++) {
     const char = code[i];
+    const nextChar = code[i + 1] || '';
 
+    // Handle string literals
     if (inString) {
       result += char;
       if (char === stringChar && lastChar !== '\\') {
         inString = false;
       }
-    } else if (char === '"' || char === "'") {
+    }
+    // Handle comments
+    else if (inComment) {
+      if (char === '\n') {
+        inComment = false;
+      }
+    }
+    else if (inMultilineComment) {
+      if (char === '*' && nextChar === '/') {
+        inMultilineComment = false;
+        i++;
+      }
+    }
+    // Start of comments
+    else if (char === '/' && nextChar === '/') {
+      inComment = true;
+      i++;
+    }
+    else if (char === '/' && nextChar === '*') {
+      inMultilineComment = true;
+      i++;
+    }
+    // Start of strings
+    else if (char === '"' || char === "'") {
       inString = true;
       stringChar = char;
       result += char;
-    } else if (char && /\s/.test(char)) {
+    }
+    // Handle whitespace
+    else if (/\s/.test(char)) {
       const prevChar = result[result.length - 1];
-      const nextChar = code[i + 1];
+      const nextNonSpaceChar = code.slice(i + 1).match(/\S/);
       
-      // Keep space only if needed for syntax
-      if (prevChar && nextChar && 
+      if (prevChar && nextNonSpaceChar && 
           /[a-zA-Z0-9_$]/.test(prevChar) && 
-          /[a-zA-Z0-9_$]/.test(nextChar)) {
+          /[a-zA-Z0-9_$]/.test(nextNonSpaceChar[0])) {
         result += ' ';
       }
-    } else {
+    }
+    // All other characters
+    else {
       result += char;
     }
-    lastChar = char;
+
+    if (!inComment && !inMultilineComment) {
+      lastChar = char;
+    }
   }
 
   // Clean up operators and punctuation
@@ -203,19 +238,20 @@ export async function generateBundle(
       throw new Error(`No dependencies found for ${entryPoint}`);
     }
 
-    let bundle = '';
+    const chunks: string[] = [];
     
     for (const dep of dependencies) {
       const content = await fs.readFile(dep, 'utf-8');
       const relativePath = path.relative(projectPath, dep);
       
       if (comments) {
-        bundle += `\n// File: ${relativePath}\n`;
+        chunks.push(`\n// File: ${relativePath}`);
       }
       
-      bundle += `${content}\n`;
+      chunks.push(content);
     }
 
+    const bundle = chunks.join('\n');
     return minify ? minifyBundle(bundle) : bundle;
   } catch (err) {
     throw new Error(
