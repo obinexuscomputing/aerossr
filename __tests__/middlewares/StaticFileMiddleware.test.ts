@@ -1,4 +1,4 @@
-import { StaticFileMiddleware } from '../../src/middlewares/StaticFileMiddleware';
+import { StaticFileMiddleware } from '../../src/middlewares/';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Readable, Transform } from 'stream';
 import { stat, readFile } from 'fs/promises';
@@ -12,8 +12,6 @@ jest.mock('path');
 jest.mock('zlib');
 jest.mock('fs');
 
-const gzipAsync = promisify(gzip) as unknown as jest.MockedFunction<typeof promisify>;
-
 describe('StaticFileMiddleware', () => {
   let middleware: StaticFileMiddleware;
   const mockStat = stat as jest.MockedFunction<typeof stat>;
@@ -25,34 +23,44 @@ describe('StaticFileMiddleware', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Setup path mocking
+    // Mock path operations
     mockPath.resolve.mockImplementation((...paths) => paths[paths.length - 1]);
-    mockPath.normalize.mockImplementation((p) => p);
+    mockPath.normalize.mockImplementation(p => p);
     mockPath.join.mockImplementation((...parts) => parts.join('/'));
     mockPath.relative.mockImplementation((from, to) => {
-      // Simple relative path calculation for tests
-      const fromParts = from.split('/');
-      const toParts = to.split('/');
-      if (to.includes('..')) return '../' + toParts.join('/');
-      return toParts.slice(fromParts.length).join('/');
+      // Handle directory traversal detection
+      if (to.includes('..')) return '../' + to;
+      // Handle normal paths
+      const fromParts = from.split('/').filter(Boolean);
+      const toParts = to.split('/').filter(Boolean);
+      const relativeParts = toParts.slice(fromParts.length);
+      return relativeParts.join('/');
     });
-    mockPath.isAbsolute.mockImplementation((p) => p.startsWith('/'));
-    mockPath.extname.mockImplementation((p) => '.' + p.split('.').pop());
+    mockPath.isAbsolute.mockImplementation(p => p.startsWith('/'));
+    mockPath.extname.mockImplementation(p => '.' + p.split('.').pop());
 
-    // Setup stream mocking
+    // Mock file operations
     const mockStream = new Transform({
       transform(chunk, encoding, callback) {
         callback(null, chunk);
       }
     });
-
     mockCreateReadStream.mockReturnValue(mockStream as any);
     (mockCreateGzip as jest.Mock).mockReturnValue(mockStream);
+    (gzip as any).mockImplementation((buffer, callback) => callback(null, Buffer.from('compressed')));
 
-    // Mock gzip implementation
-    (gzip as any).mockImplementation((buffer, callback) => 
-      callback(null, Buffer.from('compressed')));
+    // Mock file stat
+    mockStat.mockResolvedValue({
+      isFile: () => true,
+      isDirectory: () => false,
+      mtime: new Date(),
+      size: 500,
+    } as any);
 
+    // Mock file read
+    mockReadFile.mockResolvedValue(Buffer.from('test content'));
+
+    // Create middleware instance
     middleware = new StaticFileMiddleware({
       root: '/test/public',
       maxAge: 3600,
@@ -65,7 +73,7 @@ describe('StaticFileMiddleware', () => {
     req.method = method;
     req.url = url;
     req.headers = headers;
-    req._read = () => {};  // Required for Readable
+    req._read = () => {};
     return req;
   };
 
@@ -77,10 +85,11 @@ describe('StaticFileMiddleware', () => {
       on: jest.fn(),
       once: jest.fn(),
       emit: jest.fn(),
-      pipe: jest.fn()
+      pipe: jest.fn(),
     } as unknown as jest.Mocked<ServerResponse>;
   };
 
+  // Test cases...
   describe('Configuration', () => {
     it('should use default options when not provided', () => {
       const defaultMiddleware = new StaticFileMiddleware({ root: '/test' });
@@ -100,6 +109,7 @@ describe('StaticFileMiddleware', () => {
         index: ['index.htm'],
         etag: false
       });
+
       expect(customMiddleware['maxAge']).toBe(7200);
       expect(customMiddleware['compression']).toBe(false);
       expect(customMiddleware['dotFiles']).toBe('allow');
@@ -110,12 +120,11 @@ describe('StaticFileMiddleware', () => {
 
   describe('Request Handling', () => {
     beforeEach(() => {
-      // Default successful file stat
       mockStat.mockResolvedValue({
         isFile: () => true,
         isDirectory: () => false,
         mtime: new Date(),
-        size: 500
+        size: 500,
       } as any);
     });
 

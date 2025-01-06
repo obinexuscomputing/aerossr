@@ -13,7 +13,8 @@
     "paths": {
       "@/*": ["src/*"],
       "@utils/*": ["src/utils/*"],
-      "@types/*": ["src/types/*"]
+      "@types/*": ["src/types/*"],
+      "@middlewares/*": ["src/middlewares/*"]
     },
     "declaration": true,
     "declarationMap": true,
