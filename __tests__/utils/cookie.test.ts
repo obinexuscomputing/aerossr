@@ -1,18 +1,21 @@
-import { setCookie, getCookie, deleteCookie } from '../../src/utils/cookie';
+import { setCookie, getCookie, deleteCookie, __setMockDocument, __clearMockDocument } from '../../src/utils/cookie';
 
 describe('Cookie Utilities', () => {
   let documentCookies: string[] = [];
+  let mockDoc: { cookie: string };
 
   beforeEach(() => {
     // Reset cookies before each test
     documentCookies = [];
 
-    // Mock document.cookie getter and setter
-    Object.defineProperty(document, 'cookie', {
-      get: jest.fn(() => documentCookies.join('; ')),
-      set: jest.fn((value: string) => {
+    // Create mock document object
+    mockDoc = {
+      get cookie() {
+        return documentCookies.join('; ');
+      },
+      set cookie(value: string) {
         // Handle cookie deletion
-        if (value.includes('Max-Age=-99999999')) {
+        if (value.includes('expires=Thu, 01 Jan 1970 00:00:00 GMT')) {
           const cookieName = value.split('=')[0];
           documentCookies = documentCookies.filter(cookie => 
             !cookie.startsWith(cookieName + '=')
@@ -34,15 +37,21 @@ describe('Cookie Utilities', () => {
         } else {
           documentCookies.push(newCookie);
         }
-      }),
-      configurable: true
-    });
+      }
+    };
+
+    // Set the mock document for testing
+    __setMockDocument(mockDoc);
+  });
+
+  afterEach(() => {
+    __clearMockDocument();
   });
 
   describe('setCookie', () => {
     it('should set a cookie with correct name and value', () => {
       setCookie('test', 'value', 1);
-      expect(document.cookie).toContain('test=value');
+      expect(mockDoc.cookie).toContain('test=value');
     });
 
     it('should set expiration date correctly', () => {
@@ -51,7 +60,8 @@ describe('Cookie Utilities', () => {
 
       setCookie('test', 'value', 1);
       
-      expect(document.cookie).toContain('expires=Wed, 02 Jan 2025 00:00:00 GMT');
+      expect(mockDoc.cookie).toContain('test=value');
+      expect(documentCookies[0]).toContain('expires=Wed, 02 Jan 2025 00:00:00 GMT');
       
       (global.Date as unknown as jest.Mock).mockRestore();
     });
@@ -60,8 +70,8 @@ describe('Cookie Utilities', () => {
       setCookie('test', 'value1', 1);
       setCookie('test', 'value2', 1);
       
-      expect(document.cookie).toContain('test=value2');
-      expect(document.cookie.match(/test=/g)?.length).toBe(1);
+      expect(mockDoc.cookie).toContain('test=value2');
+      expect(documentCookies.filter(c => c.startsWith('test=')).length).toBe(1);
     });
 
     it('should handle special characters in value', () => {
@@ -90,7 +100,7 @@ describe('Cookie Utilities', () => {
 
     it('should handle cookies with spaces around values', () => {
       // Manually set cookie with spaces
-      document.cookie = 'test=  value  ';
+      mockDoc.cookie = 'test=  value  ';
       expect(getCookie('test')).toBe('value');
     });
 
