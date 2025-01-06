@@ -5,18 +5,10 @@ import { createGzip, gzip } from 'zlib';
 import { promisify } from 'util';
 import { IncomingMessage, ServerResponse } from 'http';
 import { generateETag } from '../utils/etag';
-import { Middleware } from '../types';
+import { Middleware, StaticFileOptions } from '../types';
 
 const gzipAsync = promisify(gzip);
 
-export interface StaticFileOptions {
-  root: string;
-  maxAge?: number;
-  index?: string[];
-  dotFiles?: 'ignore' | 'allow' | 'deny';
-  compression?: boolean;
-  etag?: boolean;
-}
 
 export class StaticFileMiddleware {
   private readonly root: string;
