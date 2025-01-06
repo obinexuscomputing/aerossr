@@ -5,6 +5,7 @@ import { stat, readFile } from 'fs/promises';
 import * as fs from 'fs';
 import { gzip, createGzip } from 'zlib';
 import { promisify } from 'util';
+import path from 'path';
 
 // Configure path mock
 const mockPath = {
