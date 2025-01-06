@@ -5,8 +5,7 @@ import { createGzip, gzip } from 'zlib';
 import { promisify } from 'util';
 import { IncomingMessage, ServerResponse } from 'http';
 
-import { Middleware, StaticFileOptions } from '../types';
-import { generateETag } from '@/types/utils';
+import { etagGenerator, Middleware, StaticFileOptions } from '../types';
 
 const gzipAsync = promisify(gzip);
 
@@ -121,85 +120,160 @@ export class StaticFileMiddleware {
     req: IncomingMessage,
     res: ServerResponse
   ): Promise<void> {
-    const mimeType = this.getMimeType(path.extname(filepath));
-    const lastModified = stats.mtime.toUTCString();
-    const etag = this.etag ? generateETag(`${stats.size}-${stats.mtime.getTime()}`) : null;
-
-    // Handle conditional requests
-    const ifModifiedSince = req.headers['if-modified-since'];
-    const ifNoneMatch = req.headers['if-none-match'];
-
-    if (ifNoneMatch && etag && ifNoneMatch === etag) {
-      res.writeHead(304);
-      res.end();
-      return;
-    }
-
-    if (ifModifiedSince && new Date(ifModifiedSince) >= stats.mtime) {
-      res.writeHead(304);
-      res.end();
-      return;
-    }
-
-    const headers: Record<string, string> = {
-      'Content-Type': mimeType,
-      'Cache-Control': `public, max-age=${this.maxAge}`,
-      'Last-Modified': lastModified
-    };
-
-    if (etag) {
-      headers['ETag'] = etag;
-    }
-
-    const acceptEncoding = req.headers['accept-encoding'] as string;
-    const shouldCompress = 
-      this.compression && 
-      this.isCompressible(mimeType) && 
-      acceptEncoding?.includes('gzip');
-
-    if (shouldCompress) {
-      headers['Content-Encoding'] = 'gzip';
-      headers['Vary'] = 'Accept-Encoding';
-    }
-
-    res.writeHead(200, headers);
-
-    // HEAD requests should only return headers
-    if (req.method === 'HEAD') {
-      res.end();
-      return;
-    }
-
-    // Handle file serving
-    if (stats.size > 1024 * 1024) { // 1MB threshold
-      const stream = createReadStream(filepath);
-      if (shouldCompress) {
-        const gzipStream = createGzip();
-        stream
-          .on('error', () => res.end())
-          .pipe(gzipStream)
-          .on('error', () => res.end())
-          .pipe(res);
-      } else {
-        stream
-          .on('error', () => res.end())
-          .pipe(res);
+    try {
+      const mimeType = this.getMimeType(path.extname(filepath));
+      const lastModified = stats.mtime.toUTCString();
+      
+      // Generate ETag using file size and modification time
+      const etagContent = `${stats.size}-${stats.mtime.getTime()}`;
+      const etag = this.etag ? etagGenerator.generate(etagContent, { 
+        weak: true,  // Use weak ETags for better performance
+        algorithm: 'sha1' // Use SHA1 for better collision resistance
+      }) : null;
+  
+      // Handle conditional requests
+      const ifModifiedSince = req.headers['if-modified-since'];
+      const ifNoneMatch = req.headers['if-none-match'] as string;
+  
+      const isNotModified = (
+        (etag && ifNoneMatch && etagGenerator.compare(etag, ifNoneMatch)) ||
+        (ifModifiedSince && new Date(ifModifiedSince) >= stats.mtime)
+      );
+  
+      if (isNotModified) {
+        res.writeHead(304, {
+          'Cache-Control': `public, max-age=${this.maxAge}`,
+          'Last-Modified': lastModified,
+          'ETag': etag
+        });
+        res.end();
+        return;
       }
-    } else {
-      try {
-        const content = await readFile(filepath);
-        if (shouldCompress) {
-          const compressed = await gzipAsync(content);
-          res.end(compressed);
-        } else {
-          res.end(content);
-        }
-      } catch (error) {
+  
+      // Setup response headers
+      const headers: Record<string, string> = {
+        'Content-Type': mimeType,
+        'Content-Length': stats.size.toString(),
+        'Cache-Control': `public, max-age=${this.maxAge}`,
+        'Last-Modified': lastModified,
+        'X-Content-Type-Options': 'nosniff' // Security header
+      };
+  
+      if (etag) {
+        headers['ETag'] = etag;
+      }
+  
+      // Determine if compression should be used
+      const acceptEncoding = req.headers['accept-encoding'] as string;
+      const shouldCompress = 
+        this.compression && 
+        this.isCompressible(mimeType) && 
+        acceptEncoding?.includes('gzip') &&
+        stats.size > 1024; // Only compress files larger than 1KB
+  
+      if (shouldCompress) {
+        headers['Content-Encoding'] = 'gzip';
+        headers['Vary'] = 'Accept-Encoding';
+        delete headers['Content-Length']; // Remove content length as it will change after compression
+      }
+  
+      res.writeHead(200, headers);
+  
+      // Handle HEAD requests
+      if (req.method === 'HEAD') {
+        res.end();
+        return;
+      }
+  
+      // Serve file content
+      if (stats.size > 1024 * 1024) { // 1MB threshold for streaming
+        await this.serveStreamedContent(filepath, shouldCompress, res);
+      } else {
+        await this.serveBufferedContent(filepath, shouldCompress, res);
+      }
+    } catch (error) {
+      // Log error and cleanup
+      console.error('Error serving file:', error);
+      if (!res.headersSent) {
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('Internal Server Error');
+      } else {
         res.end();
       }
     }
   }
-
+  
+  /**
+   * Serves file content using streams
+   */
+  private async serveStreamedContent(
+    filepath: string,
+    shouldCompress: boolean,
+    res: ServerResponse
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const fileStream = createReadStream(filepath);
+  
+      const handleError = (error: Error) => {
+        console.error('Stream error:', error);
+        if (!res.headersSent) {
+          res.writeHead(500, { 'Content-Type': 'text/plain' });
+          res.end('Internal Server Error');
+        } else {
+          res.end();
+        }
+        reject(error);
+      };
+  
+      if (shouldCompress) {
+        const gzipStream = createGzip({
+          level: 6, // Balanced compression level
+          memLevel: 8 // Increased memory for better compression
+        });
+  
+        fileStream
+          .on('error', handleError)
+          .pipe(gzipStream)
+          .on('error', handleError)
+          .pipe(res)
+          .on('finish', resolve)
+          .on('error', handleError);
+      } else {
+        fileStream
+          .pipe(res)
+          .on('finish', resolve)
+          .on('error', handleError);
+      }
+  
+      // Handle client disconnect
+      res.on('close', () => {
+        fileStream.destroy();
+      });
+    });
+  }
+  
+  /**
+   * Serves file content using buffers
+   */
+  private async serveBufferedContent(
+    filepath: string,
+    shouldCompress: boolean,
+    res: ServerResponse
+  ): Promise<void> {
+    try {
+      const content = await readFile(filepath);
+      
+      if (shouldCompress) {
+        const compressed = await gzipAsync(content);
+        res.end(compressed);
+      } else {
+        res.end(content);
+      }
+    } catch (error) {
+      throw new Error(`Failed to serve buffered content: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  
   private isCompressible(mimeType: string): boolean {
     return /^(text|application)\/(javascript|json|html|xml|css|plain)/.test(mimeType);
   }
