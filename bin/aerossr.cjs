@@ -1,4 +1,4 @@
-const { AeroSSRCLI } = require('../dist/cli/index.js');
+const { AeroSSRCLI } = require('../dist/cli/index.cjs');
 export const cli = new AeroSSRCLI();
 
 export function runCLI(){

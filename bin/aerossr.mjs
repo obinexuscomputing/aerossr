@@ -1,4 +1,4 @@
-import { AeroSSRCLI } from '../../src/cli/index.js';
+import { AeroSSRCLI } from '../../src/cli/index.mjs';
 
 export const cli = new AeroSSRCLI();
 
