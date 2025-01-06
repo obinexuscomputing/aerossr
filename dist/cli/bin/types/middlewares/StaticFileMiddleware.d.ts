@@ -1,12 +1,4 @@
-import { Middleware } from '../types';
-export interface StaticFileOptions {
-    root: string;
-    maxAge?: number;
-    index?: string[];
-    dotFiles?: 'ignore' | 'allow' | 'deny';
-    compression?: boolean;
-    etag?: boolean;
-}
+import { Middleware, StaticFileOptions } from '../types';
 export declare class StaticFileMiddleware {
     private readonly root;
     private readonly maxAge;

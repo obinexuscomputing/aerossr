@@ -4,7 +4,6 @@
  * Released under the ISC License
  */
 export { AeroSSR } from './AeroSSR.js';
-export { StaticFileMiddleware } from './middlewares/StaticFileMiddleware.js';
 export { createCache } from './utils/cache.js';
 export { normalizeCorsOptions, setCorsHeaders } from './utils/cors.js';
 export { injectMetaTags } from './utils/html.js';
@@ -14,6 +13,7 @@ export { generateETag } from './utils/etag.js';
 export { generateBundle, minifyBundle, resolveDependencies } from './utils/bundler.js';
 export { ensureAsync, isPromise } from './utils/async.js';
 export { __clearMockDocument, __setMockDocument, areCookiesEnabled, deleteCookie, getAllCookies, getCookie, setCookie } from './utils/cookie.js';
+export { StaticFileMiddleware } from './middlewares/StaticFileMiddleware.js';
 export { SecurityMiddleware } from './middlewares/SecurityMiddleware.js';
 /*!
  * End of bundle for @obinexuscomputing/aerossr

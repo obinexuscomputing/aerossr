@@ -6,7 +6,6 @@
 'use strict';
 
 var AeroSSR = require('./AeroSSR.js');
-var StaticFileMiddleware = require('./middlewares/StaticFileMiddleware.js');
 var cache = require('./utils/cache.js');
 var cors = require('./utils/cors.js');
 var html = require('./utils/html.js');
@@ -16,12 +15,12 @@ var etag = require('./utils/etag.js');
 var bundler = require('./utils/bundler.js');
 var async = require('./utils/async.js');
 var cookie = require('./utils/cookie.js');
+var StaticFileMiddleware = require('./middlewares/StaticFileMiddleware.js');
 var SecurityMiddleware = require('./middlewares/SecurityMiddleware.js');
 
 
 
 exports.AeroSSR = AeroSSR.AeroSSR;
-exports.StaticFileMiddleware = StaticFileMiddleware.StaticFileMiddleware;
 exports.createCache = cache.createCache;
 exports.normalizeCorsOptions = cors.normalizeCorsOptions;
 exports.setCorsHeaders = cors.setCorsHeaders;
@@ -42,6 +41,7 @@ exports.deleteCookie = cookie.deleteCookie;
 exports.getAllCookies = cookie.getAllCookies;
 exports.getCookie = cookie.getCookie;
 exports.setCookie = cookie.setCookie;
+exports.StaticFileMiddleware = StaticFileMiddleware.StaticFileMiddleware;
 exports.SecurityMiddleware = SecurityMiddleware.SecurityMiddleware;
 /*!
  * End of bundle for @obinexuscomputing/aerossr
