@@ -40,8 +40,7 @@
     }
   },
   "bin": {
-    "aerossr": "./dist/cli/bin/index.cjs"
-
+    "aerossr": "dist/cli/bin/index.cjs"
   },
   "files": [
     "dist",
@@ -52,8 +51,8 @@
   "module": "./dist/esm/index.js",
   "types": "./dist/types/index.d.ts",
   "scripts": {
-    "build": "rimraf dist && rollup -c && npm run make-executable",
-    "make-executable": "node scripts/make-cli-executable.cjs",
+    "build": "rimraf dist && rollup -c",
+    "prepare": "npm run build",
     "clean": "rimraf dist coverage",
     "lint": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\" --fix",
@@ -61,11 +60,8 @@
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
-    "prepublishOnly": "npm run build",
-    "postinstall": "node scripts/make-cli-executable.cjs"
+    "prepublishOnly": "npm run build"
   },
- 
-
   "dependencies": {
     "commander": "^13.0.0"
   },
