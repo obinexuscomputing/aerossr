@@ -15,7 +15,10 @@
     "ssr",
     "server-side rendering",
     "typescript",
-    "nodejs"
+    "nodejs",
+    "aerossr",
+    "obinexuscomputing",
+    "obinexuscomputing/aerossr"
   ],
   "exports": {
     ".": {
