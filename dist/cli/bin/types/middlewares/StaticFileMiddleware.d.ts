@@ -1,5 +1,12 @@
-import { IncomingMessage, ServerResponse } from 'http';
-import { StaticFileOptions } from '@/types';
+import { Middleware } from '../types';
+export interface StaticFileOptions {
+    root: string;
+    maxAge?: number;
+    index?: string[];
+    dotFiles?: 'ignore' | 'allow' | 'deny';
+    compression?: boolean;
+    etag?: boolean;
+}
 export declare class StaticFileMiddleware {
     private readonly root;
     private readonly maxAge;
@@ -8,11 +15,11 @@ export declare class StaticFileMiddleware {
     private readonly compression;
     private readonly etag;
     constructor(options: StaticFileOptions);
+    private handleFile;
+    middleware(): Middleware;
     private isDotFile;
-    private handleDotFile;
+    private serveFile;
     private isCompressible;
     private getMimeType;
-    private serveFile;
-    middleware(): (_req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => Promise<void>;
 }
 //# sourceMappingURL=StaticFileMiddleware.d.ts.map
