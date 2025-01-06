@@ -6,14 +6,12 @@ import terser from '@rollup/plugin-terser';
 import alias from '@rollup/plugin-alias';
 import copy from 'rollup-plugin-copy';
 import { resolve as _resolve } from 'path';
-import { readFileSync, chmodSync } from 'fs';
+import { readFileSync } from 'fs';
+import { mkdir, chmod } from 'fs/promises';
 
 const pkg = JSON.parse(readFileSync('./package.json'));
 const isProduction = process.env.NODE_ENV === 'production';
-
-const banner = `/*!\n * @obinexuscomputing/aerossr v${pkg.version}\n * (c) ${new Date().getFullYear()} OBINexus Computing\n * Released under the ISC License\n */`;
-
-const footer = `/*!\n * End of bundle for @obinexuscomputing/aerossr\n */`;
+const banner = `/*!\n  @obinexuscomputing/aerossr v${pkg.version}\n  (c) ${new Date().getFullYear()} OBINexus Computing\n  Released under the ISC License\n */`;
 
 const aliasEntries = {
   entries: [
@@ -23,18 +21,7 @@ const aliasEntries = {
 };
 
 const external = [
-  'path',
-  'fs',
-  'http',
-  'crypto',
-  'zlib',
-  'url',
-  'stream',
-  'os',
-  'util',
-  'events',
-  'buffer',
-  'commander',
+  'path', 'fs', 'http', 'crypto', 'zlib', 'url', 'stream', 'os', 'util', 'events', 'buffer', 'commander',
   ...Object.keys(pkg.dependencies || {}),
   ...Object.keys(pkg.peerDependencies || {}),
 ];
@@ -48,7 +35,6 @@ const basePlugins = [
 ].filter(Boolean);
 
 const configs = [
-  // ESM Build
   {
     input: 'src/index.ts',
     output: {
@@ -57,8 +43,8 @@ const configs = [
       sourcemap: true,
       preserveModules: true,
       preserveModulesRoot: 'src',
+      exports: 'named',
       banner,
-      footer,
     },
     external,
     plugins: [
@@ -66,11 +52,9 @@ const configs = [
       typescript({
         tsconfig: './tsconfig.json',
         outDir: 'dist/esm',
-        outputToFilesystem: false,
       }),
     ],
   },
-  // CJS Build
   {
     input: 'src/index.ts',
     output: {
@@ -81,7 +65,6 @@ const configs = [
       preserveModulesRoot: 'src',
       exports: 'named',
       banner,
-      footer,
     },
     external,
     plugins: [
@@ -89,74 +72,61 @@ const configs = [
       typescript({
         tsconfig: './tsconfig.json',
         outDir: 'dist/cjs',
-        outputToFilesystem: false,
       }),
     ],
   },
-  // CLI Build
-{
-  input: 'src/cli/index.ts',
-  output: [
-    {
-      file: 'dist/cli/bin/index.cjs',
-      format: 'cjs',
-      sourcemap: true,
-      exports: 'named',
-      banner: '#!/usr/bin/env node\n',
-    },
-    {
-      file: 'dist/cli/bin/index.mjs',
-      format: 'esm',
-      sourcemap: true,
-      exports: 'named',
-      banner: '#!/usr/bin/env node\n',
-    }
-  ],
-  external,
-  plugins: [
-    ...basePlugins,
-    typescript({
-      tsconfig: './tsconfig.json',
-      declaration: true,
-      declarationMap: true,
-      sourceMap: true,
-      outputToFilesystem: true,
-      outDir: 'dist/cli/bin',
-      declarationDir: 'dist/cli/bin/types'
-    }),
-    copy({
-      targets: [
-        { src: './package.json', dest: 'dist/' },
-        { 
-          src: './scripts/make-cli-executable.cjs',
-          dest: 'dist/cli/bin/',
-          transform: (contents) => contents
+  {
+    input: 'src/cli/index.ts',
+    output: [
+      {
+        file: 'dist/cli/bin/index.cjs',
+        format: 'cjs',
+        sourcemap: true,
+        exports: 'named',
+        banner: '#!/usr/bin/env node\n',
+      },
+      {
+        file: 'dist/cli/bin/index.mjs',
+        format: 'esm',
+        sourcemap: true,
+        exports: 'named',
+        banner: '#!/usr/bin/env node\n',
+      }
+    ],
+    external,
+    plugins: [
+      ...basePlugins,
+      typescript({
+        tsconfig: './tsconfig.json',
+        declaration: true,
+        declarationDir: 'dist/cli/bin/types',
+      }),
+      {
+        name: 'ensure-directories',
+        async buildStart() {
+          await mkdir('dist/cli/bin', { recursive: true });
         }
-      ],
-      hook: 'writeBundle'
-    }),
-    {
-      name: 'make-executable',
-      writeBundle() {
-        const files = [
-          'dist/cli/bin/index.cjs',
-          'dist/cli/bin/index.mjs'
-        ];
-        if (process.platform !== 'win32') {
-          files.forEach(file => {
-            try {
-              chmodSync(file, '755');
-              console.log(`Made ${file} executable`);
-            } catch (err) {
-              console.error(`Failed to make ${file} executable:`, err);
-            }
-          });
+      },
+      copy({
+        targets: [{ src: 'package.json', dest: 'dist' }],
+        hook: 'writeBundle',
+        flatten: false
+      }),
+      {
+        name: 'make-executable',
+        async writeBundle() {
+          if (process.platform === 'win32') return;
+          try {
+            await chmod('dist/cli/bin/index.cjs', '755');
+            await chmod('dist/cli/bin/index.mjs', '755');
+            console.log('Made CLI files executable');
+          } catch (err) {
+            console.warn('Failed to make CLI files executable:', err);
+          }
         }
       }
-    }
-  ]
-},
-
+    ],
+  }
 ];
 
 export default configs;
