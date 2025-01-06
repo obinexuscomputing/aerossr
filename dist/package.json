@@ -61,7 +61,7 @@
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
     "prepublishOnly": "npm run build",
-    "postinstall": "node scripts/chmod-cli.js"
+    "postinstall": "node scripts/chmod-cli.mjs"
   },
   "dependencies": {
     "commander": "^13.0.0"

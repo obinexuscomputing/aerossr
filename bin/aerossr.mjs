@@ -1,3 +1,9 @@
-#!/usr/bin/env node
-import { cli } from '../dist/cli/bin/index.mjs';
-cli();
+import { AeroSSRCLI } from '../../src/cli/index.js';
+
+export const cli = new AeroSSRCLI();
+
+export function runCLI(){
+    return cli.run();
+}
+
+runCLI();

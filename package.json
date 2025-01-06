@@ -40,7 +40,8 @@
     }
   },
   "bin": {
-    "aerossr": "./dist/cjs/cli/index.js"
+    "aerossr": "./dist/cli/bin/index.cjs"
+
   },
   "files": [
     "dist",
@@ -51,8 +52,8 @@
   "module": "./dist/esm/index.js",
   "types": "./dist/types/index.d.ts",
   "scripts": {
-    "build": "rimraf dist && rollup -c && npm run chmod-cli",
-    "chmod-cli": "node scripts/chmod-cli.js",
+    "build": "rimraf dist && rollup -c && npm run make-executable",
+    "make-executable": "node scripts/make-cli-executable.cjs",
     "clean": "rimraf dist coverage",
     "lint": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\" --fix",
@@ -61,8 +62,10 @@
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
     "prepublishOnly": "npm run build",
-    "postinstall": "node scripts/chmod-cli.mjs"
+    "postinstall": "node scripts/make-cli-executable.cjs"
   },
+ 
+
   "dependencies": {
     "commander": "^13.0.0"
   },
