@@ -128,7 +128,7 @@ export * from '../utils/CorsManager';
 export * from '../utils/HtmlManager';
 export * from '../utils/Logger';
 export * from '../utils/ErrorHandler';
-export * from '../utils/etag';
+export * from '../utils/ETagGenerator';
 export * from '../utils/Bundler';
 export * from '../utils/async';
 export * from '../utils/CookieManager';

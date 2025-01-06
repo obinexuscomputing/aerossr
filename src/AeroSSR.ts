@@ -7,7 +7,7 @@ import { promisify } from 'util';
 import { Logger } from './utils/Logger';
 import { createCache } from './utils/CacheManager';
 import { setCorsHeaders } from './utils/CorsManager';
-import { generateETag } from './utils/etag';
+import { generateETag } from './utils/ETagGenerator';
 import { handleError } from './utils/ErrorHandler';
 import { injectMetaTags } from './utils/HtmlManager';
 import { generateBundle } from './utils/Bundler';
