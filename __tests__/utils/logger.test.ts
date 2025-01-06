@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import Logger from '../../src/utils/logger'; 
+import {Logger} from '../../src/utils/logger'; 
+import { setCookie, getCookie, deleteCookie } from '../../src/types';
 
 jest.mock('fs', () => ({
   ...jest.requireActual('fs'),
@@ -24,7 +25,8 @@ describe('Logger', () => {
     mockPath.dirname.mockReturnValue(testLogDir);
     mockFs.existsSync.mockReturnValue(true);
     mockFs.mkdirSync.mockReturnValue(undefined);
-    mockFs.appendFile.mockResolvedValue(Promise.resolve());
+    mockFs.appendFile.mockResolvedValue(Promise.resolve() as never);
+
   });
 
   describe('Initialization', () => {
@@ -145,7 +147,7 @@ describe('Logger', () => {
   
   beforeEach(() => {
     mockFs = fs as jest.Mocked<typeof fs>;
-    mockFs.appendFile.mockResolvedValue(undefined);
+    mockFs.appendFile.mockResolvedValue(Promise.resolve() as never);
   });
 
   it('should initialize without file path', () => {
