@@ -5,23 +5,43 @@
  */
 'use strict';
 
+// Mock document object for testing environments
+let mockDocument;
 /**
- * Check if we're in a browser environment
+ * Set mock document for testing
  */
-function isBrowser() {
-    return typeof window !== 'undefined' && typeof document !== 'undefined';
+function __setMockDocument(doc) {
+    mockDocument = doc;
+}
+/**
+ * Clear mock document
+ */
+function __clearMockDocument() {
+    mockDocument = undefined;
+}
+/**
+ * Check if we're in a browser environment or have a mock document
+ */
+function getDocument() {
+    if (mockDocument) {
+        return mockDocument;
+    }
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+        return document;
+    }
+    return null;
 }
 /**
  * Sets a cookie with the specified name, value and options
  */
 function setCookie(name, value, days, options = {}) {
-    if (!isBrowser()) {
+    const doc = getDocument();
+    if (!doc)
         return;
-    }
     const date = new Date();
-    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    date.setTime(date.getTime() + (Math.max(0, days) * 24 * 60 * 60 * 1000));
     const cookieParts = [
-        `${encodeURIComponent(name)}=${encodeURIComponent(value)}`,
+        `${encodeURIComponent(name)}=${encodeURIComponent(value.trim())}`,
         `expires=${date.toUTCString()}`,
         `path=${options.path || '/'}`
     ];
@@ -37,21 +57,24 @@ function setCookie(name, value, days, options = {}) {
     if (options.httpOnly) {
         cookieParts.push('httponly');
     }
-    document.cookie = cookieParts.join('; ');
+    // Join all parts and set the cookie
+    const cookieString = cookieParts.join('; ');
+    doc.cookie = cookieString;
 }
 /**
  * Gets a cookie value by name
  */
 function getCookie(name) {
-    if (!isBrowser()) {
+    const doc = getDocument();
+    if (!doc)
         return null;
-    }
     const nameEQ = encodeURIComponent(name) + '=';
-    const cookies = document.cookie.split(';');
+    const cookies = doc.cookie.split(';');
     for (let cookie of cookies) {
         cookie = cookie.trim();
         if (cookie.indexOf(nameEQ) === 0) {
-            return decodeURIComponent(cookie.substring(nameEQ.length));
+            const value = cookie.substring(nameEQ.length).trim();
+            return decodeURIComponent(value);
         }
     }
     return null;
@@ -60,9 +83,9 @@ function getCookie(name) {
  * Deletes a cookie by name
  */
 function deleteCookie(name, options = {}) {
-    if (!isBrowser()) {
+    const doc = getDocument();
+    if (!doc)
         return;
-    }
     const cookieParts = [
         `${encodeURIComponent(name)}=`,
         'expires=Thu, 01 Jan 1970 00:00:00 GMT',
@@ -80,15 +103,15 @@ function deleteCookie(name, options = {}) {
     if (options.httpOnly) {
         cookieParts.push('httponly');
     }
-    document.cookie = cookieParts.join('; ');
+    doc.cookie = cookieParts.join('; ');
 }
 /**
- * Checks if cookies are enabled in the browser
+ * Checks if cookies are enabled
  */
 function areCookiesEnabled() {
-    if (!isBrowser()) {
+    const doc = getDocument();
+    if (!doc)
         return false;
-    }
     try {
         const testKey = '__cookie_test__';
         const testValue = 'test';
@@ -105,10 +128,10 @@ function areCookiesEnabled() {
  * Gets all cookies as a key-value object
  */
 function getAllCookies() {
-    if (!isBrowser()) {
+    const doc = getDocument();
+    if (!doc)
         return {};
-    }
-    return document.cookie
+    return doc.cookie
         .split(';')
         .reduce((cookies, cookie) => {
         const [name, value] = cookie.split('=').map(c => c.trim());
@@ -119,6 +142,8 @@ function getAllCookies() {
     }, {});
 }
 
+exports.__clearMockDocument = __clearMockDocument;
+exports.__setMockDocument = __setMockDocument;
 exports.areCookiesEnabled = areCookiesEnabled;
 exports.deleteCookie = deleteCookie;
 exports.getAllCookies = getAllCookies;

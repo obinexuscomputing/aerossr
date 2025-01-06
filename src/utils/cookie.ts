@@ -54,11 +54,18 @@ export function setCookie(
   const date = new Date();
   date.setTime(date.getTime() + (Math.max(0, days) * 24 * 60 * 60 * 1000));
   
-  const cookieParts = [
-    `${encodeURIComponent(name)}=${encodeURIComponent(value.trim())}`,
-    `expires=${date.toUTCString()}`,
-    `path=${options.path || '/'}`
-  ];
+  const cookieParts = [];
+  
+  // Main cookie part
+  cookieParts.push(`${encodeURIComponent(name)}=${encodeURIComponent(value.trim())}`);
+  
+  // Expiration date
+  const expires = date.toUTCString();
+  cookieParts.push(`expires=${expires}`);
+  
+  // Path
+  cookieParts.push(`path=${options.path || '/'}`);
+
 
   if (options.domain) {
     cookieParts.push(`domain=${options.domain}`);

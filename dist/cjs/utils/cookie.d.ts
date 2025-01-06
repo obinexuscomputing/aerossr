@@ -7,6 +7,16 @@ export interface CookieOptions {
     maxAge?: number;
 }
 /**
+ * Set mock document for testing
+ */
+export declare function __setMockDocument(doc: {
+    cookie: string;
+}): void;
+/**
+ * Clear mock document
+ */
+export declare function __clearMockDocument(): void;
+/**
  * Sets a cookie with the specified name, value and options
  */
 export declare function setCookie(name: string, value: string, days: number, options?: CookieOptions): void;
@@ -19,7 +29,7 @@ export declare function getCookie(name: string): string | null;
  */
 export declare function deleteCookie(name: string, options?: Omit<CookieOptions, 'maxAge' | 'expires'>): void;
 /**
- * Checks if cookies are enabled in the browser
+ * Checks if cookies are enabled
  */
 export declare function areCookiesEnabled(): boolean;
 /**
