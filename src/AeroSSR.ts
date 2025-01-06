@@ -11,7 +11,7 @@ import { corsManager, CorsOptions } from './utils/CorsManager';
 import { etagGenerator } from './utils/ETagGenerator';
 import { ErrorHandler } from './utils/ErrorHandler';
 import { htmlManager } from './utils/HtmlManager';
-import { AeroSSRBundler } from './utils/Bundler';
+import { AeroSSRBundler } from './utils/';
 import { AeroSSRConfig, Middleware, RouteHandler, BundleHandler } from './types';
 
 const gzipAsync = promisify(gzip);
