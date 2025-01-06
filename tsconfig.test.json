@@ -1,18 +1,20 @@
 {
-    "extends": "./tsconfig.json",
-    "compilerOptions": {
-      "types": ["jest", "node"],
-      "esModuleInterop": true,
-      "module": "ESNext",
-      "moduleResolution": "NodeNext",
-      "baseUrl": ".",
-      "paths": {
-        "@/*": ["src/*"]
-      }
-    },
-    "include": [
-      "src/**/*",
-      "tests/**/*",
-      "jest.setup.ts"
-    ]
-  }
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["jest", "node"],
+    "isolatedModules": false,
+    "noEmit": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "__tests__/**/*.ts",
+    "setupTests.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    ".rollup",
+    "buildcache"
+  ]
+}
