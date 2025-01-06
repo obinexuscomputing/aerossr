@@ -1,7 +1,7 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.1
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
+  @obinexuscomputing/aerossr v0.1.1
+  (c) 2025 OBINexus Computing
+  Released under the ISC License
  */
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -270,7 +270,4 @@ class AeroSSRBundler {
 }
 
 export { AeroSSRBundler };
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
 //# sourceMappingURL=Bundler.js.map

@@ -1,7 +1,7 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.1
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
+  @obinexuscomputing/aerossr v0.1.1
+  (c) 2025 OBINexus Computing
+  Released under the ISC License
  */
 'use strict';
 
@@ -228,7 +228,4 @@ class AeroSSR {
 
 exports.AeroSSR = AeroSSR;
 exports.default = AeroSSR;
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
 //# sourceMappingURL=AeroSSR.js.map

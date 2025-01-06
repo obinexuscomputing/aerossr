@@ -1,7 +1,7 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.1
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
+  @obinexuscomputing/aerossr v0.1.1
+  (c) 2025 OBINexus Computing
+  Released under the ISC License
  */
 export { AeroSSR } from './AeroSSR.js';
 export { CacheManager, createCache } from './utils/CacheManager.js';
@@ -15,7 +15,4 @@ export { AsyncUtils, asyncUtils } from './utils/AsyncUtils.js';
 export { CookieManager, cookieManager } from './utils/CookieManager.js';
 export { StaticFileMiddleware } from './middlewares/StaticFileMiddleware.js';
 export { SecurityMiddleware } from './middlewares/SecurityMiddleware.js';
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
 //# sourceMappingURL=index.js.map

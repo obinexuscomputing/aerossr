@@ -1,7 +1,7 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.1
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
+  @obinexuscomputing/aerossr v0.1.1
+  (c) 2025 OBINexus Computing
+  Released under the ISC License
  */
 'use strict';
 
@@ -199,7 +199,4 @@ function createCache() {
 
 exports.CacheManager = CacheManager;
 exports.createCache = createCache;
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
 //# sourceMappingURL=CacheManager.js.map

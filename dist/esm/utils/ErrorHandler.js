@@ -1,7 +1,7 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.1
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
+  @obinexuscomputing/aerossr v0.1.1
+  (c) 2025 OBINexus Computing
+  Released under the ISC License
  */
 class ErrorHandler {
     defaultStyles;
@@ -93,7 +93,4 @@ class ErrorHandler {
 }
 
 export { ErrorHandler };
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
 //# sourceMappingURL=ErrorHandler.js.map

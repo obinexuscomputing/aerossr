@@ -1,7 +1,7 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.1
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
+  @obinexuscomputing/aerossr v0.1.1
+  (c) 2025 OBINexus Computing
+  Released under the ISC License
  */
 class CORSManager {
     defaultOptions;
@@ -69,7 +69,4 @@ class CORSManager {
 const corsManager = new CORSManager();
 
 export { CORSManager, corsManager };
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
 //# sourceMappingURL=CorsManager.js.map

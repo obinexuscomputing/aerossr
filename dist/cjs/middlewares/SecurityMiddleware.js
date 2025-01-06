@@ -1,7 +1,7 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.1
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
+  @obinexuscomputing/aerossr v0.1.1
+  (c) 2025 OBINexus Computing
+  Released under the ISC License
  */
 'use strict';
 
@@ -213,7 +213,4 @@ class SecurityMiddleware {
 }
 
 exports.SecurityMiddleware = SecurityMiddleware;
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
 //# sourceMappingURL=SecurityMiddleware.js.map

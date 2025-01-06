@@ -1,7 +1,7 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.1
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
+  @obinexuscomputing/aerossr v0.1.1
+  (c) 2025 OBINexus Computing
+  Released under the ISC License
  */
 import { createServer } from 'http';
 import { promises } from 'fs';
@@ -223,7 +223,4 @@ class AeroSSR {
 }
 
 export { AeroSSR, AeroSSR as default };
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
 //# sourceMappingURL=AeroSSR.js.map

@@ -1,7 +1,7 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.1
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
+  @obinexuscomputing/aerossr v0.1.1
+  (c) 2025 OBINexus Computing
+  Released under the ISC License
  */
 class CookieManager {
     mockDocument;
@@ -143,7 +143,4 @@ class CookieManager {
 const cookieManager = new CookieManager();
 
 export { CookieManager, cookieManager };
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
 //# sourceMappingURL=CookieManager.js.map

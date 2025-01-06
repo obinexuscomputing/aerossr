@@ -1,7 +1,7 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.1
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
+  @obinexuscomputing/aerossr v0.1.1
+  (c) 2025 OBINexus Computing
+  Released under the ISC License
  */
 'use strict';
 
@@ -146,7 +146,4 @@ const cookieManager = new CookieManager();
 
 exports.CookieManager = CookieManager;
 exports.cookieManager = cookieManager;
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
 //# sourceMappingURL=CookieManager.js.map

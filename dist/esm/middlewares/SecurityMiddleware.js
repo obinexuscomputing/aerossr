@@ -1,7 +1,7 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.1
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
+  @obinexuscomputing/aerossr v0.1.1
+  (c) 2025 OBINexus Computing
+  Released under the ISC License
  */
 class SecurityMiddleware {
     static DEFAULT_CSRF_TOKEN = 'your-csrf-token';
@@ -211,7 +211,4 @@ class SecurityMiddleware {
 }
 
 export { SecurityMiddleware };
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
 //# sourceMappingURL=SecurityMiddleware.js.map

@@ -1,7 +1,7 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.1
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
+  @obinexuscomputing/aerossr v0.1.1
+  (c) 2025 OBINexus Computing
+  Released under the ISC License
  */
 'use strict';
 
@@ -38,7 +38,4 @@ exports.CookieManager = CookieManager.CookieManager;
 exports.cookieManager = CookieManager.cookieManager;
 exports.StaticFileMiddleware = StaticFileMiddleware.StaticFileMiddleware;
 exports.SecurityMiddleware = SecurityMiddleware.SecurityMiddleware;
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
 //# sourceMappingURL=index.js.map

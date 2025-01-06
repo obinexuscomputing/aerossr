@@ -1,7 +1,7 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.1
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
+  @obinexuscomputing/aerossr v0.1.1
+  (c) 2025 OBINexus Computing
+  Released under the ISC License
  */
 'use strict';
 
@@ -150,7 +150,4 @@ const etagGenerator = new ETagGenerator();
 
 exports.ETagGenerator = ETagGenerator;
 exports.etagGenerator = etagGenerator;
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
 //# sourceMappingURL=ETagGenerator.js.map

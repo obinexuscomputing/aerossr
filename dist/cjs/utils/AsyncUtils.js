@@ -1,7 +1,7 @@
 /*!
- * @obinexuscomputing/aerossr v0.1.1
- * (c) 2025 OBINexus Computing
- * Released under the ISC License
+  @obinexuscomputing/aerossr v0.1.1
+  (c) 2025 OBINexus Computing
+  Released under the ISC License
  */
 'use strict';
 
@@ -156,7 +156,4 @@ const asyncUtils = new AsyncUtils();
 
 exports.AsyncUtils = AsyncUtils;
 exports.asyncUtils = asyncUtils;
-/*!
- * End of bundle for @obinexuscomputing/aerossr
- */
 //# sourceMappingURL=AsyncUtils.js.map
