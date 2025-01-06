@@ -1,5 +1,7 @@
 // src/utils/cacheManager.ts
 
+import { CacheStoreBase } from "@/types";
+
 export interface CacheItem<T> {
   value: T;
   expires?: number;
@@ -214,7 +216,22 @@ export class CacheManager<T> {
   }
 }
 
-// Create default export factory function for backward compatibility
-export function createCache<T>(options: CacheOptions = {}): CacheManager<T> {
-  return new CacheManager<T>(options);
+export function createCache<T>(): CacheStoreBase<T> {
+  const store = new Map<string, T>();
+
+  return {
+    size: store.size,
+
+    get(key: string) {
+      return store.get(key);
+    },
+
+    set(key: string, value: T) {
+      store.set(key, value);
+    },
+
+    clear() {
+      store.clear();
+    }
+  };
 }

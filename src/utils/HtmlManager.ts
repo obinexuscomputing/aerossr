@@ -62,7 +62,7 @@ export class HTMLManager {
   /**
    * Injects meta tags into HTML
    */
-  public injectMetaTags(html: string, meta: Partial<MetaTags> = {}): string {
+  public injectMetaTags(html: string, meta: Partial<MetaTags> = {}, defaultMeta?: MetaTags): string {
     const finalMeta: MetaTags = {
       ...this.defaultMeta,
       ...meta
@@ -151,9 +151,9 @@ export class HTMLManager {
     const matches = html.match(metaRegex) || [];
 
     matches.forEach(match => {
-      const nameMatch = match.match(/name="([^"]+)"/);
-      const propertyMatch = match.match(/property="([^"]+)"/);
-      const contentMatch = match.match(/content="([^"]+)"/);
+      const nameMatch = match.match(/name="([^"]+)"/) as RegExpMatchArray;
+      const propertyMatch = match.match(/property="([^"]+)"/) as RegExpMatchArray;
+      const contentMatch = match.match(/content="([^"]+)"/) as RegExpMatchArray;
       
       if (contentMatch) {
         let name: string | undefined;

@@ -17,6 +17,36 @@ export class ErrorHandler {
   private readonly showStack: boolean;
   private readonly showDetails: boolean;
 
+  static async handleError(
+    error: CustomError,
+    req: IncomingMessage,
+    res: ServerResponse
+  ): Promise<void> {
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Internal Server Error';
+
+    console.error('Server error:', {
+      statusCode,
+      message,
+      path: req.url,
+      method: req.method,
+      error: {
+        name: error.name,
+        code: error.code,
+        stack: error.stack,
+        details: error.details
+      }
+    });
+
+    const errorPage = new ErrorHandler().generateErrorPage(statusCode, message, error);
+
+    res.writeHead(statusCode, {
+      'Content-Type': 'text/html',
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff'
+    });
+    res.end(errorPage);
+  }
   constructor(options: ErrorPageOptions = {}) {
     this.defaultStyles = options.styles || `
       body { font-family: system-ui; padding: 2rem; max-width: 600px; margin: 0 auto; }

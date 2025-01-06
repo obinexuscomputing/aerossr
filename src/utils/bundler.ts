@@ -2,6 +2,8 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { createHash } from 'crypto';
+import { CacheStoreBase } from '@/types';
+import { createCache } from './CacheManager';
 
 export interface DependencyOptions {
   extensions?: string[];
@@ -26,14 +28,24 @@ export interface BundleResult {
   hash: string;
 }
 
+export interface BundlerOptions extends BundleOptions {
+  bundleCache?: CacheStoreBase<string>;
+  templateCache?: CacheStoreBase<string>;
+}
+
 export class AeroSSRBundler {
   private readonly projectPath: string;
-  private readonly cache: Map<string, BundleResult>;
+  private readonly bundleCache: CacheStoreBase<string>;
+  private readonly templateCache: CacheStoreBase<string>;
   private readonly defaultOptions: Required<BundleOptions>;
 
-  constructor(projectPath: string, options: Partial<BundleOptions> = {}) {
+  constructor(projectPath: string, options: BundlerOptions = {}) {
     this.projectPath = path.resolve(projectPath);
-    this.cache = new Map();
+
+    // Initialize caches
+    this.bundleCache = options.bundleCache || createCache<string>();
+    this.templateCache = options.templateCache || createCache<string>();
+
     this.defaultOptions = {
       extensions: ['.js', '.ts', '.jsx', '.tsx'],
       maxDepth: 100,
@@ -47,16 +59,10 @@ export class AeroSSRBundler {
     };
   }
 
-  /**
-   * Generates a hash for cache invalidation
-   */
   private generateHash(content: string): string {
     return createHash('md5').update(content).digest('hex');
   }
 
-  /**
-   * Resolves the full path of an import
-   */
   private async resolveFilePath(
     importPath: string,
     fromPath: string,
@@ -66,14 +72,9 @@ export class AeroSSRBundler {
       return importPath;
     }
 
-    if (process.env.NODE_ENV === 'test') {
-      return importPath;
-    }
-
     const basePath = path.resolve(path.dirname(fromPath), importPath);
     const extensions = this.defaultOptions.extensions;
 
-    // Check existing extension
     if (extensions.some(ext => importPath.endsWith(ext))) {
       try {
         await fs.access(basePath);
@@ -83,7 +84,6 @@ export class AeroSSRBundler {
       }
     }
 
-    // Try adding extensions
     for (const ext of extensions) {
       const fullPath = `${basePath}${ext}`;
       try {
@@ -94,7 +94,6 @@ export class AeroSSRBundler {
       }
     }
 
-    // Try index files
     for (const ext of extensions) {
       const indexPath = path.join(basePath, `index${ext}`);
       try {
@@ -108,9 +107,6 @@ export class AeroSSRBundler {
     return null;
   }
 
-  /**
-   * Resolves all dependencies for a given file
-   */
   private async resolveDependencies(
     filePath: string,
     options: BundleOptions
@@ -122,7 +118,7 @@ export class AeroSSRBundler {
       return deps;
     }
 
-    async function resolve(this: AeroSSRBundler, currentPath: string, depth = 0): Promise<void> {
+    const resolve = async (currentPath: string, depth = 0): Promise<void> => {
       if (depth > maxDepth || deps.has(currentPath)) {
         return;
       }
@@ -136,50 +132,37 @@ export class AeroSSRBundler {
           /import\s+.*?from\s+['"]([^'"]+)['"]/g,
           /import\s*['"]([^'"]+)['"]/g,
           /import\s*\(.*?['"]([^'"]+)['"]\s*\)/g,
-          /export\s+.*?from\s+['"]([^'"]+)['"]/g,
-          /import\.meta\.url/g
+          /export\s+.*?from\s+['"]([^'"]+)['"]/g
         ];
 
-        const promises: Promise<void>[] = [];
-
-        for (const pattern of importPatterns) {
+        const promises = importPatterns.flatMap(pattern => {
+          const matches: string[] = [];
           let match;
           while ((match = pattern.exec(content)) !== null) {
-            const importPath = match[1];
-            if (!importPath) continue;
+            matches.push(match[1]);
+          }
+          return matches.map(importPath => this.resolveFilePath(importPath, currentPath, { target }));
+        });
 
-            promises.push((async () => {
-              try {
-                const fullPath = await this.resolveFilePath(importPath, currentPath, { target });
-                if (fullPath) {
-                  await resolve.call(this, fullPath, depth + 1);
-                }
-              } catch (err) {
-                if (process.env.NODE_ENV !== 'test') {
-                  console.warn(`Warning: Could not resolve dependency ${importPath} in ${currentPath}`);
-                }
-              }
-            })());
+        const resolvedPaths = await Promise.all(promises);
+
+        for (const resolved of resolvedPaths) {
+          if (resolved) {
+            await resolve(resolved, depth + 1);
           }
         }
-
-        await Promise.all(promises);
       } catch (err) {
         throw new Error(`Error processing ${currentPath}: ${err instanceof Error ? err.message : String(err)}`);
       }
-    }
+    };
 
-    await resolve.call(this, filePath, 0);
+    await resolve(filePath, 0);
     return deps;
   }
 
-  /**
-   * Minifies JavaScript code
-   */
   private minifyBundle(code: string): string {
     if (!code.trim()) return '';
 
-    // Extract strings
     const strings: string[] = [];
     let stringPlaceholderCode = code.replace(
       /`(?:\\[\s\S]|[^\\`])*`|"(?:\\[\s\S]|[^\\"])*"|'(?:\\[\s\S]|[^\\'])*'/g,
@@ -189,7 +172,6 @@ export class AeroSSRBundler {
       }
     );
 
-    // Process code
     let result = '';
     let inComment = false;
     let inMultilineComment = false;
@@ -226,7 +208,7 @@ export class AeroSSRBundler {
       if (/\s/.test(char)) {
         const prevChar = result[result.length - 1];
         const nextNonSpaceChar = stringPlaceholderCode.slice(i + 1).match(/\S/);
-        
+
         if (prevChar && nextNonSpaceChar && 
             /[a-zA-Z0-9_$]/.test(prevChar) && 
             /[a-zA-Z0-9_$]/.test(nextNonSpaceChar[0])) {
@@ -238,7 +220,6 @@ export class AeroSSRBundler {
       result += char;
     }
 
-    // Clean up and restore strings
     result = result
       .replace(/\s*([+\-*/%=<>!&|^~?:,;{}[\]()])\s*/g, '$1')
       .replace(/\s+/g, ' ')
@@ -247,9 +228,6 @@ export class AeroSSRBundler {
     return result.replace(/__STRING_(\d+)__/g, (_, index) => strings[parseInt(index)]);
   }
 
-  /**
-   * Generates hydration code for client-side rehydration
-   */
   private generateHydrationCode(entryPoint: string): string {
     return `
       (function() {
@@ -262,9 +240,6 @@ export class AeroSSRBundler {
     `;
   }
 
-  /**
-   * Generates a browser-compatible module system
-   */
   private generateModuleSystem(): string {
     return `
       const __modules__ = new Map();
@@ -281,9 +256,6 @@ export class AeroSSRBundler {
     `;
   }
 
-  /**
-   * Main bundle generation method
-   */
   public async generateBundle(
     entryPoint: string,
     options: Partial<BundleOptions> = {}
@@ -291,9 +263,9 @@ export class AeroSSRBundler {
     const mergedOptions = { ...this.defaultOptions, ...options };
     const cacheKey = `${entryPoint}:${JSON.stringify(mergedOptions)}`;
 
-    // Check cache
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey)!;
+    const cached = this.bundleCache.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached) as BundleResult;
     }
 
     try {
@@ -305,7 +277,7 @@ export class AeroSSRBundler {
       }
 
       const chunks: string[] = [];
-      
+
       if (mergedOptions.target !== 'server') {
         chunks.push(this.generateModuleSystem());
       }
@@ -313,19 +285,26 @@ export class AeroSSRBundler {
       for (const dep of dependencies) {
         const content = await fs.readFile(dep, 'utf-8');
         const relativePath = path.relative(this.projectPath, dep);
-        
-        if (mergedOptions.comments) {
-          chunks.push(`\n// File: ${relativePath}`);
-        }
 
-        if (mergedOptions.target !== 'server') {
-          chunks.push(`
-            __modules__.set("${relativePath}", function(module, exports, require) {
-              ${content}
-            });
-          `);
+        if (dep.endsWith('.html')) {
+          const templateKey = `template:${relativePath}`;
+          const cached = this.templateCache.get(templateKey) || content;
+          this.templateCache.set(templateKey, cached);
+          chunks.push(cached);
         } else {
-          chunks.push(content);
+          if (mergedOptions.comments) {
+            chunks.push(`\n// File: ${relativePath}`);
+          }
+
+          if (mergedOptions.target !== 'server') {
+            chunks.push(`
+              __modules__.set("${relativePath}", function(module, exports, require) {
+                ${content}
+              });
+            `);
+          } else {
+            chunks.push(content);
+          }
         }
       }
 
@@ -348,8 +327,7 @@ export class AeroSSRBundler {
         result.hydrationCode = this.generateHydrationCode(entryPoint);
       }
 
-      // Cache the result
-      this.cache.set(cacheKey, result);
+      this.bundleCache.set(cacheKey, JSON.stringify(result));
 
       return result;
     } catch (err) {
@@ -359,20 +337,15 @@ export class AeroSSRBundler {
     }
   }
 
-  /**
-   * Clears the bundle cache
-   */
   public clearCache(): void {
-    this.cache.clear();
+    this.bundleCache.clear();
+    this.templateCache.clear();
   }
 
-  /**
-   * Gets cache stats
-   */
-  public getCacheStats(): { size: number; keys: string[] } {
+  public getCacheStats(): { bundles: number; templates: number } {
     return {
-      size: this.cache.size,
-      keys: Array.from(this.cache.keys())
+      bundles: this.bundleCache.size,
+      templates: this.templateCache.size
     };
   }
 }
