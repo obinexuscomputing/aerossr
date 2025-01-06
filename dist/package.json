@@ -45,7 +45,10 @@
   "files": [
     "dist",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "src",
+    "docs",
+    "scripts"
   ],
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
