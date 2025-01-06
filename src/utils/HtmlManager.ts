@@ -103,7 +103,7 @@ export class HTMLManager {
    */
   private sanitizeContent(content: string): string {
     return content
-      .replace(/[<>]/g, '')  // Remove HTML tags
+      .replace(/<\/?[^>]+(>|$)/g, '') // Remove HTML tags while preserving content
       .replace(/"/g, '&quot;')  // Escape quotes
       .trim();
   }
@@ -156,9 +156,20 @@ export class HTMLManager {
       const contentMatch = match.match(/content="([^"]+)"/);
       
       if (contentMatch) {
-        const name = nameMatch?.[1] || propertyMatch?.[1]?.replace('og:', 'og')?.replace('twitter:', 'twitter');
+        let name: string | undefined;
+        
+        if (propertyMatch) {
+          // Handle OpenGraph tags
+          name = propertyMatch[1].replace('og:', 'og');
+        } else if (nameMatch) {
+          // Handle Twitter and other meta tags
+          name = nameMatch[1].replace('twitter:', 'twitter');
+        }
+
         if (name) {
-          meta[name] = contentMatch[1];
+          // Convert kebab-case to camelCase for property names
+          const propertyName = name.replace(/-([a-z])/g, g => g[1].toUpperCase());
+          meta[propertyName] = contentMatch[1];
         }
       }
     });
