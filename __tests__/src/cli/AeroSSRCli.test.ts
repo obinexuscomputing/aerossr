@@ -2,7 +2,7 @@ import { jest } from '@jest/globals';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { Command } from 'commander';
-import { AeroSSR } from '../src/';
+import { AeroSSR } from '../src/cli/index';
 
 // Mock dependencies
 jest.mock('fs', () => ({
