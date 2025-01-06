@@ -1,6 +1,7 @@
 export interface CacheItem<T> {
     value: T;
-    expires?: number | undefined;
+    expires?: number;
+    lastAccessed: number;
 }
 export interface CacheOptions {
     ttl?: number;
@@ -8,8 +9,8 @@ export interface CacheOptions {
 }
 export interface CacheStore<T> {
     get(key: string): T | undefined;
-    set(key: string, value: T, itemTtl?: number, ttl?: number): void;
+    set(key: string, value: T, options?: CacheOptions): void;
     clear(): void;
 }
-export declare function createCache<T>(): CacheStore<T>;
+export declare function createCache<T>(defaultOptions?: CacheOptions): CacheStore<T>;
 //# sourceMappingURL=cache.d.ts.map

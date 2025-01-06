@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import { createServer } from 'http';
-import { existsSync, mkdirSync, promises, createReadStream, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, promises, createReadStream, readFileSync } from 'fs';
 import { parse } from 'url';
 import * as path from 'path';
 import path__default, { join, resolve } from 'path';
@@ -85,26 +85,57 @@ class Logger {
     }
 }
 
-function createCache() {
+function createCache(defaultOptions = {}) {
+    const { maxSize = Infinity, ttl } = defaultOptions;
     const cache = new Map();
+    function evictOldest() {
+        if (cache.size <= 0)
+            return;
+        let oldestKey = '';
+        let oldestAccess = Infinity;
+        for (const [key, item] of cache.entries()) {
+            if (item.lastAccessed < oldestAccess) {
+                oldestAccess = item.lastAccessed;
+                oldestKey = key;
+            }
+        }
+        if (oldestKey) {
+            cache.delete(oldestKey);
+        }
+    }
+    function isExpired(item) {
+        return item.expires !== undefined && item.expires <= Date.now();
+    }
     return {
-        get: (key) => {
+        get(key) {
             const item = cache.get(key);
-            if (!item)
+            if (!item) {
                 return undefined;
-            if (item.expires && item.expires < Date.now()) {
+            }
+            if (isExpired(item)) {
                 cache.delete(key);
                 return undefined;
             }
+            // Update last accessed time
+            item.lastAccessed = Date.now();
             return item.value;
         },
-        set: (key, value, itemTtl, ttl) => {
-            const expires = itemTtl || ttl
-                ? Date.now() + (itemTtl || ttl)
-                : undefined;
-            cache.set(key, { value, expires });
+        set(key, value, options = {}) {
+            // Handle max size - remove oldest if needed
+            if (cache.size >= maxSize) {
+                evictOldest();
+            }
+            const itemTtl = options.ttl ?? ttl;
+            const expires = itemTtl ? Date.now() + itemTtl : undefined;
+            cache.set(key, {
+                value,
+                expires,
+                lastAccessed: Date.now()
+            });
         },
-        clear: () => cache.clear()
+        clear() {
+            cache.clear();
+        }
     };
 }
 
@@ -770,30 +801,93 @@ class StaticFileMiddleware {
     }
 }
 
+// src/cli/commands.ts
+/**
+ * Get the project root directory by looking for package.json
+ */
+async function findProjectRoot(startDir) {
+    let currentDir = startDir;
+    while (currentDir !== path__default.parse(currentDir).root) {
+        try {
+            const pkgPath = path__default.join(currentDir, 'package.json');
+            await promises.access(pkgPath);
+            return currentDir;
+        }
+        catch {
+            currentDir = path__default.dirname(currentDir);
+        }
+    }
+    return startDir; // Fallback to start directory if no package.json found
+}
+/**
+ * Initialize a new AeroSSR project structure
+ */
 async function initializeSSR(directory) {
-    const projectRoot = path__default.resolve(directory);
-    const publicDir = path__default.join(projectRoot, 'public');
-    const logDir = path__default.join(projectRoot, 'logs');
-    const logFilePath = path__default.join(logDir, 'server.log');
-    await promises.mkdir(publicDir, { recursive: true });
-    await promises.mkdir(logDir, { recursive: true });
-    const indexHtmlPath = path__default.join(publicDir, 'index.html');
-    const defaultHtmlContent = `
+    try {
+        // Find project root
+        const projectRoot = await findProjectRoot(process.cwd());
+        const targetDir = path__default.resolve(projectRoot, directory);
+        // Create required directories
+        const publicDir = path__default.join(targetDir, 'public');
+        const logDir = path__default.join(targetDir, 'logs');
+        const configDir = path__default.join(targetDir, 'config');
+        const logFilePath = path__default.join(logDir, 'server.log');
+        await promises.mkdir(publicDir, { recursive: true });
+        await promises.mkdir(logDir, { recursive: true });
+        await promises.mkdir(configDir, { recursive: true });
+        // Create default HTML template
+        const indexHtmlPath = path__default.join(publicDir, 'index.html');
+        const defaultHtmlContent = `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AeroSSR App</title>
+    <link rel="stylesheet" href="/styles/main.css">
 </head>
 <body>
-    <h1>Welcome to AeroSSR</h1>
-    <div id="app"></div>
+    <div id="app">
+        <h1>Welcome to AeroSSR</h1>
+        <p>Edit public/index.html to get started</p>
+    </div>
+    <script src="/dist/main.js"></script>
 </body>
 </html>`;
-    await promises.writeFile(indexHtmlPath, defaultHtmlContent, 'utf-8');
-    await promises.writeFile(logFilePath, '', 'utf-8');
+        // Create default CSS
+        const stylesDir = path__default.join(publicDir, 'styles');
+        await promises.mkdir(stylesDir, { recursive: true });
+        const defaultCssContent = `
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    margin: 0;
+    padding: 2rem;
 }
+
+#app {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+h1 {
+    color: #2c3e50;
+}`;
+        // Create necessary files
+        await promises.writeFile(indexHtmlPath, defaultHtmlContent.trim(), 'utf-8');
+        await promises.writeFile(path__default.join(stylesDir, 'main.css'), defaultCssContent.trim(), 'utf-8');
+        await promises.writeFile(logFilePath, '', 'utf-8');
+        // Create empty dist directory for bundled files
+        const distDir = path__default.join(publicDir, 'dist');
+        await promises.mkdir(distDir, { recursive: true });
+        console.log(`AeroSSR project initialized in ${targetDir}`);
+    }
+    catch (error) {
+        throw new Error(`Failed to initialize project: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+/**
+ * Create a logging middleware
+ */
 function createLoggingMiddleware() {
     return async (_req, _res, next) => {
         const start = Date.now();
@@ -806,6 +900,9 @@ function createLoggingMiddleware() {
         }
     };
 }
+/**
+ * Create an error handling middleware
+ */
 function createErrorMiddleware() {
     return async (_req, res, next) => {
         try {
@@ -820,15 +917,19 @@ function createErrorMiddleware() {
         }
     };
 }
+/**
+ * Configure middleware for the AeroSSR instance
+ */
 async function configureMiddleware(app, config) {
     if (!app) {
         throw new Error('AeroSSR instance is required');
     }
+    // Configure static file middleware with security defaults
     const staticMiddleware = new StaticFileMiddleware({
         root: 'public',
         maxAge: 86400,
         index: ['index.html'],
-        dotFiles: 'ignore',
+        dotFiles: 'deny',
         compression: true,
         etag: true,
     });
@@ -837,7 +938,11 @@ async function configureMiddleware(app, config) {
     app.use(createErrorMiddleware());
     {
         try {
-            const customMiddleware = require(config.path);
+            const projectRoot = await findProjectRoot(process.cwd());
+            const middlewarePath = path__default.resolve(projectRoot, config.path);
+            // Verify middleware file exists
+            await promises.access(middlewarePath);
+            const customMiddleware = require(middlewarePath);
             if (typeof customMiddleware[config.name] !== 'function') {
                 throw new Error(`Middleware ${config.name} not found in ${config.path}`);
             }
@@ -849,18 +954,47 @@ async function configureMiddleware(app, config) {
     }
 }
 
+// src/cli/index.ts
 const CONFIG_FILE = 'aerossr.config.json';
-function loadConfig() {
+/**
+ * Load configuration from file or return defaults
+ */
+async function loadConfig() {
     try {
-        const config = JSON.parse(readFileSync(CONFIG_FILE, 'utf-8'));
+        // First try to find config in current directory
+        if (existsSync(CONFIG_FILE)) {
+            const config = JSON.parse(readFileSync(CONFIG_FILE, 'utf-8'));
+            return {
+                port: config.port ?? 3000,
+                logPath: config.logPath ?? 'logs/server.log',
+                middleware: config.middleware ?? [],
+                ...config
+            };
+        }
+        // If not found, look for it in parent directories
+        let currentDir = process.cwd();
+        while (currentDir !== resolve(currentDir, '..')) {
+            const configPath = join(currentDir, CONFIG_FILE);
+            if (existsSync(configPath)) {
+                const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+                return {
+                    port: config.port ?? 3000,
+                    logPath: config.logPath ?? 'logs/server.log',
+                    middleware: config.middleware ?? [],
+                    ...config
+                };
+            }
+            currentDir = resolve(currentDir, '..');
+        }
+        // If no config found, return defaults
         return {
-            port: config.port ?? 3000,
-            logPath: config.logPath ?? 'logs/server.log',
-            middleware: config.middleware ?? [],
-            ...config
+            port: 3000,
+            logPath: 'logs/server.log',
+            middleware: []
         };
     }
-    catch {
+    catch (error) {
+        console.warn(`Warning: Could not load config file: ${error instanceof Error ? error.message : String(error)}`);
         return {
             port: 3000,
             logPath: 'logs/server.log',
@@ -868,33 +1002,52 @@ function loadConfig() {
         };
     }
 }
-function saveConfig(config) {
-    writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf-8');
+/**
+ * Save configuration to file
+ */
+async function saveConfig(config) {
+    try {
+        // Ensure config directory exists
+        const configDir = process.cwd();
+        await promises.mkdir(configDir, { recursive: true });
+        // Format config for better readability
+        const formattedConfig = JSON.stringify(config, null, 2);
+        await promises.writeFile(CONFIG_FILE, formattedConfig, 'utf-8');
+    }
+    catch (error) {
+        throw new Error(`Failed to save config: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }
+// Initialize CLI program
 const program = new Command();
 program
-    .version('1.0.0')
+    .name('aerossr')
+    .version('0.1.1')
     .description('AeroSSR CLI for managing server-side rendering configurations');
+// Init command
 program
     .command('init')
     .description('Initialize a new AeroSSR project')
     .option('-d, --directory <path>', 'Project directory path', '.')
+    .option('-p, --port <number>', 'Server port number', '3000')
     .action(async (options) => {
     try {
         const directory = resolve(options.directory);
         await initializeSSR(directory);
         const config = {
-            port: 3000,
+            port: parseInt(options.port, 10),
             logPath: join(directory, 'logs/server.log'),
             middleware: []
         };
-        saveConfig(config);
+        await saveConfig(config);
+        console.log('Successfully initialized AeroSSR project');
     }
     catch (error) {
         console.error('Initialization failed:', error instanceof Error ? error.message : String(error));
         process.exit(1);
     }
 });
+// Middleware command
 program
     .command('middleware')
     .description('Configure AeroSSR middleware')
@@ -903,7 +1056,7 @@ program
     .option('-o, --options <json>', 'Middleware options as JSON')
     .action(async (options) => {
     try {
-        const config = loadConfig();
+        const config = await loadConfig();
         const app = new AeroSSR({
             port: config.port,
             logFilePath: config.logPath,
@@ -915,29 +1068,44 @@ program
         };
         await configureMiddleware(app, middlewareConfig);
         config.middleware.push(middlewareConfig);
-        saveConfig(config);
+        await saveConfig(config);
+        console.log(`Successfully configured middleware: ${options.name}`);
     }
     catch (error) {
         console.error('Middleware configuration failed:', error instanceof Error ? error.message : String(error));
         process.exit(1);
     }
 });
+// Config command
 program
     .command('config')
     .description('Manage AeroSSR configuration')
     .option('-u, --update <key=value>', 'Update configuration')
-    .action((options) => {
+    .option('-l, --list', 'List current configuration')
+    .option('-r, --reset', 'Reset configuration to defaults')
+    .action(async (options) => {
     try {
-        const config = loadConfig();
-        if (options.update) {
+        let config = await loadConfig();
+        if (options.reset) {
+            config = {
+                port: 3000,
+                logPath: 'logs/server.log',
+                middleware: []
+            };
+            await saveConfig(config);
+            console.log('Configuration reset to defaults');
+        }
+        else if (options.update) {
             const [key, value] = options.update.split('=');
             if (!key || value === undefined) {
                 throw new Error('Invalid key-value format');
             }
             config[key] = isNaN(Number(value)) ? value : Number(value);
-            saveConfig(config);
+            await saveConfig(config);
+            console.log(`Updated configuration: ${key}=${value}`);
         }
-        else {
+        else if (options.list) {
+            console.log('Current configuration:');
             console.log(JSON.stringify(config, null, 2));
         }
     }
@@ -946,5 +1114,6 @@ program
         process.exit(1);
     }
 });
+// Parse command line arguments
 program.parse(process.argv);
 //# sourceMappingURL=index.mjs.map
