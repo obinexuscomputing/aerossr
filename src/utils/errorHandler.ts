@@ -1,4 +1,3 @@
-// src/utils/errorHandler.ts
 import { IncomingMessage, ServerResponse } from 'http';
 
 export interface CustomError extends Error {

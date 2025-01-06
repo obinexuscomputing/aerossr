@@ -1,7 +1,7 @@
 // src/cli/index.ts
 import { Command } from 'commander';
 import { AeroSSR } from '../';
-import { initializeSSR, configureMiddleware, MiddlewareConfig } from './commands';
+import { initializeSSR, configureMiddleware, MiddlewareConfig } from './Commands';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { promises as fs } from 'fs';
 import { join, resolve } from 'path';
