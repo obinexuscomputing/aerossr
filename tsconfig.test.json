@@ -2,8 +2,26 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": ["jest", "node"],
-    "isolatedModules": false,
-    "noEmit": true
+    "target": "es2018",
+    "module": "commonjs",
+    "lib": ["es2018", "dom"],
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "src/*": ["src/*"],
+      "@utils/*": ["src/utils/*"],
+      "@types/*": ["src/types/*"],
+      "@middlewares/*": ["src/middlewares/*"],
+      "@cli/*": ["src/cli/*"]
+    }
   },
   "include": [
     "src/**/*.ts",
@@ -13,8 +31,6 @@
   "exclude": [
     "node_modules",
     "dist",
-    "coverage",
-    ".rollup",
-    "buildcache"
+    "coverage"
   ]
 }

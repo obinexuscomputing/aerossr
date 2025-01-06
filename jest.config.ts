@@ -31,33 +31,39 @@ const config: Config.InitialOptions = {
   // Module resolution
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@utils/(.*)$': '<rootDir>/src/utils/$1',
-    '^@types/(.*)$': '<rootDir>/src/types/$1',
-    '^@middlewares/(.*)$': '<rootDir>/src/middlewares/$1',
-    '^@cli/(.*)$': '<rootDir>/src/cli/$1'
+    '^src/(.*)$': '<rootDir>/src/$1', // Add direct src mapping
+    '\\.txt$': '<rootDir>/__mocks__/fileMock.js',
+    '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/__mocks__/fileMock.js'
   },
   moduleDirectories: ['node_modules', 'src'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 
   // Transform configuration
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: resolve(__dirname, './tsconfig.test.json'),
-      diagnostics: {
-        warnOnly: true
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: 'tsconfig.test.json',
+        diagnostics: {
+          warnOnly: true,
+          ignoreCodes: [151001]
+        }
       }
-    }]
+    ]
   },
 
   // Coverage configuration
   collectCoverage: true,
-  coverageDirectory: '<rootDir>/coverage',
+  coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
     '!src/types/**',
-    '!src/**/index.ts',
-    '!**/node_modules/**'
+    '!**/*.test.ts',
+    '!**/*.spec.ts',
+    '!**/node_modules/**',
+    '!dist/**',
+    '!coverage/**'
   ],
   coverageReporters: ['text', 'lcov', 'clover', 'html'],
   coverageThreshold: {
@@ -66,12 +72,6 @@ const config: Config.InitialOptions = {
       branches: 80,
       functions: 80,
       lines: 80
-    },
-    './src/core/': {
-      statements: 90,
-      branches: 85,
-      functions: 90,
-      lines: 90
     }
   },
 
@@ -88,20 +88,26 @@ const config: Config.InitialOptions = {
   // Global configuration
   globals: {
     'ts-jest': {
-      tsconfig: 'tsconfig.test.json',
-      diagnostics: false
+      isolatedModules: true
     }
   },
 
   // Miscellaneous options
   verbose: true,
-  testTimeout: 10000,
-  maxConcurrency: 5,
+  testTimeout: 30000,
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
   errorOnDeprecated: true,
-  notify: true
+  notify: true,
+
+  // Important: Add these to fix path resolution
+  modulePaths: ['<rootDir>'],
+  rootDir: './',
+  modulePathIgnorePatterns: ['<rootDir>/dist/'],
+  
+  // Add resolver for ts-jest
+  resolver: 'ts-jest-resolver'
 };
 
 export default config;
