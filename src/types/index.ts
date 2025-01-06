@@ -130,9 +130,9 @@ export * from '../utils/Logger';
 export * from '../utils/ErrorHandler';
 export * from '../utils/ETagGenerator';
 export * from '../utils/Bundler';
-export * from '../utils/async';
+export * from '../utils/AsycUtils';
 export * from '../utils/CookieManager';
-export * from '../utils/async';
+export * from '../utils/AsycUtils';
 
 // Create union type for all possible HTTP methods
 export type HTTPMethod = 
