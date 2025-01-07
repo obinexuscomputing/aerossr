@@ -201,7 +201,7 @@ export class AeroSSR {
       const pathname = parsedUrl.pathname || '/';
 
       // Read and process HTML template
-      const htmlPath = join(__dirname, 'index.html');
+      const htmlPath = join(new URL('.', import.meta.url).pathname, 'index.html');
       let html = await fs.readFile(htmlPath, 'utf-8');
 
       // Generate meta tags
