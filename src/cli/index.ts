@@ -1,4 +1,3 @@
-// src/cli/index.ts
 import { Command } from 'commander';
 import { AeroSSR } from '../';
 import { aeroCommands, MiddlewareConfig } from './commands';

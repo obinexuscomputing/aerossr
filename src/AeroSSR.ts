@@ -1,4 +1,3 @@
-// src/AeroSSR.ts
 import { Server, createServer, IncomingMessage, ServerResponse } from 'http';
 import { promises as fs } from 'fs';
 import { parse as parseUrl } from 'url';
