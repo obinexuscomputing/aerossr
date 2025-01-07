@@ -64,6 +64,7 @@ const configs = [
       preserveModulesRoot: 'src',
       exports: 'named',
       banner,
+    
     },
     external,
     plugins: [
