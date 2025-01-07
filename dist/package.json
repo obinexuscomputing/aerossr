@@ -28,8 +28,8 @@
     },
     "./cli": {
       "types": "./dist/types/cli/index.d.ts",
-      "import": "./dist/esm/cli/index.js",
-      "require": "./dist/cjs/cli/index.js"
+      "import": "./dist/esm/cli/index.mjs",
+      "require": "./dist/cjs/cli/index.cjs"
     },
     "./middlewares": {
       "types": "./dist/types/middlewares/index.d.ts",

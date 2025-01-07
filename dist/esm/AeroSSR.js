@@ -18,7 +18,6 @@ import { htmlManager } from './utils/HtmlManager.js';
 import { AeroSSRBundler } from './utils/Bundler.js';
 import './utils/AsyncUtils.js';
 
-// src/AeroSSR.ts
 const gzipAsync = promisify(gzip);
 class AeroSSR {
     config;

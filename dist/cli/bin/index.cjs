@@ -972,7 +972,6 @@ class AsyncUtils {
 // Export singleton instance
 new AsyncUtils();
 
-// src/AeroSSR.ts
 const gzipAsync$1 = util.promisify(zlib.gzip);
 class AeroSSR {
     config;
@@ -1426,7 +1425,6 @@ class StaticFileMiddleware {
     }
 }
 
-// src/cli/commands.ts
 class AeroSSRCommands {
     logger;
     constructor(logger) {
@@ -1633,7 +1631,6 @@ h1 {
 // Export singleton instance
 const aeroCommands = new AeroSSRCommands();
 
-// src/cli/index.ts
 class AeroSSRCLI {
     static CONFIG_FILE = 'aerossr.config.json';
     static DEFAULT_CONFIG = {

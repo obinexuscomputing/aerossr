@@ -22,7 +22,6 @@ var HtmlManager = require('./utils/HtmlManager.js');
 var Bundler = require('./utils/Bundler.js');
 require('./utils/AsyncUtils.js');
 
-// src/AeroSSR.ts
 const gzipAsync = util.promisify(zlib.gzip);
 class AeroSSR {
     config;
