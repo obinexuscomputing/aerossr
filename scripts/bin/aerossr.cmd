@@ -8,9 +8,9 @@ set args=%*
 
 rem Check if the script is running in a Windows environment
 if "%OS%"=="Windows_NT" (
-    set exe=..\dist\cli\bin\index.mjs
+    set exe=..\..\dist\cli\bin\index.mjs
 ) else (
-    set exe=..\dist\cli\bin\index.cjs
+    set exe=..\..\dist\cli\bin\index.cjs
 )
 
 call "%basedir%%exe%" %args%

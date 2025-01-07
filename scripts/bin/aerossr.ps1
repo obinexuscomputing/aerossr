@@ -12,9 +12,9 @@ if ($split.length -gt 1) {
 if ($PSVersionTable.PSVersion -lt "6.0") {
     # Fix case when both the Windows and Linux builds of Node
     # are installed in the same directory
-    $exe = "..\dist\cli\bin\index.cjs"
+    $exe = "..\..\dist\cli\bin\index.cjs"
 } else {
-    $exe = "..\dist\cli\bin\index.mjs"
+    $exe = "..\..\dist\cli\bin\index.mjs"
 }
 
 & "$basedir\$exe" $nodeArgs $args

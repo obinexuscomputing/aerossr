@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Purpose: Entry point for the AeroSSR CLI.
 // Project: AeroSSR
-import { AeroSSRCLI } from '../../src/cli/index.mjs';
+import { AeroSSRCLI } from '../../dist/cli/index.mjs';
 
 export const cli = new AeroSSRCLI();
 
