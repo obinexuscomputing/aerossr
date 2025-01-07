@@ -43,7 +43,7 @@
     }
   },
   "bin": {
-    "aerossr": "./scripts/bin/aerossr.cmd"
+    "aerossr": "./scripts/bin/aerossr.cjs"
   },
   "files": [
     "dist",
