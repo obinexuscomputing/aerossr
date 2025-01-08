@@ -1,5 +1,3 @@
-
-// src/index.ts
 export { default as AeroSSR } from './AeroSSR';
 export * from './types';
 export * from './utils';
@@ -9,6 +7,7 @@ export type {
   CacheStoreBase as CacheStore,
   CorsOptionsBase as CorsOptions,
   MetaTagsBase as MetaTags,
-  LoggerOptionsBase as LoggerOptions
+  LoggerOptionsBase as LoggerOptions,
+  
 } from './types';
 

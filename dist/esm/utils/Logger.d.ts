@@ -10,7 +10,7 @@ export declare class Logger {
     private logFilePath;
     private readonly options;
     private static readonly DEFAULT_OPTIONS;
-    constructor(options?: LoggerOptions);
+    constructor(options?: LoggerOptions | string);
     private initializeLogFile;
     getLogPath(): string | null;
     private formatMessage;

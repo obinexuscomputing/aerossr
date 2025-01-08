@@ -14,6 +14,7 @@ var util = require('util');
 var fs$1 = require('fs/promises');
 var crypto = require('crypto');
 
+var _documentCurrentScript = typeof document !== 'undefined' ? document.currentScript : null;
 function _interopNamespaceDefault(e) {
     var n = Object.create(null);
     if (e) {
@@ -46,6 +47,10 @@ class Logger {
         format: 'text'
     };
     constructor(options = {}) {
+        // Handle string argument for backward compatibility
+        if (typeof options === 'string') {
+            options = { logFilePath: options };
+        }
         this.options = { ...Logger.DEFAULT_OPTIONS, ...options };
         this.logFilePath = this.options.logFilePath;
         if (this.logFilePath) {
@@ -61,7 +66,7 @@ class Logger {
         }
         catch (error) {
             console.error(`Logger initialization failed for path: ${this.logFilePath} - ${error.message}`);
-            this.logFilePath = null;
+            throw error; // Propagate the error instead of silently failing
         }
     }
     getLogPath() {
@@ -83,10 +88,11 @@ class Logger {
         console.log(formattedMessage.trim());
         if (this.logFilePath) {
             try {
-                await fs__namespace.appendFile(this.logFilePath, formattedMessage, 'utf-8');
+                await fs__namespace.appendFile(this.logFilePath, formattedMessage);
             }
             catch (error) {
                 console.error(`Failed to write to log file: ${error.message}`);
+                throw error; // Propagate the error instead of silently failing
             }
         }
     }
@@ -94,15 +100,16 @@ class Logger {
         const { method = 'undefined', url = 'undefined', headers = {} } = req;
         const userAgent = headers['user-agent'] || 'unknown';
         const logMessage = `${method} ${url} - ${userAgent}`;
-        this.log(logMessage);
+        void this.log(logMessage);
     }
     async clear() {
         if (this.logFilePath && fs.existsSync(this.logFilePath)) {
             try {
-                await fs__namespace.writeFile(this.logFilePath, '', 'utf-8');
+                await fs__namespace.writeFile(this.logFilePath, '');
             }
             catch (error) {
                 console.error(`Failed to clear log file: ${error.message}`);
+                throw error; // Propagate the error instead of silently failing
             }
         }
     }
@@ -1117,7 +1124,7 @@ class AeroSSR {
             const parsedUrl = url.parse(req.url || '', true);
             const pathname = parsedUrl.pathname || '/';
             // Read and process HTML template
-            const htmlPath = path.join(__dirname, 'index.html');
+            const htmlPath = path.join(new URL('.', (typeof document === 'undefined' ? require('u' + 'rl').pathToFileURL(__filename).href : (_documentCurrentScript && _documentCurrentScript.tagName.toUpperCase() === 'SCRIPT' && _documentCurrentScript.src || new URL('index.cjs', document.baseURI).href))).pathname, 'index.html');
             let html = await fs.promises.readFile(htmlPath, 'utf-8');
             // Generate meta tags
             const meta = {
