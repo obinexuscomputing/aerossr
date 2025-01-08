@@ -38,8 +38,8 @@ export declare class AeroSSRBundler {
     generateBundle(entryPoint: string, options?: Partial<BundleOptions>): Promise<BundleResult>;
     clearCache(): void;
     getCacheStats(): {
-        bundles: number;
-        templates: number;
+        size: number;
+        keys: string[];
     };
 }
 //# sourceMappingURL=Bundler.d.ts.map

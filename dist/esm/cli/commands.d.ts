@@ -5,15 +5,27 @@ export interface MiddlewareConfig {
     path: string;
     options?: Record<string, unknown>;
 }
+export interface ProjectStructure {
+    public: string;
+    logs: string;
+    config: string;
+    styles: string;
+    dist: string;
+}
 export declare class AeroSSRCommands {
     private readonly logger;
+    private readonly defaultHeaders;
     constructor(logger?: Logger);
     /**
-     * Find the project root directory by looking for package.json
+     * Find the project root directory
      */
     private findProjectRoot;
     /**
-     * Create default project structure
+     * Verify directory exists or create it
+     */
+    private ensureDirectory;
+    /**
+     * Create project directory structure
      */
     private createProjectStructure;
     /**
@@ -21,7 +33,7 @@ export declare class AeroSSRCommands {
      */
     private createProjectFiles;
     /**
-     * Initialize a new AeroSSR project
+     * Initialize new AeroSSR project
      */
     initializeProject(directory: string): Promise<void>;
     /**
@@ -32,6 +44,10 @@ export declare class AeroSSRCommands {
      * Create error handling middleware
      */
     private createErrorMiddleware;
+    /**
+     * Validate middleware module exports
+     */
+    private validateMiddlewareExports;
     /**
      * Load custom middleware
      */

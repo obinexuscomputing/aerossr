@@ -8,19 +8,28 @@ export interface AsyncOptions {
 }
 export declare class AsyncUtils {
     private readonly defaultOptions;
+    private timeoutIds;
     constructor(options?: Partial<AsyncOptions>);
     /**
      * Type guard to check if a value is a Promise
      */
     isPromise<T = unknown>(value: unknown): value is Promise<T>;
     /**
+     * Creates a timeout promise with cleanup
+     */
+    private createTimeout;
+    /**
+     * Creates a delay promise with cleanup
+     */
+    private delay;
+    /**
+     * Calculates backoff delay based on strategy
+     */
+    private calculateBackoff;
+    /**
      * Ensures a function returns a Promise
      */
     ensureAsync<T extends AnyFunction>(fn: T, options?: Partial<AsyncOptions>): (...args: Parameters<T>) => Promise<ReturnType<T>>;
-    /**
-     * Creates a retry wrapper for any async function
-     */
-    withRetry<T extends AnyFunction>(fn: T, options?: Partial<AsyncOptions>): (...args: Parameters<T>) => Promise<ReturnType<T>>;
     /**
      * Executes multiple promises with concurrency limit
      */
@@ -30,17 +39,9 @@ export declare class AsyncUtils {
      */
     debounceAsync<T extends AnyFunction>(fn: T, wait: number): (...args: Parameters<T>) => Promise<ReturnType<T>>;
     /**
-     * Creates a timeout promise
+     * Cleans up any pending timeouts
      */
-    private createTimeout;
-    /**
-     * Calculates backoff delay based on strategy
-     */
-    private calculateBackoff;
-    /**
-     * Creates a delay promise
-     */
-    private delay;
+    clearTimeouts(): void;
     /**
      * Gets the current default options
      */

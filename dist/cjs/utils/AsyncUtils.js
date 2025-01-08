@@ -7,6 +7,7 @@
 
 class AsyncUtils {
     defaultOptions;
+    timeoutIds;
     constructor(options = {}) {
         this.defaultOptions = {
             timeout: 30000,
@@ -16,6 +17,7 @@ class AsyncUtils {
             onRetry: () => { },
             ...options
         };
+        this.timeoutIds = new Set();
     }
     /**
      * Type guard to check if a value is a Promise
@@ -27,97 +29,29 @@ class AsyncUtils {
             typeof value.then === 'function');
     }
     /**
-     * Ensures a function returns a Promise
-     */
-    ensureAsync(fn, options = {}) {
-        const mergedOptions = { ...this.defaultOptions, ...options };
-        return async (...args) => {
-            let lastError;
-            for (let attempt = 0; attempt <= mergedOptions.retries; attempt++) {
-                try {
-                    const timeoutPromise = this.createTimeout(mergedOptions.timeout);
-                    const resultPromise = fn(...args);
-                    const result = await Promise.race([
-                        resultPromise,
-                        timeoutPromise
-                    ]);
-                    return result;
-                }
-                catch (error) {
-                    lastError = error instanceof Error ? error : new Error(String(error));
-                    if (attempt < mergedOptions.retries) {
-                        await mergedOptions.onRetry(lastError, attempt + 1);
-                        await this.delay(this.calculateBackoff(attempt, mergedOptions));
-                    }
-                }
-            }
-            throw lastError || new Error('Operation failed');
-        };
-    }
-    /**
-     * Creates a retry wrapper for any async function
-     */
-    withRetry(fn, options = {}) {
-        return this.ensureAsync(fn, options);
-    }
-    /**
-     * Executes multiple promises with concurrency limit
-     */
-    async withConcurrency(tasks, concurrency) {
-        const results = [];
-        const executing = [];
-        for (const task of tasks) {
-            const execution = task().then(result => {
-                results.push(result);
-                executing.splice(executing.indexOf(execution), 1);
-            });
-            executing.push(execution);
-            if (executing.length >= concurrency) {
-                await Promise.race(executing);
-            }
-        }
-        await Promise.all(executing);
-        return results;
-    }
-    /**
-     * Creates a debounced version of an async function
-     */
-    debounceAsync(fn, wait) {
-        let timeoutId;
-        let pendingPromise = null;
-        return (...args) => {
-            if (pendingPromise) {
-                clearTimeout(timeoutId);
-            }
-            return new Promise((resolve, reject) => {
-                timeoutId = setTimeout(async () => {
-                    try {
-                        const result = await fn(...args);
-                        pendingPromise = null;
-                        resolve(result);
-                    }
-                    catch (error) {
-                        pendingPromise = null;
-                        reject(error);
-                    }
-                }, wait);
-                pendingPromise = Promise.race([
-                    new Promise((_, reject) => {
-                        timeoutId.unref?.(); // Optional chaining for non-Node environments
-                    })
-                ]);
-            });
-        };
-    }
-    /**
-     * Creates a timeout promise
+     * Creates a timeout promise with cleanup
      */
     createTimeout(ms) {
         return new Promise((_, reject) => {
             const timeoutId = setTimeout(() => {
+                this.timeoutIds.delete(timeoutId);
                 reject(new Error(`Operation timed out after ${ms}ms`));
             }, ms);
-            timeoutId.unref?.(); // Optional chaining for non-Node environments
+            this.timeoutIds.add(timeoutId);
+            timeoutId.unref?.();
+        });
+    }
+    /**
+     * Creates a delay promise with cleanup
+     */
+    delay(ms) {
+        return new Promise(resolve => {
+            const timeoutId = setTimeout(() => {
+                this.timeoutIds.delete(timeoutId);
+                resolve();
+            }, ms);
+            this.timeoutIds.add(timeoutId);
+            timeoutId.unref?.();
         });
     }
     /**
@@ -130,13 +64,97 @@ class AsyncUtils {
         return options.backoffDelay;
     }
     /**
-     * Creates a delay promise
+     * Ensures a function returns a Promise
      */
-    delay(ms) {
-        return new Promise(resolve => {
-            const timeoutId = setTimeout(resolve, ms);
-            timeoutId.unref?.(); // Optional chaining for non-Node environments
-        });
+    ensureAsync(fn, options = {}) {
+        const mergedOptions = { ...this.defaultOptions, ...options };
+        return async (...args) => {
+            let lastError;
+            for (let attempt = 0; attempt <= mergedOptions.retries; attempt++) {
+                try {
+                    const timeoutPromise = this.createTimeout(mergedOptions.timeout);
+                    const resultPromise = Promise.resolve(fn(...args));
+                    const result = await Promise.race([
+                        resultPromise,
+                        timeoutPromise
+                    ]);
+                    return result;
+                }
+                catch (error) {
+                    lastError = error instanceof Error ? error : new Error(String(error));
+                    if (attempt < mergedOptions.retries) {
+                        await mergedOptions.onRetry(lastError, attempt + 1);
+                        await this.delay(this.calculateBackoff(attempt, mergedOptions));
+                        continue;
+                    }
+                    break;
+                }
+            }
+            throw lastError || new Error('Operation failed');
+        };
+    }
+    /**
+     * Executes multiple promises with concurrency limit
+     */
+    async withConcurrency(tasks, concurrency) {
+        const results = [];
+        const executing = [];
+        try {
+            for (const task of tasks) {
+                const execution = task().then(result => {
+                    results.push(result);
+                    executing.splice(executing.indexOf(execution), 1);
+                });
+                executing.push(execution);
+                if (executing.length >= concurrency) {
+                    await Promise.race(executing);
+                }
+            }
+            await Promise.all(executing);
+            return results;
+        }
+        catch (error) {
+            this.clearTimeouts();
+            throw error;
+        }
+    }
+    /**
+     * Creates a debounced version of an async function
+     */
+    debounceAsync(fn, wait) {
+        let timeoutId;
+        let pendingPromise = null;
+        return (...args) => {
+            if (pendingPromise) {
+                clearTimeout(timeoutId);
+                this.timeoutIds.delete(timeoutId);
+            }
+            return new Promise((resolve, reject) => {
+                timeoutId = setTimeout(async () => {
+                    this.timeoutIds.delete(timeoutId);
+                    try {
+                        const result = await fn(...args);
+                        pendingPromise = null;
+                        resolve(result);
+                    }
+                    catch (error) {
+                        pendingPromise = null;
+                        reject(error);
+                    }
+                }, wait);
+                this.timeoutIds.add(timeoutId);
+                timeoutId.unref?.();
+            });
+        };
+    }
+    /**
+     * Cleans up any pending timeouts
+     */
+    clearTimeouts() {
+        for (const timeoutId of this.timeoutIds) {
+            clearTimeout(timeoutId);
+        }
+        this.timeoutIds.clear();
     }
     /**
      * Gets the current default options
