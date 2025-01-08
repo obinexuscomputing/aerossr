@@ -22,7 +22,6 @@ var HtmlManager = require('./utils/HtmlManager.js');
 var Bundler = require('./utils/Bundler.js');
 require('./utils/AsyncUtils.js');
 
-var _documentCurrentScript = typeof document !== 'undefined' ? document.currentScript : null;
 const gzipAsync = util.promisify(zlib.gzip);
 class AeroSSR {
     config;
@@ -167,8 +166,8 @@ class AeroSSR {
         try {
             const parsedUrl = url.parse(req.url || '', true);
             const pathname = parsedUrl.pathname || '/';
-            // Read and process HTML template
-            const htmlPath = path.join(new URL('.', (typeof document === 'undefined' ? require('u' + 'rl').pathToFileURL(__filename).href : (_documentCurrentScript && _documentCurrentScript.tagName.toUpperCase() === 'SCRIPT' && _documentCurrentScript.src || new URL('AeroSSR.js', document.baseURI).href))).pathname, 'index.html');
+            // Use project path for template lookup
+            const htmlPath = path.join(this.config.projectPath, 'index.html');
             let html = await fs.promises.readFile(htmlPath, 'utf-8');
             // Generate meta tags
             const meta = {

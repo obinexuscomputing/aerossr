@@ -14,8 +14,16 @@ export declare class Logger {
     private initializeLogFile;
     getLogPath(): string | null;
     private formatMessage;
-    log(message: string): Promise<void>;
+    log(message: string, level?: 'debug' | 'info' | 'warn' | 'error'): Promise<void>;
+    private shouldLog;
+    private checkRotation;
+    private rotateLogFiles;
     logRequest(req: IncomingMessage): void;
+    logError(error: Error): Promise<void>;
     clear(): Promise<void>;
+    debug(message: string): Promise<void>;
+    info(message: string): Promise<void>;
+    warn(message: string): Promise<void>;
+    error(message: string): Promise<void>;
 }
 //# sourceMappingURL=Logger.d.ts.map

@@ -11,19 +11,27 @@ export interface CorsOptions extends CorsOptionsBase {
 }
 export declare class CORSManager {
     private readonly defaultOptions;
-    constructor(options?: CorsOptions);
+    constructor(options?: Partial<CorsOptions>);
+    /**
+     * Validates and normalizes CORS options
+     */
+    private validateOptions;
+    /**
+     * Safely joins array values with fallback
+     */
+    private safeJoin;
     /**
      * Sets CORS headers on response
      */
-    setCorsHeaders(res: ServerResponse, options?: CorsOptions): void;
+    setCorsHeaders(res: ServerResponse, options?: Partial<CorsOptions>): void;
     /**
      * Handles preflight requests
      */
-    handlePreflight(res: ServerResponse, options?: CorsOptions): void;
+    handlePreflight(res: ServerResponse, options?: Partial<CorsOptions>): void;
     /**
      * Normalizes CORS options
      */
-    normalizeCorsOptions(options?: string | CorsOptions): CorsOptions;
+    normalizeCorsOptions(options?: string | Partial<CorsOptions>): CorsOptions;
     /**
      * Updates default options
      */

@@ -27,17 +27,25 @@ export declare class HTMLManager {
      */
     private sanitizeContent;
     /**
-     * Creates meta tags object with sanitized values
-     */
-    createMetaTags(meta: Partial<MetaTags>): MetaTags;
-    /**
      * Generates complete HTML document with meta tags
      */
     generateHTML(content: string, meta?: Partial<MetaTags>): string;
     /**
+     * Helper method to decode HTML entities
+     */
+    private decodeHTMLEntities;
+    /**
+     * Convert property name to camelCase
+     */
+    private propertyNameToCamelCase;
+    /**
      * Extracts existing meta tags from HTML
      */
     extractMetaTags(html: string): MetaTags;
+    /**
+     * Creates meta tags object with sanitized values
+     */
+    createMetaTags(meta: Partial<MetaTags>): MetaTags;
 }
 export declare const htmlManager: HTMLManager;
 //# sourceMappingURL=HtmlManager.d.ts.map

@@ -14,7 +14,6 @@ var util = require('util');
 var fs$1 = require('fs/promises');
 var crypto = require('crypto');
 
-var _documentCurrentScript = typeof document !== 'undefined' ? document.currentScript : null;
 function _interopNamespaceDefault(e) {
     var n = Object.create(null);
     if (e) {
@@ -66,41 +65,92 @@ class Logger {
         }
         catch (error) {
             console.error(`Logger initialization failed for path: ${this.logFilePath} - ${error.message}`);
-            throw error; // Propagate the error instead of silently failing
+            throw error;
         }
     }
     getLogPath() {
         return this.logFilePath;
     }
-    formatMessage(message) {
+    formatMessage(message, level = 'info') {
         const timestamp = new Date().toISOString();
         if (this.options.format === 'json') {
             return JSON.stringify({
                 timestamp,
-                message,
-                level: this.options.logLevel
+                level,
+                message
             }) + '\n';
         }
-        return `[${timestamp}] ${message}\n`;
+        return `[${timestamp}] [${level.toUpperCase()}] ${message}\n`;
     }
-    async log(message) {
-        const formattedMessage = this.formatMessage(message);
+    async log(message, level = 'info') {
+        if (!this.shouldLog(level)) {
+            return;
+        }
+        const formattedMessage = this.formatMessage(message, level);
         console.log(formattedMessage.trim());
         if (this.logFilePath) {
             try {
-                await fs__namespace.appendFile(this.logFilePath, formattedMessage);
+                await this.checkRotation();
+                await fs__namespace.appendFile(this.logFilePath, formattedMessage, 'utf8');
             }
             catch (error) {
                 console.error(`Failed to write to log file: ${error.message}`);
-                throw error; // Propagate the error instead of silently failing
+                throw error;
             }
+        }
+    }
+    shouldLog(level) {
+        const levels = ['debug', 'info', 'warn', 'error'];
+        const configuredLevel = levels.indexOf(this.options.logLevel);
+        const messageLevel = levels.indexOf(level);
+        return messageLevel >= configuredLevel;
+    }
+    async checkRotation() {
+        if (!this.logFilePath || !this.options.maxFileSize) {
+            return;
+        }
+        try {
+            const stats = await fs__namespace.stat(this.logFilePath);
+            if (stats.size >= this.options.maxFileSize) {
+                await this.rotateLogFiles();
+            }
+        }
+        catch (error) {
+            console.error(`Failed to check log rotation: ${error.message}`);
+        }
+    }
+    async rotateLogFiles() {
+        if (!this.logFilePath)
+            return;
+        for (let i = this.options.maxFiles - 1; i > 0; i--) {
+            const oldPath = `${this.logFilePath}.${i}`;
+            const newPath = `${this.logFilePath}.${i + 1}`;
+            try {
+                if (fs.existsSync(oldPath)) {
+                    await fs__namespace.rename(oldPath, newPath);
+                }
+            }
+            catch (error) {
+                console.error(`Failed to rotate log file: ${error.message}`);
+            }
+        }
+        try {
+            await fs__namespace.rename(this.logFilePath, `${this.logFilePath}.1`);
+            await fs__namespace.writeFile(this.logFilePath, '');
+        }
+        catch (error) {
+            console.error(`Failed to create new log file: ${error.message}`);
         }
     }
     logRequest(req) {
         const { method = 'undefined', url = 'undefined', headers = {} } = req;
         const userAgent = headers['user-agent'] || 'unknown';
         const logMessage = `${method} ${url} - ${userAgent}`;
-        void this.log(logMessage);
+        void this.log(logMessage, 'info');
+    }
+    async logError(error) {
+        const message = `${error.name}: ${error.message}\nStack: ${error.stack}`;
+        await this.log(message, 'error');
     }
     async clear() {
         if (this.logFilePath && fs.existsSync(this.logFilePath)) {
@@ -109,9 +159,22 @@ class Logger {
             }
             catch (error) {
                 console.error(`Failed to clear log file: ${error.message}`);
-                throw error; // Propagate the error instead of silently failing
+                throw error;
             }
         }
+    }
+    // Debug level convenience methods
+    async debug(message) {
+        await this.log(message, 'debug');
+    }
+    async info(message) {
+        await this.log(message, 'info');
+    }
+    async warn(message) {
+        await this.log(message, 'warn');
+    }
+    async error(message) {
+        await this.log(message, 'error');
     }
 }
 
@@ -142,50 +205,124 @@ class CORSManager {
             exposedHeaders: [],
             credentials: false,
             maxAge: 86400,
-            ...options
+            ...this.validateOptions(options)
         };
+    }
+    /**
+     * Validates and normalizes CORS options
+     */
+    validateOptions(options) {
+        const validated = {};
+        if (options.origins !== undefined) {
+            validated.origins = options.origins;
+        }
+        if (Array.isArray(options.methods)) {
+            validated.methods = options.methods.filter(method => typeof method === 'string' && method.length > 0);
+        }
+        if (Array.isArray(options.allowedHeaders)) {
+            validated.allowedHeaders = options.allowedHeaders.filter(header => typeof header === 'string' && header.length > 0);
+        }
+        if (Array.isArray(options.exposedHeaders)) {
+            validated.exposedHeaders = options.exposedHeaders.filter(header => typeof header === 'string' && header.length > 0);
+        }
+        if (typeof options.credentials === 'boolean') {
+            validated.credentials = options.credentials;
+        }
+        if (typeof options.maxAge === 'number' && !isNaN(options.maxAge)) {
+            validated.maxAge = Math.max(0, Math.floor(options.maxAge));
+        }
+        return validated;
+    }
+    /**
+     * Safely joins array values with fallback
+     */
+    safeJoin(arr, separator = ', ') {
+        if (!Array.isArray(arr) || arr.length === 0) {
+            return '';
+        }
+        return arr.filter(item => typeof item === 'string' && item.length > 0).join(separator);
     }
     /**
      * Sets CORS headers on response
      */
     setCorsHeaders(res, options = {}) {
-        const mergedOptions = { ...this.defaultOptions, ...options };
-        const { origins, methods, allowedHeaders, exposedHeaders, credentials, maxAge } = mergedOptions;
-        // Set main CORS headers
-        res.setHeader('Access-Control-Allow-Origin', Array.isArray(origins) ? origins.join(',') : origins);
-        res.setHeader('Access-Control-Allow-Methods', methods.join(', '));
-        res.setHeader('Access-Control-Allow-Headers', allowedHeaders.join(', '));
-        // Set optional headers
-        if (exposedHeaders.length) {
-            res.setHeader('Access-Control-Expose-Headers', exposedHeaders.join(', '));
+        if (!res || typeof res.setHeader !== 'function') {
+            throw new Error('Invalid ServerResponse object');
         }
-        if (credentials) {
-            res.setHeader('Access-Control-Allow-Credentials', 'true');
+        const validOptions = this.validateOptions(options);
+        const mergedOptions = { ...this.defaultOptions, ...validOptions };
+        try {
+            // Set Allow-Origin header
+            const origin = Array.isArray(mergedOptions.origins)
+                ? this.safeJoin(mergedOptions.origins, ',')
+                : (mergedOptions.origins || '*');
+            res.setHeader('Access-Control-Allow-Origin', origin);
+            // Set Allow-Methods header
+            const methods = this.safeJoin(mergedOptions.methods);
+            if (methods) {
+                res.setHeader('Access-Control-Allow-Methods', methods);
+            }
+            // Set Allow-Headers header
+            const allowedHeaders = this.safeJoin(mergedOptions.allowedHeaders);
+            if (allowedHeaders) {
+                res.setHeader('Access-Control-Allow-Headers', allowedHeaders);
+            }
+            // Set optional headers
+            const exposedHeaders = this.safeJoin(mergedOptions.exposedHeaders);
+            if (exposedHeaders) {
+                res.setHeader('Access-Control-Expose-Headers', exposedHeaders);
+            }
+            // Set credentials header
+            if (mergedOptions.credentials) {
+                res.setHeader('Access-Control-Allow-Credentials', 'true');
+            }
+            // Set max age header
+            if (typeof mergedOptions.maxAge === 'number' && mergedOptions.maxAge >= 0) {
+                res.setHeader('Access-Control-Max-Age', mergedOptions.maxAge.toString());
+            }
         }
-        res.setHeader('Access-Control-Max-Age', maxAge.toString());
+        catch (error) {
+            console.error('Error setting CORS headers:', error);
+            throw error;
+        }
     }
     /**
      * Handles preflight requests
      */
     handlePreflight(res, options = {}) {
-        this.setCorsHeaders(res, options);
-        res.writeHead(204);
-        res.end();
+        try {
+            this.setCorsHeaders(res, options);
+            if (!res.headersSent) {
+                res.writeHead(204);
+            }
+            res.end();
+        }
+        catch (error) {
+            console.error('Error handling preflight request:', error);
+            if (!res.headersSent) {
+                res.writeHead(500);
+            }
+            res.end();
+        }
     }
     /**
      * Normalizes CORS options
      */
     normalizeCorsOptions(options) {
+        if (!options) {
+            return { origins: '*' };
+        }
         if (typeof options === 'string') {
             return { origins: options };
         }
-        return options || { origins: '*' };
+        return this.validateOptions(options);
     }
     /**
      * Updates default options
      */
     updateDefaults(options) {
-        Object.assign(this.defaultOptions, options);
+        const validOptions = this.validateOptions(options);
+        Object.assign(this.defaultOptions, validOptions);
     }
     /**
      * Gets current default options
@@ -506,17 +643,6 @@ class HTMLManager {
             .trim();
     }
     /**
-     * Creates meta tags object with sanitized values
-     */
-    createMetaTags(meta) {
-        return Object.entries(meta).reduce((acc, [key, value]) => {
-            if (value !== undefined) {
-                acc[key] = this.sanitizeContent(value);
-            }
-            return acc;
-        }, {});
-    }
-    /**
      * Generates complete HTML document with meta tags
      */
     generateHTML(content, meta = {}) {
@@ -532,38 +658,82 @@ class HTMLManager {
         return this.injectMetaTags(baseHTML, meta);
     }
     /**
+     * Helper method to decode HTML entities
+     */
+    decodeHTMLEntities(str) {
+        const doc = new DOMParser().parseFromString(str, 'text/html');
+        return doc.documentElement.textContent || str;
+    }
+    /**
+     * Convert property name to camelCase
+     */
+    propertyNameToCamelCase(name) {
+        // Handle special cases first
+        if (name.startsWith('og:')) {
+            const ogProp = name.slice(3); // Remove 'og:'
+            return 'og' + ogProp.charAt(0).toUpperCase() + ogProp.slice(1);
+        }
+        if (name.startsWith('twitter:')) {
+            const twitterProp = name.slice(8); // Remove 'twitter:'
+            return 'twitter' + twitterProp.charAt(0).toUpperCase() + twitterProp.slice(1);
+        }
+        // General kebab-case to camelCase conversion
+        return name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+    }
+    /**
      * Extracts existing meta tags from HTML
      */
     extractMetaTags(html) {
         const meta = {};
+        // Extract title
         const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
         if (titleMatch) {
-            meta.title = titleMatch[1];
+            meta.title = this.decodeHTMLEntities(titleMatch[1]);
         }
-        const metaRegex = /<meta[^>]+>/g;
-        const matches = html.match(metaRegex) || [];
-        matches.forEach(match => {
-            const nameMatch = match.match(/name="([^"]+)"/);
-            const propertyMatch = match.match(/property="([^"]+)"/);
-            const contentMatch = match.match(/content="([^"]+)"/);
-            if (contentMatch) {
-                let name;
-                if (propertyMatch) {
-                    // Handle OpenGraph tags
-                    name = propertyMatch[1].replace('og:', 'og');
-                }
-                else if (nameMatch) {
-                    // Handle Twitter and other meta tags
-                    name = nameMatch[1].replace('twitter:', 'twitter');
-                }
-                if (name) {
-                    // Convert kebab-case to camelCase for property names
-                    const propertyName = name.replace(/-([a-z])/g, g => g[1].toUpperCase());
-                    meta[propertyName] = contentMatch[1];
-                }
+        // Extract meta tags
+        const metaTags = html.matchAll(/<meta\s+(?:[^>]*?\s+)?(?:name|property)="([^"]+)"[^>]*?content="([^"]+)"[^>]*>/g);
+        for (const match of metaTags) {
+            const [_, nameOrProperty, content] = match;
+            if (!nameOrProperty || !content)
+                continue;
+            // Normalize property name
+            const propertyName = this.propertyNameToCamelCase(nameOrProperty);
+            // Decode content
+            const decodedContent = this.decodeHTMLEntities(content);
+            // Special handling for charset
+            if (nameOrProperty === 'charset') {
+                meta.charset = decodedContent;
+                continue;
             }
-        });
+            meta[propertyName] = decodedContent;
+        }
+        // Also check for charset in meta tag
+        const charsetMatch = html.match(/<meta\s+charset="([^"]+)"[^>]*>/i);
+        if (charsetMatch) {
+            meta.charset = this.decodeHTMLEntities(charsetMatch[1]);
+        }
         return meta;
+    }
+    /**
+     * Creates meta tags object with sanitized values
+     */
+    createMetaTags(meta) {
+        // Create a temporary div to decode entities
+        const sanitizedMeta = Object.entries(meta).reduce((acc, [key, value]) => {
+            if (value !== undefined) {
+                // First encode special characters, then decode entities
+                acc[key] = this.decodeHTMLEntities(value.replace(/["<>]/g, (char) => {
+                    const entities = {
+                        '"': '&quot;',
+                        '<': '&lt;',
+                        '>': '&gt;'
+                    };
+                    return entities[char];
+                }));
+            }
+            return acc;
+        }, {});
+        return sanitizedMeta;
     }
 }
 // Export singleton instance
@@ -1157,8 +1327,8 @@ class AeroSSR {
         try {
             const parsedUrl = url.parse(req.url || '', true);
             const pathname = parsedUrl.pathname || '/';
-            // Read and process HTML template
-            const htmlPath = path.join(new URL('.', (typeof document === 'undefined' ? require('u' + 'rl').pathToFileURL(__filename).href : (_documentCurrentScript && _documentCurrentScript.tagName.toUpperCase() === 'SCRIPT' && _documentCurrentScript.src || new URL('index.cjs', document.baseURI).href))).pathname, 'index.html');
+            // Use project path for template lookup
+            const htmlPath = path.join(this.config.projectPath, 'index.html');
             let html = await fs.promises.readFile(htmlPath, 'utf-8');
             // Generate meta tags
             const meta = {

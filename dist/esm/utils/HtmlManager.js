@@ -101,17 +101,6 @@ class HTMLManager {
             .trim();
     }
     /**
-     * Creates meta tags object with sanitized values
-     */
-    createMetaTags(meta) {
-        return Object.entries(meta).reduce((acc, [key, value]) => {
-            if (value !== undefined) {
-                acc[key] = this.sanitizeContent(value);
-            }
-            return acc;
-        }, {});
-    }
-    /**
      * Generates complete HTML document with meta tags
      */
     generateHTML(content, meta = {}) {
@@ -127,38 +116,82 @@ class HTMLManager {
         return this.injectMetaTags(baseHTML, meta);
     }
     /**
+     * Helper method to decode HTML entities
+     */
+    decodeHTMLEntities(str) {
+        const doc = new DOMParser().parseFromString(str, 'text/html');
+        return doc.documentElement.textContent || str;
+    }
+    /**
+     * Convert property name to camelCase
+     */
+    propertyNameToCamelCase(name) {
+        // Handle special cases first
+        if (name.startsWith('og:')) {
+            const ogProp = name.slice(3); // Remove 'og:'
+            return 'og' + ogProp.charAt(0).toUpperCase() + ogProp.slice(1);
+        }
+        if (name.startsWith('twitter:')) {
+            const twitterProp = name.slice(8); // Remove 'twitter:'
+            return 'twitter' + twitterProp.charAt(0).toUpperCase() + twitterProp.slice(1);
+        }
+        // General kebab-case to camelCase conversion
+        return name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+    }
+    /**
      * Extracts existing meta tags from HTML
      */
     extractMetaTags(html) {
         const meta = {};
+        // Extract title
         const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
         if (titleMatch) {
-            meta.title = titleMatch[1];
+            meta.title = this.decodeHTMLEntities(titleMatch[1]);
         }
-        const metaRegex = /<meta[^>]+>/g;
-        const matches = html.match(metaRegex) || [];
-        matches.forEach(match => {
-            const nameMatch = match.match(/name="([^"]+)"/);
-            const propertyMatch = match.match(/property="([^"]+)"/);
-            const contentMatch = match.match(/content="([^"]+)"/);
-            if (contentMatch) {
-                let name;
-                if (propertyMatch) {
-                    // Handle OpenGraph tags
-                    name = propertyMatch[1].replace('og:', 'og');
-                }
-                else if (nameMatch) {
-                    // Handle Twitter and other meta tags
-                    name = nameMatch[1].replace('twitter:', 'twitter');
-                }
-                if (name) {
-                    // Convert kebab-case to camelCase for property names
-                    const propertyName = name.replace(/-([a-z])/g, g => g[1].toUpperCase());
-                    meta[propertyName] = contentMatch[1];
-                }
+        // Extract meta tags
+        const metaTags = html.matchAll(/<meta\s+(?:[^>]*?\s+)?(?:name|property)="([^"]+)"[^>]*?content="([^"]+)"[^>]*>/g);
+        for (const match of metaTags) {
+            const [_, nameOrProperty, content] = match;
+            if (!nameOrProperty || !content)
+                continue;
+            // Normalize property name
+            const propertyName = this.propertyNameToCamelCase(nameOrProperty);
+            // Decode content
+            const decodedContent = this.decodeHTMLEntities(content);
+            // Special handling for charset
+            if (nameOrProperty === 'charset') {
+                meta.charset = decodedContent;
+                continue;
             }
-        });
+            meta[propertyName] = decodedContent;
+        }
+        // Also check for charset in meta tag
+        const charsetMatch = html.match(/<meta\s+charset="([^"]+)"[^>]*>/i);
+        if (charsetMatch) {
+            meta.charset = this.decodeHTMLEntities(charsetMatch[1]);
+        }
         return meta;
+    }
+    /**
+     * Creates meta tags object with sanitized values
+     */
+    createMetaTags(meta) {
+        // Create a temporary div to decode entities
+        const sanitizedMeta = Object.entries(meta).reduce((acc, [key, value]) => {
+            if (value !== undefined) {
+                // First encode special characters, then decode entities
+                acc[key] = this.decodeHTMLEntities(value.replace(/["<>]/g, (char) => {
+                    const entities = {
+                        '"': '&quot;',
+                        '<': '&lt;',
+                        '>': '&gt;'
+                    };
+                    return entities[char];
+                }));
+            }
+            return acc;
+        }, {});
+        return sanitizedMeta;
     }
 }
 // Export singleton instance
