@@ -9,7 +9,8 @@ export declare class AeroSSR {
     server: Server | null;
     readonly routes: Map<string, RouteHandler>;
     private readonly middlewares;
-    constructor(config?: AeroSSRConfig);
+    constructor(options?: Partial<AeroSSRConfig>);
+    private validateConfig;
     use(middleware: Middleware): void;
     route(path: string, handler: RouteHandler): void;
     clearCache(): void;
