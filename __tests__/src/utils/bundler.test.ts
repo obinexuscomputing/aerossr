@@ -1,6 +1,6 @@
-import { AeroSSRBundler } from '../../src/utils/Bundler';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { AeroSSRBundler } from '../../../src/utils/Bundler';
 
 // Mock external modules
 jest.mock('fs/promises');

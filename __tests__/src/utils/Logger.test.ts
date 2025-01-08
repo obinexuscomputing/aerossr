@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { existsSync, mkdirSync } from 'fs';
-import { Logger } from '../../../src/utils/logger';
+import { Logger } from '../../../src/utils/Logger';
 import { IncomingMessage } from 'http';
 
 jest.mock('fs', () => ({

@@ -1,4 +1,5 @@
-import { cookieManager, CookieManager } from '../../src/utils/CookieManager';
+import { CookieManager } from "../../../src/utils/CookieManager";
+
 describe('Cookie Manager', () => {
   let cookieManager: CookieManager;
   let documentCookies: string[] = [];

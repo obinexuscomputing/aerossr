@@ -1,5 +1,5 @@
 // __tests__/utils/corsManager.test.ts
-import { CORSManager, CorsOptions } from '../../src/utils/CORSManager';
+import { CORSManager, CorsOptions } from '../../../src/utils/CorsManager';
 import { ServerResponse } from 'http';
 
 describe('CORS Manager', () => {

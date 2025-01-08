@@ -3,9 +3,9 @@ import { jest } from '@jest/globals';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { IncomingMessage, ServerResponse } from 'http';
-import { AeroSSR } from '../../src';
-import { AeroSSRCommands } from '../../src/cli/commands';
-import { Logger } from '../../src/utils/logger';
+import { AeroSSRCommands } from '../../../src/cli/commands';
+import { AeroSSR } from '../../../src/AeroSSR';
+import { Logger } from '../../../src/utils/Logger';
 
 // Mock dependencies
 jest.mock('fs', () => ({
@@ -19,7 +19,7 @@ jest.mock('fs', () => ({
 jest.mock('path', () => ({
   join: jest.fn((...args) => args.join('/')),
   resolve: jest.fn((...args) => args.join('/')),
-  dirname: jest.fn(dir => dir.split('/').slice(0, -1).join('/')),
+  dirname: jest.fn((dir: string) => dir.split('/').slice(0, -1).join('/')),
   parse: jest.fn(() => ({ root: '/' }))
 }));
 

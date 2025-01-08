@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import {SecurityMiddleware} from '../../src/middlewares/SecurityMiddleware';
+import {SecurityMiddleware} from '../../../src/middlewares/SecurityMiddleware';
 
 interface IncomingMessageWithBody extends IncomingMessage {
   body?: any;

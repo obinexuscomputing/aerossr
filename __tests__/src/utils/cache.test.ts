@@ -1,4 +1,4 @@
-import { CacheManager } from '../../src/utils/CacheManager';
+import { CacheManager } from "../../../src/utils/CacheManager";
 
 describe('CacheManager', () => {
   let cache: CacheManager<string>;

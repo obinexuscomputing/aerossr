@@ -1,5 +1,5 @@
 // __tests__/utils/errorHandler.test.ts
-import { ErrorHandler, CustomError, ErrorPageOptions } from '../../src/utils/errorHandler';
+import { ErrorHandler, CustomError, ErrorPageOptions } from '../../../src/utils/ErrorHandler';
 import { IncomingMessage, ServerResponse } from 'http';
 
 describe('ErrorHandler', () => {

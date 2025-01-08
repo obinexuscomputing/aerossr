@@ -1,4 +1,4 @@
-import { AsyncUtils } from '../../src/utils/AsyncUtils';
+import { AsyncUtils } from "../../../src/utils/AsyncUtils";
 
 describe('AsyncUtils', () => {
   let asyncUtils: AsyncUtils;

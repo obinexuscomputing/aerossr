@@ -1,5 +1,5 @@
 // __tests__/utils/ETagGenerator.test.ts
-import { ETagGenerator } from '../../src/utils/ETagGenerator';
+import { ETagGenerator } from '../../../src/utils/ETagGenerator';
 
 describe('ETagGenerator', () => {
   let generator: ETagGenerator;

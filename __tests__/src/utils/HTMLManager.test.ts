@@ -1,5 +1,4 @@
-// __tests__/utils/HTMLManager.test.ts
-import { HTMLManager } from '../../src/utils/HTMLManager';
+import { HTMLManager } from '../../../src/utils/HTMLManager';
 
 describe('HTMLManager', () => {
   let htmlManager: HTMLManager;
