@@ -1,4 +1,3 @@
-// src/utils/AsyncUtils.ts
 import type { AnyFunction } from '../types';
 
 export interface AsyncOptions {
@@ -11,6 +10,7 @@ export interface AsyncOptions {
 
 export class AsyncUtils {
   private readonly defaultOptions: Required<AsyncOptions>;
+  private timeoutIds: Set<NodeJS.Timeout>;
 
   constructor(options: Partial<AsyncOptions> = {}) {
     this.defaultOptions = {
@@ -21,6 +21,7 @@ export class AsyncUtils {
       onRetry: () => {},
       ...options
     };
+    this.timeoutIds = new Set();
   }
 
   /**
@@ -33,6 +34,46 @@ export class AsyncUtils {
       'then' in value && 
       typeof value.then === 'function'
     );
+  }
+
+  /**
+   * Creates a timeout promise with cleanup
+   */
+  private createTimeout(ms: number): Promise<never> {
+    return new Promise((_, reject) => {
+      const timeoutId = setTimeout(() => {
+        this.timeoutIds.delete(timeoutId);
+        reject(new Error(`Operation timed out after ${ms}ms`));
+      }, ms);
+      
+      this.timeoutIds.add(timeoutId);
+      timeoutId.unref?.();
+    });
+  }
+
+  /**
+   * Creates a delay promise with cleanup
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => {
+      const timeoutId = setTimeout(() => {
+        this.timeoutIds.delete(timeoutId);
+        resolve();
+      }, ms);
+      
+      this.timeoutIds.add(timeoutId);
+      timeoutId.unref?.();
+    });
+  }
+
+  /**
+   * Calculates backoff delay based on strategy
+   */
+  private calculateBackoff(attempt: number, options: Required<AsyncOptions>): number {
+    if (options.backoff === 'exponential') {
+      return options.backoffDelay * Math.pow(2, attempt);
+    }
+    return options.backoffDelay;
   }
 
   /**
@@ -50,7 +91,7 @@ export class AsyncUtils {
       for (let attempt = 0; attempt <= mergedOptions.retries; attempt++) {
         try {
           const timeoutPromise = this.createTimeout(mergedOptions.timeout);
-          const resultPromise = fn(...args);
+          const resultPromise = Promise.resolve(fn(...args));
           
           const result = await Promise.race([
             resultPromise,
@@ -64,22 +105,14 @@ export class AsyncUtils {
           if (attempt < mergedOptions.retries) {
             await mergedOptions.onRetry(lastError, attempt + 1);
             await this.delay(this.calculateBackoff(attempt, mergedOptions));
+            continue;
           }
+          break;
         }
       }
 
       throw lastError || new Error('Operation failed');
     };
-  }
-
-  /**
-   * Creates a retry wrapper for any async function
-   */
-  public withRetry<T extends AnyFunction>(
-    fn: T,
-    options: Partial<AsyncOptions> = {}
-  ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
-    return this.ensureAsync(fn, options);
   }
 
   /**
@@ -92,21 +125,26 @@ export class AsyncUtils {
     const results: T[] = [];
     const executing: Promise<void>[] = [];
 
-    for (const task of tasks) {
-      const execution = task().then(result => {
-        results.push(result);
-        executing.splice(executing.indexOf(execution), 1);
-      });
+    try {
+      for (const task of tasks) {
+        const execution = task().then(result => {
+          results.push(result);
+          executing.splice(executing.indexOf(execution), 1);
+        });
 
-      executing.push(execution);
+        executing.push(execution);
 
-      if (executing.length >= concurrency) {
-        await Promise.race(executing);
+        if (executing.length >= concurrency) {
+          await Promise.race(executing);
+        }
       }
-    }
 
-    await Promise.all(executing);
-    return results;
+      await Promise.all(executing);
+      return results;
+    } catch (error) {
+      this.clearTimeouts();
+      throw error;
+    }
   }
 
   /**
@@ -122,10 +160,12 @@ export class AsyncUtils {
     return (...args: Parameters<T>): Promise<ReturnType<T>> => {
       if (pendingPromise) {
         clearTimeout(timeoutId);
+        this.timeoutIds.delete(timeoutId);
       }
 
       return new Promise((resolve, reject) => {
         timeoutId = setTimeout(async () => {
+          this.timeoutIds.delete(timeoutId);
           try {
             const result = await fn(...args);
             pendingPromise = null;
@@ -136,45 +176,20 @@ export class AsyncUtils {
           }
         }, wait);
 
-        pendingPromise = Promise.race([
-          new Promise((_, reject) => {
-            timeoutId.unref?.(); // Optional chaining for non-Node environments
-          })
-        ]) as Promise<ReturnType<T>>;
+        this.timeoutIds.add(timeoutId);
+        timeoutId.unref?.();
       });
     };
   }
 
   /**
-   * Creates a timeout promise
+   * Cleans up any pending timeouts
    */
-  private createTimeout(ms: number): Promise<never> {
-    return new Promise((_, reject) => {
-      const timeoutId = setTimeout(() => {
-        reject(new Error(`Operation timed out after ${ms}ms`));
-      }, ms);
-      timeoutId.unref?.(); // Optional chaining for non-Node environments
-    });
-  }
-
-  /**
-   * Calculates backoff delay based on strategy
-   */
-  private calculateBackoff(attempt: number, options: Required<AsyncOptions>): number {
-    if (options.backoff === 'exponential') {
-      return options.backoffDelay * Math.pow(2, attempt);
+  public clearTimeouts(): void {
+    for (const timeoutId of this.timeoutIds) {
+      clearTimeout(timeoutId);
     }
-    return options.backoffDelay;
-  }
-
-  /**
-   * Creates a delay promise
-   */
-  private delay(ms: number): Promise<void> {
-    return new Promise(resolve => {
-      const timeoutId = setTimeout(resolve, ms);
-      timeoutId.unref?.(); // Optional chaining for non-Node environments
-    });
+    this.timeoutIds.clear();
   }
 
   /**
