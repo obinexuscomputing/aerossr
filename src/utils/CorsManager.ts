@@ -1,4 +1,3 @@
-// src/utils/cors.ts
 import { ServerResponse } from 'http';
 import { CorsOptionsBase } from '@/types';
 
@@ -14,7 +13,7 @@ export interface CorsOptions extends CorsOptionsBase {
 export class CORSManager {
   private readonly defaultOptions: Required<CorsOptions>;
 
-  constructor(options: CorsOptions = {}) {
+  constructor(options: Partial<CorsOptions> = {}) {
     this.defaultOptions = {
       origins: '*',
       methods: ['GET', 'POST', 'OPTIONS', 'HEAD'],
@@ -22,8 +21,57 @@ export class CORSManager {
       exposedHeaders: [],
       credentials: false,
       maxAge: 86400,
-      ...options
+      ...this.validateOptions(options)
     };
+  }
+
+  /**
+   * Validates and normalizes CORS options
+   */
+  private validateOptions(options: Partial<CorsOptions>): Partial<CorsOptions> {
+    const validated: Partial<CorsOptions> = {};
+
+    if (options.origins !== undefined) {
+      validated.origins = options.origins;
+    }
+
+    if (Array.isArray(options.methods)) {
+      validated.methods = options.methods.filter(method => 
+        typeof method === 'string' && method.length > 0
+      );
+    }
+
+    if (Array.isArray(options.allowedHeaders)) {
+      validated.allowedHeaders = options.allowedHeaders.filter(header => 
+        typeof header === 'string' && header.length > 0
+      );
+    }
+
+    if (Array.isArray(options.exposedHeaders)) {
+      validated.exposedHeaders = options.exposedHeaders.filter(header => 
+        typeof header === 'string' && header.length > 0
+      );
+    }
+
+    if (typeof options.credentials === 'boolean') {
+      validated.credentials = options.credentials;
+    }
+
+    if (typeof options.maxAge === 'number' && !isNaN(options.maxAge)) {
+      validated.maxAge = Math.max(0, Math.floor(options.maxAge));
+    }
+
+    return validated;
+  }
+
+  /**
+   * Safely joins array values with fallback
+   */
+  private safeJoin(arr: any[] | undefined | null, separator: string = ', '): string {
+    if (!Array.isArray(arr) || arr.length === 0) {
+      return '';
+    }
+    return arr.filter(item => typeof item === 'string' && item.length > 0).join(separator);
   }
 
   /**
@@ -31,53 +79,53 @@ export class CORSManager {
    */
   public setCorsHeaders(
     res: ServerResponse,
-    options: CorsOptions = {}
+    options: Partial<CorsOptions> = {}
   ): void {
-    const mergedOptions = { ...this.defaultOptions, ...options };
-    const {
-      origins,
-      methods,
-      allowedHeaders,
-      exposedHeaders,
-      credentials,
-      maxAge
-    } = mergedOptions;
-
-    // Set main CORS headers
-    res.setHeader(
-      'Access-Control-Allow-Origin',
-      Array.isArray(origins) ? origins.join(',') : origins
-    );
-    
-    res.setHeader(
-      'Access-Control-Allow-Methods',
-      methods.join(', ')
-    );
-    
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      allowedHeaders.join(', ')
-    );
-
-    // Set optional headers
-    if (exposedHeaders.length) {
-      res.setHeader(
-        'Access-Control-Expose-Headers',
-        exposedHeaders.join(', ')
-      );
+    if (!res || typeof res.setHeader !== 'function') {
+      throw new Error('Invalid ServerResponse object');
     }
 
-    if (credentials) {
-      res.setHeader(
-        'Access-Control-Allow-Credentials',
-        'true'
-      );
-    }
+    const validOptions = this.validateOptions(options);
+    const mergedOptions = { ...this.defaultOptions, ...validOptions };
 
-    res.setHeader(
-      'Access-Control-Max-Age',
-      maxAge.toString()
-    );
+    try {
+      // Set Allow-Origin header
+      const origin = Array.isArray(mergedOptions.origins) 
+        ? this.safeJoin(mergedOptions.origins, ',') 
+        : (mergedOptions.origins || '*');
+      res.setHeader('Access-Control-Allow-Origin', origin);
+
+      // Set Allow-Methods header
+      const methods = this.safeJoin(mergedOptions.methods);
+      if (methods) {
+        res.setHeader('Access-Control-Allow-Methods', methods);
+      }
+
+      // Set Allow-Headers header
+      const allowedHeaders = this.safeJoin(mergedOptions.allowedHeaders);
+      if (allowedHeaders) {
+        res.setHeader('Access-Control-Allow-Headers', allowedHeaders);
+      }
+
+      // Set optional headers
+      const exposedHeaders = this.safeJoin(mergedOptions.exposedHeaders);
+      if (exposedHeaders) {
+        res.setHeader('Access-Control-Expose-Headers', exposedHeaders);
+      }
+
+      // Set credentials header
+      if (mergedOptions.credentials) {
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+      }
+
+      // Set max age header
+      if (typeof mergedOptions.maxAge === 'number' && mergedOptions.maxAge >= 0) {
+        res.setHeader('Access-Control-Max-Age', mergedOptions.maxAge.toString());
+      }
+    } catch (error) {
+      console.error('Error setting CORS headers:', error);
+      throw error;
+    }
   }
 
   /**
@@ -85,30 +133,46 @@ export class CORSManager {
    */
   public handlePreflight(
     res: ServerResponse,
-    options: CorsOptions = {}
+    options: Partial<CorsOptions> = {}
   ): void {
-    this.setCorsHeaders(res, options);
-    res.writeHead(204);
-    res.end();
+    try {
+      this.setCorsHeaders(res, options);
+      if (!res.headersSent) {
+        res.writeHead(204);
+      }
+      res.end();
+    } catch (error) {
+      console.error('Error handling preflight request:', error);
+      if (!res.headersSent) {
+        res.writeHead(500);
+      }
+      res.end();
+    }
   }
 
   /**
    * Normalizes CORS options
    */
   public normalizeCorsOptions(
-    options?: string | CorsOptions
+    options?: string | Partial<CorsOptions>
   ): CorsOptions {
+    if (!options) {
+      return { origins: '*' };
+    }
+
     if (typeof options === 'string') {
       return { origins: options };
     }
-    return options || { origins: '*' };
+
+    return this.validateOptions(options) as CorsOptions;
   }
 
   /**
    * Updates default options
    */
   public updateDefaults(options: Partial<CorsOptions>): void {
-    Object.assign(this.defaultOptions, options);
+    const validOptions = this.validateOptions(options);
+    Object.assign(this.defaultOptions, validOptions);
   }
 
   /**
