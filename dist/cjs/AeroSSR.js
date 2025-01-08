@@ -20,6 +20,7 @@ var ETagGenerator = require('./utils/ETagGenerator.js');
 var ErrorHandler = require('./utils/ErrorHandler.js');
 var HtmlManager = require('./utils/HtmlManager.js');
 var Bundler = require('./utils/Bundler.js');
+var StaticFileMiddleware = require('./middlewares/StaticFileMiddleware.js');
 
 const gzipAsync = util.promisify(zlib.gzip);
 class AeroSSR {
@@ -32,11 +33,12 @@ class AeroSSR {
     constructor(options = {}) {
         // Initialize base configuration first
         const baseConfig = {
-            projectPath: options.projectPath || process.cwd(),
+            projectPath: path.resolve(options.projectPath || process.cwd()),
+            publicPath: path.resolve(options.projectPath || process.cwd(), 'public'),
             port: options.port || 3000,
             compression: options.compression !== false,
             cacheMaxAge: options.cacheMaxAge || 3600,
-            logFilePath: options.logFilePath || null,
+            logFilePath: options.logFilePath || path.join(process.cwd(), 'logs', 'server.log'),
             loggerOptions: options.loggerOptions || {},
             corsOrigins: CorsManager.corsManager.normalizeCorsOptions(options.corsOrigins),
             defaultMeta: {
@@ -47,6 +49,7 @@ class AeroSSR {
                 ...options.defaultMeta,
             },
         };
+        this.createRequiredDirectories(baseConfig.projectPath);
         // Complete configuration with derived components
         this.config = {
             ...baseConfig,
@@ -65,10 +68,74 @@ class AeroSSR {
         this.server = null;
         this.routes = new Map();
         this.middlewares = [];
+        // Set up default static file handling
+        if (!options.staticFileOptions && !options.staticFileHandler) {
+            const defaultStaticOptions = {
+                root: 'public',
+                maxAge: 86400,
+                index: ['index.html'],
+                dotFiles: 'ignore',
+                compression: this.config.compression,
+                etag: true
+            };
+            this.setupStaticFileHandling(defaultStaticOptions);
+        }
+        else if (options.staticFileOptions) {
+            this.setupStaticFileHandling(options.staticFileOptions);
+        }
         // Update CORS manager defaults
         CorsManager.corsManager.updateDefaults(this.config.corsOrigins);
         // Validate configuration
         this.validateConfig();
+    }
+    async createRequiredDirectories(projectPath) {
+        const requiredDirs = [
+            path.join(projectPath, 'public'),
+            path.join(projectPath, 'logs'),
+            path.join(projectPath, 'src')
+        ];
+        for (const dir of requiredDirs) {
+            try {
+                await fs.promises.mkdir(dir, { recursive: true });
+            }
+            catch (error) {
+                this.logger.warn(`Failed to create directory ${dir}: ${error}`);
+            }
+        }
+    }
+    setupStaticFileHandling(options) {
+        const staticOptions = {
+            root: path.join(this.config.projectPath, options.root || 'public'),
+            maxAge: options.maxAge || 86400,
+            index: options.index || ['index.html'],
+            dotFiles: options.dotFiles || 'ignore',
+            compression: options.compression ?? this.config.compression,
+            etag: options.etag !== false
+        };
+        const staticFileMiddleware = new StaticFileMiddleware.StaticFileMiddleware(staticOptions);
+        this.use(staticFileMiddleware.middleware());
+    }
+    async ensureDefaultTemplate() {
+        const defaultHtml = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>AeroSSR App</title>
+  </head>
+  <body>
+      <div id="app"></div>
+      <script type="module" src="/dist/main.js"></script>
+  </body>
+  </html>`;
+        const indexPath = path.join(this.config.projectPath, 'public', 'index.html');
+        try {
+            await fs.promises.access(indexPath);
+        }
+        catch {
+            await fs.promises.writeFile(indexPath, defaultHtml, 'utf-8');
+        }
     }
     validateConfig() {
         if (this.config.port < 0 || this.config.port > 65535) {
@@ -188,13 +255,31 @@ class AeroSSR {
         try {
             const parsedUrl = url.parse(req.url || '', true);
             const pathname = parsedUrl.pathname || '/';
-            // Template lookup
-            const htmlPath = path.join(this.config.projectPath, 'index.html');
-            let html = await fs.promises.readFile(htmlPath, 'utf-8');
-            // Meta tags
+            // Template lookup - check both project root and public directory
+            const possiblePaths = [
+                path.join(this.config.projectPath, 'public', 'index.html'),
+                path.join(this.config.projectPath, 'index.html')
+            ];
+            let html = '';
+            for (const htmlPath of possiblePaths) {
+                try {
+                    html = await fs.promises.readFile(htmlPath, 'utf-8');
+                    break;
+                }
+                catch (error) {
+                    continue;
+                }
+            }
+            if (!html) {
+                throw new Error('No index.html found in project');
+            }
+            ;
+            // Define meta tags
             const meta = {
-                title: `Page - ${pathname}`,
-                description: `Content for ${pathname}`,
+                title: 'AeroSSR App',
+                description: 'Built with AeroSSR bundler',
+                charset: 'UTF-8',
+                viewport: 'width=device-width, initial-scale=1.0',
             };
             // Inject meta tags
             html = HtmlManager.htmlManager.injectMetaTags(html, meta, this.config.defaultMeta);

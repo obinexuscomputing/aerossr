@@ -10,6 +10,9 @@ export declare class AeroSSR {
     readonly routes: Map<string, RouteHandler>;
     private readonly middlewares;
     constructor(options?: Partial<AeroSSRConfig>);
+    private createRequiredDirectories;
+    private setupStaticFileHandling;
+    private ensureDefaultTemplate;
     private validateConfig;
     use(middleware: Middleware): void;
     route(path: string, handler: RouteHandler): void;
