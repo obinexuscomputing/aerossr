@@ -109,6 +109,8 @@ export interface AeroSSRConfig {
   templateCache?: CacheStoreBase<string>;
   defaultMeta?: MetaTags;
   loggerOptions?: LoggerOptions;
+  staticFileOptions?: StaticFileOptions;
+
   errorHandler?: ErrorHandler;
   staticFileHandler?: StaticFileHandler;
   bundleHandler?: BundleHandler;

@@ -11,7 +11,8 @@ import { etagGenerator } from './utils/ETagGenerator';
 import { ErrorHandler } from './utils/ErrorHandler';
 import { htmlManager } from './utils/HtmlManager';
 import { AeroSSRBundler } from './utils/Bundler';
-import { AeroSSRConfig, Middleware, RouteHandler, BundleHandler } from './types';
+import { AeroSSRConfig, Middleware, RouteHandler, BundleHandler, StaticFileOptions } from './types';
+import { StaticFileMiddleware } from './middlewares';
 
 const gzipAsync = promisify(gzip);
 
@@ -62,12 +63,44 @@ export class AeroSSR {
     this.server = null;
     this.routes = new Map();
     this.middlewares = [];
+    
+    // Set up default static file handling
+    if (!options.staticFileOptions && !options.staticFileHandler) {
+      const defaultStaticOptions: StaticFileOptions = {
+        root: 'public',
+        maxAge: 86400,
+        index: ['index.html'],
+        dotFiles: 'ignore',
+        compression: this.config.compression,
+        etag: true
+      };
+      this.setupStaticFileHandling(defaultStaticOptions);
+    } else if (options.staticFileOptions) {
+      this.setupStaticFileHandling(options.staticFileOptions);
+    }
 
     // Update CORS manager defaults
     corsManager.updateDefaults(this.config.corsOrigins as CorsOptions);
 
     // Validate configuration
     this.validateConfig();
+  }
+
+  private setupStaticFileHandling(options: StaticFileOptions): void {
+    if (!options.root) {
+      throw new Error('Static file root directory must be specified');
+    }
+    
+    const staticFileMiddleware = new StaticFileMiddleware({
+      root: options.root,
+      maxAge: options.maxAge || 86400,
+      index: options.index || ['index.html'],
+      dotFiles: options.dotFiles || 'ignore',
+      compression: options.compression !== false,
+      etag: options.etag !== false
+    });
+
+    this.use(staticFileMiddleware.middleware());
   }
 
   private validateConfig(): void {
