@@ -51,7 +51,8 @@
     "README.md",
     "src",
     "docs",
-    "scripts/bin"
+    "scripts/",
+    "examples/"
   ],
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
