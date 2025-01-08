@@ -9,9 +9,8 @@ const config: Config.InitialOptions = {
   roots: ['<rootDir>/src', '<rootDir>/__tests__'],
   
   testMatch: [
-    '**/__tests__/**/*.(test|spec).ts',
-    '**/__tests__/**/*.(test|spec).tsx',
-    '**/?(*.)+(spec|test).[jt]s?(x)'
+    '**/__tests__/**/*.test.ts',
+    '**/__tests__/**/*.spec.ts'
   ],
   
   moduleNameMapper: {
@@ -19,44 +18,47 @@ const config: Config.InitialOptions = {
     '^src/(.*)$': '<rootDir>/src/$1'
   },
 
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    '/dist/',
-    '/coverage/',
-    '/.rollup/',
-    '/buildcache/'
-  ],
-
-  moduleDirectories: ['node_modules', 'src', '__tests__'],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-
   transform: {
-    '^.+\\.[tj]sx?$': ['ts-jest', {
+    '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: 'tsconfig.test.json',
-      diagnostics: { warnOnly: true }
+      diagnostics: { 
+        warnOnly: true,
+        ignoreCodes: [151001]
+      }
     }]
   },
 
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  moduleDirectories: ['node_modules', 'src'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+
   collectCoverage: true,
   coverageDirectory: 'coverage',
-  coveragePathIgnorePatterns: ['/node_modules/', '/dist/'],
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/types/**',
+    '!**/*.test.ts',
+    '!**/*.spec.ts'
+  ],
   
-  setupFilesAfterEnv: ['<rootDir>/setupTests.ts'],
-  
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.test.json',
-      isolatedModules: true
+  coverageThreshold: {
+    global: {
+      statements: 80,
+      branches: 80,
+      functions: 80,
+      lines: 80
     }
   },
+
+  setupFilesAfterEnv: ['<rootDir>/setupTests.ts'],
 
   verbose: true,
   testTimeout: 30000,
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
-
-  projects: undefined,
+  
   modulePathIgnorePatterns: ['<rootDir>/dist/']
 };
 

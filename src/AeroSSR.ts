@@ -199,20 +199,20 @@ export class AeroSSR {
     try {
       const parsedUrl = parseUrl(req.url || '', true);
       const pathname = parsedUrl.pathname || '/';
-
-      // Read and process HTML template
-      const htmlPath = join(new URL('.', import.meta.url).pathname, 'index.html');
+  
+      // Use project path for template lookup
+      const htmlPath = join(this.config.projectPath, 'index.html');
       let html = await fs.readFile(htmlPath, 'utf-8');
-
+  
       // Generate meta tags
       const meta = {
         title: `Page - ${pathname}`,
         description: `Content for ${pathname}`,
       };
-
+  
       // Inject meta tags
       html = htmlManager.injectMetaTags(html, meta, this.config.defaultMeta);
-
+  
       // Set response headers
       res.writeHead(200, {
         'Content-Type': 'text/html',
