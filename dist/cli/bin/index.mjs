@@ -5,7 +5,7 @@ import { createServer } from 'http';
 import { existsSync, mkdirSync, createReadStream, promises } from 'fs';
 import { parse } from 'url';
 import * as path from 'path';
-import path__default, { resolve, join } from 'path';
+import path__default, { join, resolve } from 'path';
 import { gzip, createGzip } from 'zlib';
 import { promisify } from 'util';
 import * as fs from 'fs/promises';
@@ -602,6 +602,200 @@ class ErrorHandler {
     }
 }
 
+class HTMLManager {
+    defaultMeta;
+    constructor(defaultMeta = {}) {
+        this.defaultMeta = {
+            charset: 'utf-8',
+            viewport: 'width=device-width, initial-scale=1.0',
+            title: '',
+            description: '',
+            keywords: '',
+            author: '',
+            ogTitle: '',
+            ogDescription: '',
+            ogImage: '',
+            twitterCard: 'summary',
+            twitterTitle: '',
+            twitterDescription: '',
+            twitterImage: '',
+            ...defaultMeta
+        };
+    }
+    /**
+     * Updates default meta tags
+     */
+    setDefaultMeta(meta) {
+        this.defaultMeta = {
+            ...this.defaultMeta,
+            ...meta
+        };
+    }
+    /**
+     * Gets current default meta tags
+     */
+    getDefaultMeta() {
+        return { ...this.defaultMeta };
+    }
+    /**
+     * Formats a meta tag based on type and content
+     */
+    formatMetaTag(key, value) {
+        if (key === 'title') {
+            return `<title>${value}</title>`;
+        }
+        if (key.startsWith('og')) {
+            return `<meta property="og:${key.slice(2).toLowerCase()}" content="${value}">`;
+        }
+        if (key.startsWith('twitter')) {
+            return `<meta name="twitter:${key.slice(7).toLowerCase()}" content="${value}">`;
+        }
+        if (key === 'charset') {
+            return `<meta charset="${value}">`;
+        }
+        return `<meta name="${key}" content="${value}">`;
+    }
+    /**
+     * Injects meta tags into HTML
+     */
+    injectMetaTags(html, meta = {}, defaultMeta) {
+        const finalMeta = {
+            ...this.defaultMeta,
+            ...meta
+        };
+        const metaTags = Object.entries(finalMeta)
+            .filter(([_, value]) => value !== undefined && value !== '')
+            .map(([key, value]) => this.formatMetaTag(key, value))
+            .join('\n    ');
+        return html.replace('</head>', `    ${metaTags}\n  </head>`);
+    }
+    /**
+     * Validates meta tags structure
+     */
+    validateMetaTags(meta) {
+        // Basic validation rules
+        const validations = {
+            title: (value) => value.length <= 60,
+            description: (value) => value.length <= 160,
+            keywords: (value) => value.split(',').length <= 10,
+            ogImage: (value) => /^https?:\/\/.+/.test(value),
+            twitterImage: (value) => /^https?:\/\/.+/.test(value)
+        };
+        return Object.entries(meta).every(([key, value]) => {
+            if (!value)
+                return true;
+            if (validations[key]) {
+                return validations[key](value);
+            }
+            return true;
+        });
+    }
+    /**
+     * Sanitizes meta tag content
+     */
+    sanitizeContent(content) {
+        return content
+            .replace(/<\/?[^>]+(>|$)/g, '') // Remove HTML tags while preserving content
+            .replace(/"/g, '&quot;') // Escape quotes
+            .trim();
+    }
+    /**
+     * Generates complete HTML document with meta tags
+     */
+    generateHTML(content, meta = {}) {
+        const baseHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+  ${content}
+</body>
+</html>`;
+        return this.injectMetaTags(baseHTML, meta);
+    }
+    /**
+     * Helper method to decode HTML entities
+     */
+    decodeHTMLEntities(str) {
+        const doc = new DOMParser().parseFromString(str, 'text/html');
+        return doc.documentElement.textContent || str;
+    }
+    /**
+     * Convert property name to camelCase
+     */
+    propertyNameToCamelCase(name) {
+        // Handle special cases first
+        if (name.startsWith('og:')) {
+            const ogProp = name.slice(3); // Remove 'og:'
+            return 'og' + ogProp.charAt(0).toUpperCase() + ogProp.slice(1);
+        }
+        if (name.startsWith('twitter:')) {
+            const twitterProp = name.slice(8); // Remove 'twitter:'
+            return 'twitter' + twitterProp.charAt(0).toUpperCase() + twitterProp.slice(1);
+        }
+        // General kebab-case to camelCase conversion
+        return name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+    }
+    /**
+     * Extracts existing meta tags from HTML
+     */
+    extractMetaTags(html) {
+        const meta = {};
+        // Extract title
+        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        if (titleMatch) {
+            meta.title = this.decodeHTMLEntities(titleMatch[1]);
+        }
+        // Extract meta tags
+        const metaTags = html.matchAll(/<meta\s+(?:[^>]*?\s+)?(?:name|property)="([^"]+)"[^>]*?content="([^"]+)"[^>]*>/g);
+        for (const match of metaTags) {
+            const [_, nameOrProperty, content] = match;
+            if (!nameOrProperty || !content)
+                continue;
+            // Normalize property name
+            const propertyName = this.propertyNameToCamelCase(nameOrProperty);
+            // Decode content
+            const decodedContent = this.decodeHTMLEntities(content);
+            // Special handling for charset
+            if (nameOrProperty === 'charset') {
+                meta.charset = decodedContent;
+                continue;
+            }
+            meta[propertyName] = decodedContent;
+        }
+        // Also check for charset in meta tag
+        const charsetMatch = html.match(/<meta\s+charset="([^"]+)"[^>]*>/i);
+        if (charsetMatch) {
+            meta.charset = this.decodeHTMLEntities(charsetMatch[1]);
+        }
+        return meta;
+    }
+    /**
+     * Creates meta tags object with sanitized values
+     */
+    createMetaTags(meta) {
+        // Create a temporary div to decode entities
+        const sanitizedMeta = Object.entries(meta).reduce((acc, [key, value]) => {
+            if (value !== undefined) {
+                // First encode special characters, then decode entities
+                acc[key] = this.decodeHTMLEntities(value.replace(/["<>]/g, (char) => {
+                    const entities = {
+                        '"': '&quot;',
+                        '<': '&lt;',
+                        '>': '&gt;'
+                    };
+                    return entities[char];
+                }));
+            }
+            return acc;
+        }, {});
+        return sanitizedMeta;
+    }
+}
+// Export singleton instance
+const htmlManager = new HTMLManager();
+
 // src/utils/bundler.ts
 class AeroSSRBundler {
     projectPath;
@@ -878,200 +1072,6 @@ class AeroSSRBundler {
         };
     }
 }
-
-class HTMLManager {
-    defaultMeta;
-    constructor(defaultMeta = {}) {
-        this.defaultMeta = {
-            charset: 'utf-8',
-            viewport: 'width=device-width, initial-scale=1.0',
-            title: '',
-            description: '',
-            keywords: '',
-            author: '',
-            ogTitle: '',
-            ogDescription: '',
-            ogImage: '',
-            twitterCard: 'summary',
-            twitterTitle: '',
-            twitterDescription: '',
-            twitterImage: '',
-            ...defaultMeta
-        };
-    }
-    /**
-     * Updates default meta tags
-     */
-    setDefaultMeta(meta) {
-        this.defaultMeta = {
-            ...this.defaultMeta,
-            ...meta
-        };
-    }
-    /**
-     * Gets current default meta tags
-     */
-    getDefaultMeta() {
-        return { ...this.defaultMeta };
-    }
-    /**
-     * Formats a meta tag based on type and content
-     */
-    formatMetaTag(key, value) {
-        if (key === 'title') {
-            return `<title>${value}</title>`;
-        }
-        if (key.startsWith('og')) {
-            return `<meta property="og:${key.slice(2).toLowerCase()}" content="${value}">`;
-        }
-        if (key.startsWith('twitter')) {
-            return `<meta name="twitter:${key.slice(7).toLowerCase()}" content="${value}">`;
-        }
-        if (key === 'charset') {
-            return `<meta charset="${value}">`;
-        }
-        return `<meta name="${key}" content="${value}">`;
-    }
-    /**
-     * Injects meta tags into HTML
-     */
-    injectMetaTags(html, meta = {}, defaultMeta) {
-        const finalMeta = {
-            ...this.defaultMeta,
-            ...meta
-        };
-        const metaTags = Object.entries(finalMeta)
-            .filter(([_, value]) => value !== undefined && value !== '')
-            .map(([key, value]) => this.formatMetaTag(key, value))
-            .join('\n    ');
-        return html.replace('</head>', `    ${metaTags}\n  </head>`);
-    }
-    /**
-     * Validates meta tags structure
-     */
-    validateMetaTags(meta) {
-        // Basic validation rules
-        const validations = {
-            title: (value) => value.length <= 60,
-            description: (value) => value.length <= 160,
-            keywords: (value) => value.split(',').length <= 10,
-            ogImage: (value) => /^https?:\/\/.+/.test(value),
-            twitterImage: (value) => /^https?:\/\/.+/.test(value)
-        };
-        return Object.entries(meta).every(([key, value]) => {
-            if (!value)
-                return true;
-            if (validations[key]) {
-                return validations[key](value);
-            }
-            return true;
-        });
-    }
-    /**
-     * Sanitizes meta tag content
-     */
-    sanitizeContent(content) {
-        return content
-            .replace(/<\/?[^>]+(>|$)/g, '') // Remove HTML tags while preserving content
-            .replace(/"/g, '&quot;') // Escape quotes
-            .trim();
-    }
-    /**
-     * Generates complete HTML document with meta tags
-     */
-    generateHTML(content, meta = {}) {
-        const baseHTML = `
-<!DOCTYPE html>
-<html>
-<head>
-</head>
-<body>
-  ${content}
-</body>
-</html>`;
-        return this.injectMetaTags(baseHTML, meta);
-    }
-    /**
-     * Helper method to decode HTML entities
-     */
-    decodeHTMLEntities(str) {
-        const doc = new DOMParser().parseFromString(str, 'text/html');
-        return doc.documentElement.textContent || str;
-    }
-    /**
-     * Convert property name to camelCase
-     */
-    propertyNameToCamelCase(name) {
-        // Handle special cases first
-        if (name.startsWith('og:')) {
-            const ogProp = name.slice(3); // Remove 'og:'
-            return 'og' + ogProp.charAt(0).toUpperCase() + ogProp.slice(1);
-        }
-        if (name.startsWith('twitter:')) {
-            const twitterProp = name.slice(8); // Remove 'twitter:'
-            return 'twitter' + twitterProp.charAt(0).toUpperCase() + twitterProp.slice(1);
-        }
-        // General kebab-case to camelCase conversion
-        return name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-    }
-    /**
-     * Extracts existing meta tags from HTML
-     */
-    extractMetaTags(html) {
-        const meta = {};
-        // Extract title
-        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-        if (titleMatch) {
-            meta.title = this.decodeHTMLEntities(titleMatch[1]);
-        }
-        // Extract meta tags
-        const metaTags = html.matchAll(/<meta\s+(?:[^>]*?\s+)?(?:name|property)="([^"]+)"[^>]*?content="([^"]+)"[^>]*>/g);
-        for (const match of metaTags) {
-            const [_, nameOrProperty, content] = match;
-            if (!nameOrProperty || !content)
-                continue;
-            // Normalize property name
-            const propertyName = this.propertyNameToCamelCase(nameOrProperty);
-            // Decode content
-            const decodedContent = this.decodeHTMLEntities(content);
-            // Special handling for charset
-            if (nameOrProperty === 'charset') {
-                meta.charset = decodedContent;
-                continue;
-            }
-            meta[propertyName] = decodedContent;
-        }
-        // Also check for charset in meta tag
-        const charsetMatch = html.match(/<meta\s+charset="([^"]+)"[^>]*>/i);
-        if (charsetMatch) {
-            meta.charset = this.decodeHTMLEntities(charsetMatch[1]);
-        }
-        return meta;
-    }
-    /**
-     * Creates meta tags object with sanitized values
-     */
-    createMetaTags(meta) {
-        // Create a temporary div to decode entities
-        const sanitizedMeta = Object.entries(meta).reduce((acc, [key, value]) => {
-            if (value !== undefined) {
-                // First encode special characters, then decode entities
-                acc[key] = this.decodeHTMLEntities(value.replace(/["<>]/g, (char) => {
-                    const entities = {
-                        '"': '&quot;',
-                        '<': '&lt;',
-                        '>': '&gt;'
-                    };
-                    return entities[char];
-                }));
-            }
-            return acc;
-        }, {});
-        return sanitizedMeta;
-    }
-}
-// Export singleton instance
-new HTMLManager();
 
 class AsyncUtils {
     defaultOptions;
@@ -1516,15 +1516,16 @@ class AeroSSR {
                 ...options.defaultMeta,
             },
         };
+        // Create required directories
         this.createRequiredDirectories(baseConfig.projectPath);
         // Complete configuration with derived components
         this.config = {
             ...baseConfig,
             bundleCache: options.bundleCache || createCache(),
             templateCache: options.templateCache || createCache(),
-            errorHandler: options.errorHandler || ErrorHandler.handleError,
+            errorHandler: options.errorHandler || ErrorHandler.handleErrorStatic,
             staticFileHandler: options.staticFileHandler || this.handleDefaultRequest.bind(this),
-            bundleHandler: options.bundleHandler || this.handleDistRequest.bind(this),
+            bundleHandler: options.bundleHandler || this.handleBundle.bind(this),
         };
         // Initialize core components
         this.logger = new Logger({
@@ -1566,7 +1567,9 @@ class AeroSSR {
                 await promises.mkdir(dir, { recursive: true });
             }
             catch (error) {
-                this.logger.warn(`Failed to create directory ${dir}: ${error}`);
+                if (this.logger) {
+                    this.logger.log(`Failed to create directory ${dir}: ${error}`);
+                }
             }
         }
     }
@@ -1581,28 +1584,6 @@ class AeroSSR {
         };
         const staticFileMiddleware = new StaticFileMiddleware(staticOptions);
         this.use(staticFileMiddleware.middleware());
-    }
-    async ensureDefaultTemplate() {
-        const defaultHtml = `
-  <!DOCTYPE html>
-  <html>
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>AeroSSR App</title>
-  </head>
-  <body>
-      <div id="app"></div>
-      <script type="module" src="/dist/main.js"></script>
-  </body>
-  </html>`;
-        const indexPath = path__default.join(this.config.projectPath, 'public', 'index.html');
-        try {
-            await promises.access(indexPath);
-        }
-        catch {
-            await promises.writeFile(indexPath, defaultHtml, 'utf-8');
-        }
     }
     validateConfig() {
         if (this.config.port < 0 || this.config.port > 65535) {
@@ -1672,18 +1653,18 @@ class AeroSSR {
             }
             // Special routes
             if (pathname === '/dist') {
-                await this.handleDistRequest(req, res, parsedUrl.query);
+                await this.handleBundle(req, res, parsedUrl.query);
                 return;
             }
             // Default handler
             await this.handleDefaultRequest(req, res);
         }
-        catch (error) {
-            await ErrorHandler.handleErrorStatic(error instanceof Error ? error : new Error('Unknown error'), req, res, { logger: this.logger } // Pass logger to error handler
-            );
+        catch (err) {
+            const error = err;
+            await ErrorHandler.handleErrorStatic(error, req, res, { logger: this.logger });
         }
     }
-    async handleDistRequest(req, res, query) {
+    async handleBundle(req, res, query) {
         try {
             const entryPoint = query.entryPoint || 'main.js';
             // Generate bundle
@@ -1719,12 +1700,42 @@ class AeroSSR {
             }
         }
         catch (error) {
-            throw new Error(`Bundle generation failed: ${error instanceof Error ? error.message : String(error)}`);
+            const bundleError = new Error(`Bundle generation failed: ${error instanceof Error ? error.message : String(error)}`);
+            if (error instanceof Error) {
+                bundleError.cause = error;
+            }
+            throw bundleError;
         }
     }
-    async handleDistRequest(req, res, query) {
-    }
     async handleDefaultRequest(req, res) {
+        try {
+            const parsedUrl = parse(req.url || '', true);
+            const pathname = parsedUrl.pathname || '/';
+            // Template lookup
+            const htmlPath = join(this.config.projectPath, 'public', 'index.html');
+            let html = await promises.readFile(htmlPath, 'utf-8');
+            // Meta tags
+            const meta = {
+                title: `Page - ${pathname}`,
+                description: `Content for ${pathname}`,
+            };
+            // Inject meta tags
+            html = htmlManager.injectMetaTags(html, meta, this.config.defaultMeta);
+            // Set response
+            res.writeHead(200, {
+                'Content-Type': 'text/html',
+                'Cache-Control': 'no-cache',
+                'X-Content-Type-Options': 'nosniff'
+            });
+            res.end(html);
+        }
+        catch (error) {
+            const requestError = new Error(`Default request handling failed: ${error instanceof Error ? error.message : String(error)}`);
+            if (error instanceof Error) {
+                requestError.cause = error;
+            }
+            throw requestError;
+        }
     }
     async start() {
         return new Promise((resolve, reject) => {

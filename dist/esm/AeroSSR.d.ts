@@ -12,14 +12,13 @@ export declare class AeroSSR {
     constructor(options?: Partial<AeroSSRConfig>);
     private createRequiredDirectories;
     private setupStaticFileHandling;
-    private ensureDefaultTemplate;
     private validateConfig;
     use(middleware: Middleware): void;
     route(path: string, handler: RouteHandler): void;
     clearCache(): void;
     private executeMiddlewares;
     private handleRequest;
-    private handleDistRequest;
+    private handleBundle;
     private handleDefaultRequest;
     start(): Promise<Server>;
     stop(): Promise<void>;

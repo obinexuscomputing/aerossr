@@ -6,7 +6,7 @@
 import { createServer } from 'http';
 import { promises } from 'fs';
 import { parse } from 'url';
-import path__default from 'path';
+import path__default, { join } from 'path';
 import { gzip } from 'zlib';
 import { promisify } from 'util';
 import { Logger } from './utils/Logger.js';
@@ -14,6 +14,7 @@ import { createCache } from './utils/CacheManager.js';
 import { corsManager } from './utils/CorsManager.js';
 import { etagGenerator } from './utils/ETagGenerator.js';
 import { ErrorHandler } from './utils/ErrorHandler.js';
+import { htmlManager } from './utils/HtmlManager.js';
 import { AeroSSRBundler } from './utils/Bundler.js';
 import { StaticFileMiddleware } from './middlewares/StaticFileMiddleware.js';
 
@@ -44,15 +45,16 @@ class AeroSSR {
                 ...options.defaultMeta,
             },
         };
+        // Create required directories
         this.createRequiredDirectories(baseConfig.projectPath);
         // Complete configuration with derived components
         this.config = {
             ...baseConfig,
             bundleCache: options.bundleCache || createCache(),
             templateCache: options.templateCache || createCache(),
-            errorHandler: options.errorHandler || ErrorHandler.handleError,
+            errorHandler: options.errorHandler || ErrorHandler.handleErrorStatic,
             staticFileHandler: options.staticFileHandler || this.handleDefaultRequest.bind(this),
-            bundleHandler: options.bundleHandler || this.handleDistRequest.bind(this),
+            bundleHandler: options.bundleHandler || this.handleBundle.bind(this),
         };
         // Initialize core components
         this.logger = new Logger({
@@ -94,7 +96,9 @@ class AeroSSR {
                 await promises.mkdir(dir, { recursive: true });
             }
             catch (error) {
-                this.logger.warn(`Failed to create directory ${dir}: ${error}`);
+                if (this.logger) {
+                    this.logger.log(`Failed to create directory ${dir}: ${error}`);
+                }
             }
         }
     }
@@ -109,28 +113,6 @@ class AeroSSR {
         };
         const staticFileMiddleware = new StaticFileMiddleware(staticOptions);
         this.use(staticFileMiddleware.middleware());
-    }
-    async ensureDefaultTemplate() {
-        const defaultHtml = `
-  <!DOCTYPE html>
-  <html>
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>AeroSSR App</title>
-  </head>
-  <body>
-      <div id="app"></div>
-      <script type="module" src="/dist/main.js"></script>
-  </body>
-  </html>`;
-        const indexPath = path__default.join(this.config.projectPath, 'public', 'index.html');
-        try {
-            await promises.access(indexPath);
-        }
-        catch {
-            await promises.writeFile(indexPath, defaultHtml, 'utf-8');
-        }
     }
     validateConfig() {
         if (this.config.port < 0 || this.config.port > 65535) {
@@ -200,18 +182,18 @@ class AeroSSR {
             }
             // Special routes
             if (pathname === '/dist') {
-                await this.handleDistRequest(req, res, parsedUrl.query);
+                await this.handleBundle(req, res, parsedUrl.query);
                 return;
             }
             // Default handler
             await this.handleDefaultRequest(req, res);
         }
-        catch (error) {
-            await ErrorHandler.handleErrorStatic(error instanceof Error ? error : new Error('Unknown error'), req, res, { logger: this.logger } // Pass logger to error handler
-            );
+        catch (err) {
+            const error = err;
+            await ErrorHandler.handleErrorStatic(error, req, res, { logger: this.logger });
         }
     }
-    async handleDistRequest(req, res, query) {
+    async handleBundle(req, res, query) {
         try {
             const entryPoint = query.entryPoint || 'main.js';
             // Generate bundle
@@ -247,12 +229,42 @@ class AeroSSR {
             }
         }
         catch (error) {
-            throw new Error(`Bundle generation failed: ${error instanceof Error ? error.message : String(error)}`);
+            const bundleError = new Error(`Bundle generation failed: ${error instanceof Error ? error.message : String(error)}`);
+            if (error instanceof Error) {
+                bundleError.cause = error;
+            }
+            throw bundleError;
         }
     }
-    async handleDistRequest(req, res, query) {
-    }
     async handleDefaultRequest(req, res) {
+        try {
+            const parsedUrl = parse(req.url || '', true);
+            const pathname = parsedUrl.pathname || '/';
+            // Template lookup
+            const htmlPath = join(this.config.projectPath, 'public', 'index.html');
+            let html = await promises.readFile(htmlPath, 'utf-8');
+            // Meta tags
+            const meta = {
+                title: `Page - ${pathname}`,
+                description: `Content for ${pathname}`,
+            };
+            // Inject meta tags
+            html = htmlManager.injectMetaTags(html, meta, this.config.defaultMeta);
+            // Set response
+            res.writeHead(200, {
+                'Content-Type': 'text/html',
+                'Cache-Control': 'no-cache',
+                'X-Content-Type-Options': 'nosniff'
+            });
+            res.end(html);
+        }
+        catch (error) {
+            const requestError = new Error(`Default request handling failed: ${error instanceof Error ? error.message : String(error)}`);
+            if (error instanceof Error) {
+                requestError.cause = error;
+            }
+            throw requestError;
+        }
     }
     async start() {
         return new Promise((resolve, reject) => {
