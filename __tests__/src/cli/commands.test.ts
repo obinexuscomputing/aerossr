@@ -1,4 +1,3 @@
-// __tests__/cli/commands.test.ts
 import { jest } from '@jest/globals';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -6,6 +5,8 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { AeroSSRCommands } from '../../../src/cli/commands';
 import { AeroSSR } from '../../../src/AeroSSR';
 import { Logger } from '../../../src/utils/Logger';
+import { StaticFileMiddleware } from '../../../src/middlewares/StaticFileMiddleware';
+import { Middleware } from '../../../src';
 
 // Mock dependencies
 jest.mock('fs', () => ({
@@ -23,10 +24,13 @@ jest.mock('path', () => ({
   parse: jest.fn(() => ({ root: '/' }))
 }));
 
+jest.mock('../../../src/middlewares/StaticFileMiddleware');
+
 describe('AeroSSRCommands', () => {
   let commands: AeroSSRCommands;
   let mockLogger: jest.Mocked<Logger>;
-  const mockFs = fs as jest.Mocked<typeof fs>;
+  let mockFs: jest.Mocked<typeof fs>;
+  const originalConsoleError = console.error;
 
   beforeEach(() => {
     mockLogger = {
@@ -35,8 +39,16 @@ describe('AeroSSRCommands', () => {
       logRequest: jest.fn()
     } as any;
 
+    mockFs = fs as jest.Mocked<typeof fs>;
     commands = new AeroSSRCommands(mockLogger);
+
+    // Silence console.error during tests
+    console.error = jest.fn();
+  });
+
+  afterEach(() => {
     jest.clearAllMocks();
+    console.error = originalConsoleError;
   });
 
   describe('Project Initialization', () => {
@@ -46,31 +58,30 @@ describe('AeroSSRCommands', () => {
       await commands.initializeProject('./test-project');
 
       // Verify directories created
-      expect(mockFs.mkdir).toHaveBeenCalledWith(
-        expect.stringContaining('public'),
-        expect.any(Object)
-      );
-      expect(mockFs.mkdir).toHaveBeenCalledWith(
-        expect.stringContaining('logs'),
-        expect.any(Object)
-      );
+      const mkdirCalls = mockFs.mkdir.mock.calls.map(call => call[0]);
+      expect(mkdirCalls).toEqual(expect.arrayContaining([
+        'test-project/public',
+        'test-project/logs',
+        'test-project/config',
+        'test-project/public/styles',
+        'test-project/public/dist'
+      ]));
 
-      // Verify files created
+      // Verify files created with correct content
       expect(mockFs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('index.html'),
+        'test-project/public/index.html',
         expect.stringContaining('<!DOCTYPE html>'),
         'utf-8'
       );
       expect(mockFs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('main.css'),
-        expect.stringContaining('body'),
+        'test-project/public/styles/main.css',
+        expect.stringContaining(':root'),
         'utf-8'
       );
     });
 
     it('should handle project initialization errors', async () => {
-      const error = new Error('Permission denied');
-      mockFs.mkdir.mockRejectedValue(error);
+      mockFs.mkdir.mockRejectedValue(new Error('Permission denied'));
 
       await expect(commands.initializeProject('./test-project'))
         .rejects.toThrow('Failed to initialize project');
@@ -79,12 +90,30 @@ describe('AeroSSRCommands', () => {
         expect.stringContaining('Failed to initialize project')
       );
     });
+
+    it('should handle file creation errors', async () => {
+      mockFs.access.mockResolvedValue(undefined);
+      mockFs.writeFile.mockRejectedValue(new Error('Write error'));
+
+      await expect(commands.initializeProject('./test-project'))
+        .rejects.toThrow('Failed to create file');
+    });
+
+    it('should log initialization duration', async () => {
+      mockFs.access.mockResolvedValue(undefined);
+      await commands.initializeProject('./test-project');
+
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringMatching(/completed successfully in \d+ms/)
+      );
+    });
   });
 
   describe('Middleware Configuration', () => {
     let mockApp: jest.Mocked<AeroSSR>;
     let mockReq: jest.Mocked<IncomingMessage>;
     let mockRes: jest.Mocked<ServerResponse>;
+    let mockMiddlewareInstance: jest.Mock;
 
     beforeEach(() => {
       mockApp = {
@@ -93,7 +122,8 @@ describe('AeroSSRCommands', () => {
 
       mockReq = {
         method: 'GET',
-        url: '/test'
+        url: '/test',
+        headers: {}
       } as any;
 
       mockRes = {
@@ -101,52 +131,152 @@ describe('AeroSSRCommands', () => {
         end: jest.fn(),
         headersSent: false
       } as any;
+
+      mockMiddlewareInstance = jest.fn();
+      (StaticFileMiddleware as jest.Mock).mockImplementation(() => ({
+        middleware: () => mockMiddlewareInstance
+      }));
     });
 
     it('should configure default middleware', async () => {
       await commands.configureMiddleware(mockApp);
-      expect(mockApp.use).toHaveBeenCalledTimes(3); // Static, logging, error middleware
+      
+      expect(mockApp.use).toHaveBeenCalledTimes(3);
+      expect(StaticFileMiddleware).toHaveBeenCalledWith(expect.objectContaining({
+        root: 'public',
+        dotFiles: 'deny',
+        compression: true,
+        etag: true
+      }));
+      expect(mockApp.use).toHaveBeenCalledWith(mockMiddlewareInstance);
+    });
+
+    it('should include security headers in static middleware', async () => {
+      await commands.configureMiddleware(mockApp);
+      
+      expect(StaticFileMiddleware).toHaveBeenCalledWith(expect.objectContaining({
+        headers: expect.objectContaining({
+          'X-Content-Type-Options': 'nosniff',
+          'X-Frame-Options': 'SAMEORIGIN',
+          'Strict-Transport-Security': expect.any(String)
+        })
+      }));
     });
 
     it('should handle custom middleware configuration', async () => {
       mockFs.access.mockResolvedValue(undefined);
-      const mockMiddleware = jest.fn();
+      const mockCustomMiddleware = jest.fn(() => () => Promise.resolve());
       jest.mock('./test-middleware.js', () => ({
-        testMiddleware: () => mockMiddleware
+        testMiddleware: mockCustomMiddleware
       }), { virtual: true });
 
       await commands.configureMiddleware(mockApp, {
         name: 'testMiddleware',
-        path: './test-middleware.js'
+        path: './test-middleware.js',
+        options: { test: true }
       });
 
-      expect(mockApp.use).toHaveBeenCalledWith(mockMiddleware);
+      expect(mockCustomMiddleware).toHaveBeenCalledWith({ test: true });
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('Successfully configured middleware: testMiddleware')
+      );
     });
 
-    it('should handle middleware loading errors', async () => {
+    it('should handle missing middleware module', async () => {
       mockFs.access.mockRejectedValue(new Error('File not found'));
 
       await expect(commands.configureMiddleware(mockApp, {
         name: 'nonexistentMiddleware',
         path: './nonexistent.js'
-      })).rejects.toThrow();
+      })).rejects.toThrow('Failed to load middleware');
 
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('Middleware configuration failed')
       );
     });
 
-    it('should handle runtime middleware errors', async () => {
-      const error = new Error('Runtime error');
-      const middleware = await commands['createErrorMiddleware']();
-      
-      await middleware(mockReq, mockRes, async () => { throw error; });
+    it('should handle invalid middleware exports', async () => {
+      mockFs.access.mockResolvedValue(undefined);
+      jest.mock('./invalid-middleware.js', () => ({
+        invalidMiddleware: 'not a function'
+      }), { virtual: true });
 
-      expect(mockRes.writeHead).toHaveBeenCalledWith(500, expect.any(Object));
-      expect(mockRes.end).toHaveBeenCalledWith('Internal Server Error');
-      expect(mockLogger.log).toHaveBeenCalledWith(
-        expect.stringContaining('Server error')
-      );
+      await expect(commands.configureMiddleware(mockApp, {
+        name: 'invalidMiddleware',
+        path: './invalid-middleware.js'
+      })).rejects.toThrow('Middleware invalidMiddleware not found');
+    });
+
+    it('should handle middleware factory errors', async () => {
+      mockFs.access.mockResolvedValue(undefined);
+      jest.mock('./error-middleware.js', () => ({
+        errorMiddleware: () => {
+          throw new Error('Factory error');
+        }
+      }), { virtual: true });
+
+      await expect(commands.configureMiddleware(mockApp, {
+        name: 'errorMiddleware',
+        path: './error-middleware.js'
+      })).rejects.toThrow('Failed to load middleware');
+    });
+
+    describe('Logging Middleware', () => {
+      it('should log requests with duration', async () => {
+        const loggingMiddleware = await getLoggingMiddleware();
+        const next = jest.fn().mockResolvedValue(undefined);
+        
+        await loggingMiddleware(mockReq, mockRes, next);
+        
+        expect(mockLogger.log).toHaveBeenCalledWith(
+          expect.stringMatching(/\[\w+\] GET \/test - \d+ms/)
+        );
+      });
+
+      it('should log requests even if next throws', async () => {
+        const loggingMiddleware = await getLoggingMiddleware();
+        const next = jest.fn().mockRejectedValue(new Error('Test error'));
+        
+        await expect(loggingMiddleware(mockReq, mockRes, next)).rejects.toThrow('Test error');
+        expect(mockLogger.log).toHaveBeenCalled();
+      });
+    });
+
+    describe('Error Middleware', () => {
+      it('should handle and log errors', async () => {
+        const errorMiddleware = await getErrorMiddleware();
+        const next = jest.fn().mockRejectedValue(new Error('Test error'));
+        
+        await errorMiddleware(mockReq, mockRes, next);
+        
+        expect(mockLogger.log).toHaveBeenCalledWith(
+          expect.stringMatching(/\[\w+\] Server error:/)
+        );
+        expect(mockRes.writeHead).toHaveBeenCalledWith(500, expect.any(Object));
+        expect(mockRes.end).toHaveBeenCalledWith(expect.stringContaining('Internal Server Error'));
+      });
+
+      it('should include error ID in response', async () => {
+        const errorMiddleware = await getErrorMiddleware();
+        const next = jest.fn().mockRejectedValue(new Error('Test error'));
+        
+        await errorMiddleware(mockReq, mockRes, next);
+        
+        expect(mockRes.end).toHaveBeenCalledWith(
+          expect.stringMatching(/Internal Server Error \(ID: \w+\)/)
+        );
+      });
+
+      it('should not modify response if headers already sent', async () => {
+        mockRes.headersSent = true;
+        const errorMiddleware = await getErrorMiddleware();
+        const next = jest.fn().mockRejectedValue(new Error('Test error'));
+        
+        await errorMiddleware(mockReq, mockRes, next);
+        
+        expect(mockRes.writeHead).not.toHaveBeenCalled();
+        expect(mockRes.end).not.toBeCalled();
+      });
     });
   });
 
@@ -156,38 +286,37 @@ describe('AeroSSRCommands', () => {
       expect(mockLogger.clear).toHaveBeenCalled();
     });
 
-    it('should handle cleanup errors', async () => {
+    it('should handle cleanup errors gracefully', async () => {
       const error = new Error('Cleanup error');
       mockLogger.clear.mockRejectedValue(error);
       
-      const consoleSpy = jest.spyOn(console, 'error');
       await commands.cleanup();
       
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.error).toHaveBeenCalledWith(
         'Cleanup failed:',
         error
       );
     });
   });
 
-  describe('Integration Tests', () => {
-    it('should handle complete project setup flow', async () => {
-      mockFs.access.mockResolvedValue(undefined);
-      
-      // Initialize project
-      await commands.initializeProject('./test-project');
-      
-      // Configure middleware
-      const app = new AeroSSR();
-      await commands.configureMiddleware(app);
+  // Helper functions
+  async function getLoggingMiddleware(): Promise<Middleware> {
+    let loggingMiddleware: Middleware | undefined;
+    await commands.configureMiddleware({
+      use: (middleware: Middleware) => {
+        if (!loggingMiddleware) loggingMiddleware = middleware;
+      }
+    } as any);
+    return loggingMiddleware!;
+  }
 
-      // Cleanup
-      await commands.cleanup();
-
-      // Verify all steps completed
-      expect(mockFs.mkdir).toHaveBeenCalled();
-      expect(mockFs.writeFile).toHaveBeenCalled();
-      expect(mockLogger.clear).toHaveBeenCalled();
-    });
-  });
+  async function getErrorMiddleware(): Promise<Middleware> {
+    let errorMiddleware: Middleware | undefined;
+    await commands.configureMiddleware({
+      use: (middleware: Middleware) => {
+        errorMiddleware = middleware;
+      }
+    } as any);
+    return errorMiddleware!;
+  }
 });
