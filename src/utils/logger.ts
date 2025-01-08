@@ -22,7 +22,12 @@ export class Logger {
     format: 'text'
   };
 
-  constructor(options: LoggerOptions = {}) {
+  constructor(options: LoggerOptions | string = {}) {
+    // Handle string argument for backward compatibility
+    if (typeof options === 'string') {
+      options = { logFilePath: options };
+    }
+
     this.options = { ...Logger.DEFAULT_OPTIONS, ...options };
     this.logFilePath = this.options.logFilePath;
 
@@ -42,7 +47,7 @@ export class Logger {
       console.error(
         `Logger initialization failed for path: ${this.logFilePath} - ${(error as Error).message}`
       );
-      this.logFilePath = null;
+      throw error; // Propagate the error instead of silently failing
     }
   }
 
@@ -68,9 +73,10 @@ export class Logger {
 
     if (this.logFilePath) {
       try {
-        await fs.appendFile(this.logFilePath, formattedMessage, 'utf-8');
+        await fs.appendFile(this.logFilePath, formattedMessage);
       } catch (error) {
         console.error(`Failed to write to log file: ${(error as Error).message}`);
+        throw error; // Propagate the error instead of silently failing
       }
     }
   }
@@ -79,15 +85,16 @@ export class Logger {
     const { method = 'undefined', url = 'undefined', headers = {} } = req;
     const userAgent = headers['user-agent'] || 'unknown';
     const logMessage = `${method} ${url} - ${userAgent}`;
-    this.log(logMessage);
+    void this.log(logMessage);
   }
 
   public async clear(): Promise<void> {
     if (this.logFilePath && existsSync(this.logFilePath)) {
       try {
-        await fs.writeFile(this.logFilePath, '', 'utf-8');
+        await fs.writeFile(this.logFilePath, '');
       } catch (error) {
         console.error(`Failed to clear log file: ${(error as Error).message}`);
+        throw error; // Propagate the error instead of silently failing
       }
     }
   }
