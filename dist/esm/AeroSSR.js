@@ -14,7 +14,6 @@ import { createCache } from './utils/CacheManager.js';
 import { corsManager } from './utils/CorsManager.js';
 import { etagGenerator } from './utils/ETagGenerator.js';
 import { ErrorHandler } from './utils/ErrorHandler.js';
-import { htmlManager } from './utils/HtmlManager.js';
 import { AeroSSRBundler } from './utils/Bundler.js';
 import { StaticFileMiddleware } from './middlewares/StaticFileMiddleware.js';
 
@@ -140,6 +139,9 @@ class AeroSSR {
         if (this.config.cacheMaxAge < 0) {
             throw new Error('Cache max age cannot be negative');
         }
+        if (this.config.errorHandler && typeof this.config.errorHandler !== 'function') {
+            throw new Error('Error handler must be a function');
+        }
     }
     use(middleware) {
         if (typeof middleware !== 'function') {
@@ -205,7 +207,8 @@ class AeroSSR {
             await this.handleDefaultRequest(req, res);
         }
         catch (error) {
-            await ErrorHandler.handleError(error instanceof Error ? error : new Error('Unknown error'), req, res);
+            await ErrorHandler.handleErrorStatic(error instanceof Error ? error : new Error('Unknown error'), req, res, { logger: this.logger } // Pass logger to error handler
+            );
         }
     }
     async handleDistRequest(req, res, query) {
@@ -247,49 +250,9 @@ class AeroSSR {
             throw new Error(`Bundle generation failed: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
+    async handleDistRequest(req, res, query) {
+    }
     async handleDefaultRequest(req, res) {
-        try {
-            const parsedUrl = parse(req.url || '', true);
-            const pathname = parsedUrl.pathname || '/';
-            // Template lookup - check both project root and public directory
-            const possiblePaths = [
-                path__default.join(this.config.projectPath, 'public', 'index.html'),
-                path__default.join(this.config.projectPath, 'index.html')
-            ];
-            let html = '';
-            for (const htmlPath of possiblePaths) {
-                try {
-                    html = await promises.readFile(htmlPath, 'utf-8');
-                    break;
-                }
-                catch (error) {
-                    continue;
-                }
-            }
-            if (!html) {
-                throw new Error('No index.html found in project');
-            }
-            ;
-            // Define meta tags
-            const meta = {
-                title: 'AeroSSR App',
-                description: 'Built with AeroSSR bundler',
-                charset: 'UTF-8',
-                viewport: 'width=device-width, initial-scale=1.0',
-            };
-            // Inject meta tags
-            html = htmlManager.injectMetaTags(html, meta, this.config.defaultMeta);
-            // Set response
-            res.writeHead(200, {
-                'Content-Type': 'text/html',
-                'Cache-Control': 'no-cache',
-                'X-Content-Type-Options': 'nosniff'
-            });
-            res.end(html);
-        }
-        catch (error) {
-            throw new Error(`Default request handling failed: ${error instanceof Error ? error.message : String(error)}`);
-        }
     }
     async start() {
         return new Promise((resolve, reject) => {

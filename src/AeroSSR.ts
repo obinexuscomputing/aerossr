@@ -8,7 +8,7 @@ import { Logger } from './utils/Logger';
 import { createCache } from './utils/CacheManager';
 import { corsManager, CorsOptions } from './utils/CorsManager';
 import { etagGenerator } from './utils/ETagGenerator';
-import { ErrorHandler } from './utils/ErrorHandler';
+import { ErrorHandler, CustomError } from './utils/ErrorHandler';
 import { htmlManager } from './utils/HtmlManager';
 import { AeroSSRBundler } from './utils/Bundler';
 import { AeroSSRConfig, Middleware, RouteHandler, BundleHandler, StaticFileOptions } from './types';
@@ -43,17 +43,18 @@ export class AeroSSR {
         ...options.defaultMeta,
       },
     } as AeroSSRConfig;
-    this.createRequiredDirectories(baseConfig.projectPath);
 
+    // Create required directories
+    this.createRequiredDirectories(baseConfig.projectPath);
 
     // Complete configuration with derived components
     this.config = {
       ...baseConfig,
       bundleCache: options.bundleCache || createCache<string>(),
       templateCache: options.templateCache || createCache<string>(),
-      errorHandler: options.errorHandler || ErrorHandler.handleError,
+      errorHandler: options.errorHandler || ErrorHandler.handleErrorStatic,
       staticFileHandler: options.staticFileHandler || this.handleDefaultRequest.bind(this),
-      bundleHandler: options.bundleHandler as BundleHandler || this.handleDistRequest.bind(this),
+      bundleHandler: options.bundleHandler as BundleHandler || this.handleBundle.bind(this),
     } as Required<AeroSSRConfig>;
 
     // Initialize core components
@@ -88,6 +89,7 @@ export class AeroSSR {
     // Validate configuration
     this.validateConfig();
   }
+
   private async createRequiredDirectories(projectPath: string): Promise<void> {
     const requiredDirs = [
       path.join(projectPath, 'public'),
@@ -99,10 +101,14 @@ export class AeroSSR {
       try {
         await fs.mkdir(dir, { recursive: true });
       } catch (error) {
-        this.logger.warn(`Failed to create directory ${dir}: ${error}`);
+        if (this.logger) {
+          this.logger.log(`Failed to create directory ${dir}: ${error}`);
+        }
       }
     }
-  }private setupStaticFileHandling(options: StaticFileOptions): void {
+  }
+
+  private setupStaticFileHandling(options: StaticFileOptions): void {
     const staticOptions = {
       root: path.join(this.config.projectPath, options.root || 'public'),
       maxAge: options.maxAge || 86400,
@@ -115,35 +121,16 @@ export class AeroSSR {
     const staticFileMiddleware = new StaticFileMiddleware(staticOptions);
     this.use(staticFileMiddleware.middleware());
   }
-  private async ensureDefaultTemplate(): Promise<void> {
-    const defaultHtml = `
-  <!DOCTYPE html>
-  <html>
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>AeroSSR App</title>
-  </head>
-  <body>
-      <div id="app"></div>
-      <script type="module" src="/dist/main.js"></script>
-  </body>
-  </html>`;
-  
-    const indexPath = path.join(this.config.projectPath, 'public', 'index.html');
-    try {
-      await fs.access(indexPath);
-    } catch {
-      await fs.writeFile(indexPath, defaultHtml, 'utf-8');
-    }
-  }
-  
+
   private validateConfig(): void {
     if (this.config.port < 0 || this.config.port > 65535) {
       throw new Error('Invalid port number');
     }
     if (this.config.cacheMaxAge < 0) {
       throw new Error('Cache max age cannot be negative');
+    }
+    if (this.config.errorHandler && typeof this.config.errorHandler !== 'function') {
+      throw new Error('Error handler must be a function');
     }
   }
 
@@ -205,41 +192,38 @@ export class AeroSSR {
         corsManager.handlePreflight(res, this.config.corsOrigins as CorsOptions);
         return;
       }
-
+  
       // Set CORS headers
       corsManager.setCorsHeaders(res, this.config.corsOrigins as CorsOptions);
-
+  
       // Execute middleware chain
       await this.executeMiddlewares(req, res);
-
+  
       const parsedUrl = parseUrl(req.url || '', true);
       const pathname = parsedUrl.pathname || '/';
-
+  
       // Route handling
       const routeHandler = this.routes.get(pathname);
       if (routeHandler) {
         await routeHandler(req, res);
         return;
       }
-
+  
       // Special routes
       if (pathname === '/dist') {
-        await this.handleDistRequest(req, res, parsedUrl.query);
+        await this.handleBundle(req, res, parsedUrl.query);
         return;
       }
-
+  
       // Default handler
       await this.handleDefaultRequest(req, res);
-    } catch (error) {
-      await ErrorHandler.handleError(
-        error instanceof Error ? error : new Error('Unknown error'), 
-        req, 
-        res
-      );
+    } catch (err) {
+      const error = err as CustomError;
+      await ErrorHandler.handleErrorStatic(error, req, res, { logger: this.logger });
     }
   }
 
-  private async handleDistRequest(
+  private async handleBundle(
     req: IncomingMessage,
     res: ServerResponse,
     query: Record<string, string | string[] | undefined>
@@ -282,7 +266,13 @@ export class AeroSSR {
         res.end(bundle.code);
       }
     } catch (error) {
-      throw new Error(`Bundle generation failed: ${error instanceof Error ? error.message : String(error)}`);
+      const bundleError = new Error(
+        `Bundle generation failed: ${error instanceof Error ? error.message : String(error)}`
+      ) as CustomError;
+      if (error instanceof Error) {
+        bundleError.cause = error;
+      }
+      throw bundleError;
     }
   }
 
@@ -293,34 +283,15 @@ export class AeroSSR {
     try {
       const parsedUrl = parseUrl(req.url || '', true);
       const pathname = parsedUrl.pathname || '/';
-  
-      // Template lookup - check both project root and public directory
-      const possiblePaths = [
-        path.join(this.config.projectPath, 'public', 'index.html'),
-        path.join(this.config.projectPath, 'index.html')
-      ];
-  
-      let html = '';
-      for (const htmlPath of possiblePaths) {
-        try {
-          html = await fs.readFile(htmlPath, 'utf-8');
-          break;
-        } catch (error) {
-          continue;
-        }
-      }
-  
-      if (!html) {
-        throw new Error('No index.html found in project');
-      
-      };
 
-      // Define meta tags
+      // Template lookup
+      const htmlPath = join(this.config.projectPath, 'public', 'index.html');
+      let html = await fs.readFile(htmlPath, 'utf-8');
+
+      // Meta tags
       const meta = {
-        title: 'AeroSSR App',
-        description: 'Built with AeroSSR bundler',
-        charset: 'UTF-8',
-        viewport: 'width=device-width, initial-scale=1.0',
+        title: `Page - ${pathname}`,
+        description: `Content for ${pathname}`,
       };
 
       // Inject meta tags
@@ -334,7 +305,13 @@ export class AeroSSR {
       });
       res.end(html);
     } catch (error) {
-      throw new Error(`Default request handling failed: ${error instanceof Error ? error.message : String(error)}`);
+      const requestError = new Error(
+        `Default request handling failed: ${error instanceof Error ? error.message : String(error)}`
+      ) as CustomError;
+      if (error instanceof Error) {
+        requestError.cause = error;
+      }
+      throw requestError;
     }
   }
 
