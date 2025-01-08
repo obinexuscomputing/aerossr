@@ -10,7 +10,7 @@ import { corsManager, CorsOptions } from './utils/CorsManager';
 import { etagGenerator } from './utils/ETagGenerator';
 import { ErrorHandler } from './utils/ErrorHandler';
 import { htmlManager } from './utils/HtmlManager';
-import { AeroSSRBundler } from './utils/';
+import { AeroSSRBundler } from './utils/Bundler';
 import { AeroSSRConfig, Middleware, RouteHandler, BundleHandler } from './types';
 
 const gzipAsync = promisify(gzip);
@@ -23,56 +23,83 @@ export class AeroSSR {
   public readonly routes: Map<string, RouteHandler>;
   private readonly middlewares: Middleware[];
   
-  constructor(config: AeroSSRConfig = {
-    projectPath: ''
-  }) {
-    // Normalize CORS options
-    const corsOptions = corsManager.normalizeCorsOptions(config.corsOrigins);
-
-    const projectPath = this.config.projectPath;
-    this.config = {
-      projectPath,
-      loggerOptions: config.loggerOptions || {},
-      errorHandler: config.errorHandler || ErrorHandler.handleError,
-      staticFileHandler: config.staticFileHandler || this.handleDefaultRequest.bind(this),
-      bundleHandler: config.bundleHandler as BundleHandler || this.handleDistRequest.bind(this),
-      port: config.port || 3000,
-      cacheMaxAge: config.cacheMaxAge || 3600,
-      corsOrigins: corsOptions,
-      compression: config.compression !== false,
-      logFilePath: config.logFilePath || null,
-      bundleCache: config.bundleCache || createCache<string>(),
-      templateCache: config.templateCache || createCache<string>(),
+  constructor(options: Partial<AeroSSRConfig> = {}) {
+    // Initialize base configuration first
+    const baseConfig = {
+      projectPath: options.projectPath || process.cwd(),
+      port: options.port || 3000,
+      compression: options.compression !== false,
+      cacheMaxAge: options.cacheMaxAge || 3600,
+      logFilePath: options.logFilePath || null,
+      loggerOptions: options.loggerOptions || {},
+      corsOrigins: corsManager.normalizeCorsOptions(options.corsOrigins),
       defaultMeta: {
         title: 'AeroSSR App',
         description: 'Built with AeroSSR bundler',
         charset: 'UTF-8',
         viewport: 'width=device-width, initial-scale=1.0',
-        ...config.defaultMeta,
+        ...options.defaultMeta,
       },
     };
 
-    this.logger = new Logger({ logFilePath: this.config.logFilePath });
-    this.bundler = new AeroSSRBundler(projectPath);
+    // Complete configuration with derived components
+    this.config = {
+      ...baseConfig,
+      bundleCache: options.bundleCache || createCache<string>(),
+      templateCache: options.templateCache || createCache<string>(),
+      errorHandler: options.errorHandler || ErrorHandler.handleError,
+      staticFileHandler: options.staticFileHandler || this.handleDefaultRequest.bind(this),
+      bundleHandler: options.bundleHandler as BundleHandler || this.handleDistRequest.bind(this),
+    } as Required<AeroSSRConfig>;
+
+    // Initialize core components
+    this.logger = new Logger({ 
+      logFilePath: this.config.logFilePath,
+      ...this.config.loggerOptions 
+    });
+    
+    this.bundler = new AeroSSRBundler(this.config.projectPath);
     this.server = null;
     this.routes = new Map();
     this.middlewares = [];
 
-    // Update CORS manager defaults with configuration
+    // Update CORS manager defaults
     corsManager.updateDefaults(this.config.corsOrigins as CorsOptions);
+
+    // Validate configuration
+    this.validateConfig();
+  }
+
+  private validateConfig(): void {
+    if (this.config.port < 0 || this.config.port > 65535) {
+      throw new Error('Invalid port number');
+    }
+    if (this.config.cacheMaxAge < 0) {
+      throw new Error('Cache max age cannot be negative');
+    }
   }
 
   public use(middleware: Middleware): void {
+    if (typeof middleware !== 'function') {
+      throw new Error('Middleware must be a function');
+    }
     this.middlewares.push(middleware);
   }
 
   public route(path: string, handler: RouteHandler): void {
+    if (typeof path !== 'string' || !path) {
+      throw new Error('Route path must be a non-empty string');
+    }
+    if (typeof handler !== 'function') {
+      throw new Error('Route handler must be a function');
+    }
     this.routes.set(path, handler);
   }
 
   public clearCache(): void {
     this.config.bundleCache.clear();
     this.config.templateCache.clear();
+    this.bundler.clearCache();
   }
 
   private async executeMiddlewares(
@@ -105,13 +132,13 @@ export class AeroSSR {
     try {
       this.logger.log(`Request received: ${req.method} ${req.url}`);
       
-      // Handle CORS preflight requests
+      // Handle CORS preflight
       if (req.method === 'OPTIONS') {
         corsManager.handlePreflight(res, this.config.corsOrigins as CorsOptions);
         return;
       }
 
-      // Set CORS headers for regular requests
+      // Set CORS headers
       corsManager.setCorsHeaders(res, this.config.corsOrigins as CorsOptions);
 
       // Execute middleware chain
@@ -133,7 +160,7 @@ export class AeroSSR {
         return;
       }
 
-      // Default request handler
+      // Default handler
       await this.handleDefaultRequest(req, res);
     } catch (error) {
       await ErrorHandler.handleError(
@@ -150,7 +177,6 @@ export class AeroSSR {
     query: Record<string, string | string[] | undefined>
   ): Promise<void> {
     try {
-      const projectPath = (query.projectPath as string) || './';
       const entryPoint = (query.entryPoint as string) || 'main.js';
 
       // Generate bundle
@@ -169,7 +195,7 @@ export class AeroSSR {
         return;
       }
 
-      // Set response headers
+      // Set headers
       const headers = {
         'Content-Type': 'application/javascript',
         'Cache-Control': `public, max-age=${this.config.cacheMaxAge}`,
@@ -199,21 +225,21 @@ export class AeroSSR {
     try {
       const parsedUrl = parseUrl(req.url || '', true);
       const pathname = parsedUrl.pathname || '/';
-  
-      // Use project path for template lookup
+
+      // Template lookup
       const htmlPath = join(this.config.projectPath, 'index.html');
       let html = await fs.readFile(htmlPath, 'utf-8');
-  
-      // Generate meta tags
+
+      // Meta tags
       const meta = {
         title: `Page - ${pathname}`,
         description: `Content for ${pathname}`,
       };
-  
+
       // Inject meta tags
       html = htmlManager.injectMetaTags(html, meta, this.config.defaultMeta);
-  
-      // Set response headers
+
+      // Set response
       res.writeHead(200, {
         'Content-Type': 'text/html',
         'Cache-Control': 'no-cache',
@@ -260,6 +286,9 @@ export class AeroSSR {
   }
 
   public listen(port: number): void {
+    if (port < 0 || port > 65535) {
+      throw new Error('Invalid port number');
+    }
     this.config.port = port;
     this.start().catch(error => {
       this.logger.log(`Failed to start server: ${error.message}`);
