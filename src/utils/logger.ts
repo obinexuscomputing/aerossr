@@ -47,7 +47,7 @@ export class Logger {
       console.error(
         `Logger initialization failed for path: ${this.logFilePath} - ${(error as Error).message}`
       );
-      throw error; // Propagate the error instead of silently failing
+      throw error;
     }
   }
 
@@ -55,29 +55,79 @@ export class Logger {
     return this.logFilePath;
   }
 
-  private formatMessage(message: string): string {
+  private formatMessage(message: string, level: string = 'info'): string {
     const timestamp = new Date().toISOString();
     if (this.options.format === 'json') {
       return JSON.stringify({
         timestamp,
-        message,
-        level: this.options.logLevel
+        level,
+        message
       }) + '\n';
     }
-    return `[${timestamp}] ${message}\n`;
+    return `[${timestamp}] [${level.toUpperCase()}] ${message}\n`;
   }
 
-  public async log(message: string): Promise<void> {
-    const formattedMessage = this.formatMessage(message);
+  public async log(message: string, level: 'debug' | 'info' | 'warn' | 'error' = 'info'): Promise<void> {
+    if (!this.shouldLog(level)) {
+      return;
+    }
+
+    const formattedMessage = this.formatMessage(message, level);
     console.log(formattedMessage.trim());
 
     if (this.logFilePath) {
       try {
-        await fs.appendFile(this.logFilePath, formattedMessage);
+        await this.checkRotation();
+        await fs.appendFile(this.logFilePath, formattedMessage, 'utf8');
       } catch (error) {
         console.error(`Failed to write to log file: ${(error as Error).message}`);
-        throw error; // Propagate the error instead of silently failing
+        throw error;
       }
+    }
+  }
+
+  private shouldLog(level: string): boolean {
+    const levels = ['debug', 'info', 'warn', 'error'];
+    const configuredLevel = levels.indexOf(this.options.logLevel);
+    const messageLevel = levels.indexOf(level);
+    return messageLevel >= configuredLevel;
+  }
+
+  private async checkRotation(): Promise<void> {
+    if (!this.logFilePath || !this.options.maxFileSize) {
+      return;
+    }
+
+    try {
+      const stats = await fs.stat(this.logFilePath);
+      if (stats.size >= this.options.maxFileSize) {
+        await this.rotateLogFiles();
+      }
+    } catch (error) {
+      console.error(`Failed to check log rotation: ${(error as Error).message}`);
+    }
+  }
+
+  private async rotateLogFiles(): Promise<void> {
+    if (!this.logFilePath) return;
+
+    for (let i = this.options.maxFiles - 1; i > 0; i--) {
+      const oldPath = `${this.logFilePath}.${i}`;
+      const newPath = `${this.logFilePath}.${i + 1}`;
+      try {
+        if (existsSync(oldPath)) {
+          await fs.rename(oldPath, newPath);
+        }
+      } catch (error) {
+        console.error(`Failed to rotate log file: ${(error as Error).message}`);
+      }
+    }
+
+    try {
+      await fs.rename(this.logFilePath, `${this.logFilePath}.1`);
+      await fs.writeFile(this.logFilePath, '');
+    } catch (error) {
+      console.error(`Failed to create new log file: ${(error as Error).message}`);
     }
   }
 
@@ -85,7 +135,12 @@ export class Logger {
     const { method = 'undefined', url = 'undefined', headers = {} } = req;
     const userAgent = headers['user-agent'] || 'unknown';
     const logMessage = `${method} ${url} - ${userAgent}`;
-    void this.log(logMessage);
+    void this.log(logMessage, 'info');
+  }
+
+  public async logError(error: Error): Promise<void> {
+    const message = `${error.name}: ${error.message}\nStack: ${error.stack}`;
+    await this.log(message, 'error');
   }
 
   public async clear(): Promise<void> {
@@ -94,8 +149,25 @@ export class Logger {
         await fs.writeFile(this.logFilePath, '');
       } catch (error) {
         console.error(`Failed to clear log file: ${(error as Error).message}`);
-        throw error; // Propagate the error instead of silently failing
+        throw error;
       }
     }
+  }
+
+  // Debug level convenience methods
+  public async debug(message: string): Promise<void> {
+    await this.log(message, 'debug');
+  }
+
+  public async info(message: string): Promise<void> {
+    await this.log(message, 'info');
+  }
+
+  public async warn(message: string): Promise<void> {
+    await this.log(message, 'warn');
+  }
+
+  public async error(message: string): Promise<void> {
+    await this.log(message, 'error');
   }
 }
