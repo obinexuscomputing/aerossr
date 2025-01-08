@@ -1,7 +1,7 @@
 import { Server, createServer, IncomingMessage, ServerResponse } from 'http';
 import { promises as fs } from 'fs';
 import { parse as parseUrl } from 'url';
-import { join } from 'path';
+import path, { join } from 'path';
 import { gzip } from 'zlib';
 import { promisify } from 'util';
 import { Logger } from './utils/Logger';
@@ -27,11 +27,12 @@ export class AeroSSR {
   constructor(options: Partial<AeroSSRConfig> = {}) {
     // Initialize base configuration first
     const baseConfig = {
-      projectPath: options.projectPath || process.cwd(),
+      projectPath: path.resolve(options.projectPath || process.cwd()),
+      publicPath: path.resolve(options.projectPath || process.cwd(), 'public'),
       port: options.port || 3000,
       compression: options.compression !== false,
       cacheMaxAge: options.cacheMaxAge || 3600,
-      logFilePath: options.logFilePath || null,
+      logFilePath: options.logFilePath || path.join(process.cwd(), 'logs', 'server.log'),
       loggerOptions: options.loggerOptions || {},
       corsOrigins: corsManager.normalizeCorsOptions(options.corsOrigins),
       defaultMeta: {
@@ -41,7 +42,9 @@ export class AeroSSR {
         viewport: 'width=device-width, initial-scale=1.0',
         ...options.defaultMeta,
       },
-    };
+    } as AeroSSRConfig;
+    this.createRequiredDirectories(baseConfig.projectPath);
+
 
     // Complete configuration with derived components
     this.config = {
@@ -85,24 +88,56 @@ export class AeroSSR {
     // Validate configuration
     this.validateConfig();
   }
-
-  private setupStaticFileHandling(options: StaticFileOptions): void {
-    if (!options.root) {
-      throw new Error('Static file root directory must be specified');
+  private async createRequiredDirectories(projectPath: string): Promise<void> {
+    const requiredDirs = [
+      path.join(projectPath, 'public'),
+      path.join(projectPath, 'logs'),
+      path.join(projectPath, 'src')
+    ];
+  
+    for (const dir of requiredDirs) {
+      try {
+        await fs.mkdir(dir, { recursive: true });
+      } catch (error) {
+        this.logger.warn(`Failed to create directory ${dir}: ${error}`);
+      }
     }
-    
-    const staticFileMiddleware = new StaticFileMiddleware({
-      root: options.root,
+  }private setupStaticFileHandling(options: StaticFileOptions): void {
+    const staticOptions = {
+      root: path.join(this.config.projectPath, options.root || 'public'),
       maxAge: options.maxAge || 86400,
       index: options.index || ['index.html'],
       dotFiles: options.dotFiles || 'ignore',
-      compression: options.compression !== false,
+      compression: options.compression ?? this.config.compression,
       etag: options.etag !== false
-    });
-
+    };
+  
+    const staticFileMiddleware = new StaticFileMiddleware(staticOptions);
     this.use(staticFileMiddleware.middleware());
   }
-
+  private async ensureDefaultTemplate(): Promise<void> {
+    const defaultHtml = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>AeroSSR App</title>
+  </head>
+  <body>
+      <div id="app"></div>
+      <script type="module" src="/dist/main.js"></script>
+  </body>
+  </html>`;
+  
+    const indexPath = path.join(this.config.projectPath, 'public', 'index.html');
+    try {
+      await fs.access(indexPath);
+    } catch {
+      await fs.writeFile(indexPath, defaultHtml, 'utf-8');
+    }
+  }
+  
   private validateConfig(): void {
     if (this.config.port < 0 || this.config.port > 65535) {
       throw new Error('Invalid port number');
@@ -258,15 +293,34 @@ export class AeroSSR {
     try {
       const parsedUrl = parseUrl(req.url || '', true);
       const pathname = parsedUrl.pathname || '/';
+  
+      // Template lookup - check both project root and public directory
+      const possiblePaths = [
+        path.join(this.config.projectPath, 'public', 'index.html'),
+        path.join(this.config.projectPath, 'index.html')
+      ];
+  
+      let html = '';
+      for (const htmlPath of possiblePaths) {
+        try {
+          html = await fs.readFile(htmlPath, 'utf-8');
+          break;
+        } catch (error) {
+          continue;
+        }
+      }
+  
+      if (!html) {
+        throw new Error('No index.html found in project');
+      
+      };
 
-      // Template lookup
-      const htmlPath = join(this.config.projectPath, 'index.html');
-      let html = await fs.readFile(htmlPath, 'utf-8');
-
-      // Meta tags
+      // Define meta tags
       const meta = {
-        title: `Page - ${pathname}`,
-        description: `Content for ${pathname}`,
+        title: 'AeroSSR App',
+        description: 'Built with AeroSSR bundler',
+        charset: 'UTF-8',
+        viewport: 'width=device-width, initial-scale=1.0',
       };
 
       // Inject meta tags
