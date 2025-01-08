@@ -10,20 +10,34 @@ export interface MiddlewareConfig {
   options?: Record<string, unknown>;
 }
 
+export interface ProjectStructure {
+  public: string;
+  logs: string;
+  config: string;
+  styles: string;
+  dist: string;
+}
+
 export class AeroSSRCommands {
   private readonly logger: Logger;
+  private readonly defaultHeaders = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'SAMEORIGIN',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+  };
 
   constructor(logger?: Logger) {
     this.logger = logger || new Logger();
   }
 
   /**
-   * Find the project root directory by looking for package.json
+   * Find the project root directory
    */
   private async findProjectRoot(startDir: string): Promise<string> {
     let currentDir = startDir;
+    const rootDir = path.parse(currentDir).root;
     
-    while (currentDir !== path.parse(currentDir).root) {
+    while (currentDir !== rootDir) {
       try {
         const pkgPath = path.join(currentDir, 'package.json');
         await fs.access(pkgPath);
@@ -37,10 +51,21 @@ export class AeroSSRCommands {
   }
 
   /**
-   * Create default project structure
+   * Verify directory exists or create it
    */
-  private async createProjectStructure(targetDir: string): Promise<Record<string, string>> {
-    const dirs = {
+  private async ensureDirectory(dir: string): Promise<void> {
+    try {
+      await fs.access(dir);
+    } catch {
+      await fs.mkdir(dir, { recursive: true });
+    }
+  }
+
+  /**
+   * Create project directory structure
+   */
+  private async createProjectStructure(targetDir: string): Promise<ProjectStructure> {
+    const dirs: ProjectStructure = {
       public: path.join(targetDir, 'public'),
       logs: path.join(targetDir, 'logs'),
       config: path.join(targetDir, 'config'),
@@ -48,9 +73,8 @@ export class AeroSSRCommands {
       dist: path.join(targetDir, 'public', 'dist')
     };
 
-    // Create all directories
     await Promise.all(
-      Object.values(dirs).map(dir => fs.mkdir(dir, { recursive: true }))
+      Object.values(dirs).map(dir => this.ensureDirectory(dir))
     );
 
     return dirs;
@@ -59,7 +83,7 @@ export class AeroSSRCommands {
   /**
    * Create default project files
    */
-  private async createProjectFiles(dirs: Record<string, string>): Promise<void> {
+  private async createProjectFiles(dirs: ProjectStructure): Promise<void> {
     const files = {
       html: {
         path: path.join(dirs.public, 'index.html'),
@@ -68,6 +92,7 @@ export class AeroSSRCommands {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <title>AeroSSR App</title>
     <link rel="stylesheet" href="/styles/main.css">
 </head>
@@ -76,16 +101,25 @@ export class AeroSSRCommands {
         <h1>Welcome to AeroSSR</h1>
         <p>Edit public/index.html to get started</p>
     </div>
-    <script src="/dist/main.js"></script>
+    <script type="module" src="/dist/main.js"></script>
 </body>
 </html>`
       },
       css: {
         path: path.join(dirs.styles, 'main.css'),
-        content: `body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        content: `/* AeroSSR Default Styles */
+:root {
+    --primary-color: #2c3e50;
+    --background-color: #ffffff;
+    --text-color: #333333;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     margin: 0;
     padding: 2rem;
+    background-color: var(--background-color);
+    color: var(--text-color);
 }
 
 #app {
@@ -94,7 +128,7 @@ export class AeroSSRCommands {
 }
 
 h1 {
-    color: #2c3e50;
+    color: var(--primary-color);
 }`
       },
       log: {
@@ -103,18 +137,23 @@ h1 {
       }
     };
 
-    // Create all files
     await Promise.all(
-      Object.values(files).map(file => 
-        fs.writeFile(file.path, file.content.trim(), 'utf-8')
-      )
+      Object.entries(files).map(async ([_, file]) => {
+        try {
+          await fs.writeFile(file.path, file.content.trim(), 'utf-8');
+        } catch (error) {
+          throw new Error(`Failed to create file ${file.path}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      })
     );
   }
 
   /**
-   * Initialize a new AeroSSR project
+   * Initialize new AeroSSR project
    */
   public async initializeProject(directory: string): Promise<void> {
+    const startTime = Date.now();
+    
     try {
       const projectRoot = await this.findProjectRoot(process.cwd());
       const targetDir = path.resolve(projectRoot, directory);
@@ -124,7 +163,8 @@ h1 {
       const dirs = await this.createProjectStructure(targetDir);
       await this.createProjectFiles(dirs);
 
-      this.logger.log('Project initialization completed successfully');
+      const duration = Date.now() - startTime;
+      this.logger.log(`Project initialization completed successfully in ${duration}ms`);
     } catch (error) {
       const message = `Failed to initialize project: ${error instanceof Error ? error.message : String(error)}`;
       this.logger.log(message);
@@ -137,12 +177,14 @@ h1 {
    */
   private createLoggingMiddleware(): Middleware {
     return async (req, _res, next) => {
+      const requestId = Math.random().toString(36).substring(7);
       const start = Date.now();
+      
       try {
         await next();
       } finally {
         const duration = Date.now() - start;
-        this.logger.log(`${req.method} ${req.url} - ${duration}ms`);
+        this.logger.log(`[${requestId}] ${req.method} ${req.url} - ${duration}ms`);
       }
     };
   }
@@ -155,16 +197,31 @@ h1 {
       try {
         await next();
       } catch (error) {
-        this.logger.log(`Server error: ${error instanceof Error ? error.message : String(error)}`);
+        const errorId = Math.random().toString(36).substring(7);
+        this.logger.log(`[${errorId}] Server error: ${error instanceof Error ? error.stack : String(error)}`);
+        
         if (!res.headersSent) {
           res.writeHead(500, { 
             'Content-Type': 'text/plain',
-            'X-Content-Type-Options': 'nosniff'
+            ...this.defaultHeaders
           });
-          res.end('Internal Server Error');
+          res.end(`Internal Server Error (ID: ${errorId})`);
         }
       }
     };
+  }
+
+  /**
+   * Validate middleware module exports
+   */
+  private validateMiddlewareExports(exports: unknown, config: MiddlewareConfig): void {
+    if (!exports || typeof exports !== 'object') {
+      throw new Error(`Invalid middleware module: ${config.path}`);
+    }
+
+    if (typeof (exports as Record<string, unknown>)[config.name] !== 'function') {
+      throw new Error(`Middleware ${config.name} not found in ${config.path}`);
+    }
   }
 
   /**
@@ -177,11 +234,14 @@ h1 {
       await fs.access(middlewarePath);
       
       const customMiddleware = require(middlewarePath);
-      if (typeof customMiddleware[config.name] !== 'function') {
-        throw new Error(`Middleware ${config.name} not found in ${config.path}`);
+      this.validateMiddlewareExports(customMiddleware, config);
+      
+      const middleware = customMiddleware[config.name](config.options);
+      if (typeof middleware !== 'function') {
+        throw new Error(`Middleware ${config.name} factory must return a function`);
       }
       
-      return customMiddleware[config.name](config.options);
+      return middleware;
     } catch (error) {
       throw new Error(
         `Failed to load middleware ${config.name}: ${error instanceof Error ? error.message : String(error)}`
@@ -200,7 +260,7 @@ h1 {
       throw new Error('AeroSSR instance is required');
     }
 
-    // Configure static file middleware with security defaults
+    // Configure static file middleware
     const staticMiddleware = new StaticFileMiddleware({
       root: 'public',
       maxAge: 86400,
@@ -208,10 +268,7 @@ h1 {
       dotFiles: 'deny',
       compression: true,
       etag: true,
-      headers: {
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'SAMEORIGIN'
-      }
+      headers: this.defaultHeaders
     });
     
     app.use(staticMiddleware.middleware());
@@ -223,9 +280,11 @@ h1 {
         const projectRoot = await this.findProjectRoot(process.cwd());
         const middleware = await this.loadCustomMiddleware(config, projectRoot);
         app.use(middleware);
+        this.logger.log(`Successfully configured middleware: ${config.name}`);
       } catch (error) {
-        this.logger.log(`Middleware configuration failed: ${error instanceof Error ? error.message : String(error)}`);
-        throw error;
+        const message = `Middleware configuration failed: ${error instanceof Error ? error.message : String(error)}`;
+        this.logger.log(message);
+        throw new Error(message);
       }
     }
   }
@@ -237,7 +296,7 @@ h1 {
     try {
       await this.logger.clear();
     } catch (error) {
-      console.error('Cleanup failed:', error);
+      console.error('Cleanup failed:', error instanceof Error ? error.message : String(error));
     }
   }
 }
