@@ -36,7 +36,7 @@ export class DistHandler {
         return;
       }
 
-      const headers = {
+      const headers: Record<string, string> = {
         'Content-Type': 'application/javascript',
         'Cache-Control': `public, max-age=${this.cacheMaxAge}`,
         'ETag': etag,
