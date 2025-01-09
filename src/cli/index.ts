@@ -5,6 +5,7 @@ import { join, resolve } from 'path';
 import { Logger } from '../../src/utils/';
 import AeroSSR from '@/core/AeroSSR';
 import { MiddlewareConfig, aeroCommands } from './commands/commands';
+import { AeroSSRConfig } from '@/types/aerossr';
 
 export interface AeroConfig {
   port: number;
@@ -128,7 +129,7 @@ export class AeroSSRCLI {
             logFilePath: config.logPath,
             projectPath: process.cwd(),
             logger: this.logger
-          });
+          } as AeroSSRConfig);
 
           const middlewareConfig: MiddlewareConfig = {
             name: options.name,

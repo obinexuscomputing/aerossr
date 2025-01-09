@@ -31,7 +31,7 @@ export {
   corsManager,
   etagGenerator,
   ErrorHandler,
-  AeroSSRBundler
+  
 } from './utils';
 
 // Re-export core types with explicit names to avoid conflicts

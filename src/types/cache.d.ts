@@ -139,8 +139,7 @@ export interface CacheItemOptions {
     /** Unsubscribe from cache events */
     off(event: 'hit' | 'miss' | 'set' | 'delete' | 'clear' | 'expire',
         callback: (key: string, value?: T) => void): void;
-  }
-  
+}
   /**
    * Factory function to create a new cache store
    */
