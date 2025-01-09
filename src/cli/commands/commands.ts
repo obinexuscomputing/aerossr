@@ -1,8 +1,10 @@
+import { StaticFileMiddleware } from '@/middleware';
+import { Middleware } from '@/routing';
+import { AeroSSR } from '@/types';
+import { Logger } from '@/utils';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { AeroSSR, StaticFileMiddleware } from '..';
-import type { Middleware } from '../types';
-import { Logger } from '../utils/Logger';
+
 
 export interface MiddlewareConfig {
   name: string;
