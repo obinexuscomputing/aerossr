@@ -209,6 +209,7 @@ export function createCache<T>(): CacheStoreBase<T> {
   const store = new Map<string, T>();
 
   return {
+    size: store.size,
 
     get(key: string) {
       return store.get(key);
