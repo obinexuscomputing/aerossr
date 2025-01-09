@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from "http";
-import { DefaultRouteStrategy } from "./DefaultRouteBuilder";
-import { RouteBuilder } from "./RouteBuilder";
 import { Route, RouteStrategy, RouteObserver, RouteMatch, RouteContext } from "./types";
+import { DefaultRouteStrategy } from "./builders/DefaultRouteBuilder";
+import { RouteBuilder } from "./builders/RouteBuilder";
 
 export class Router {
     private routes: Route[] = [];
@@ -61,12 +61,16 @@ export class Router {
     }
   
     match(path: string, method: string): RouteMatch | undefined {
-      return this.routes.find(route => {
+      const route = this.routes.find(route => {
         return route.method === method && this.strategy.matches(path, route.pattern);
-      }).map(route => ({
-        route,
-        params: this.strategy.extractParams(path, route.pattern)
-      }));
+      });
+      if (route) {
+        return {
+          route,
+          params: this.strategy.extractParams(path, route.pattern)
+        };
+      }
+      return undefined;
     }
   
     async handle(req: IncomingMessage, res: ServerResponse): Promise<void> {

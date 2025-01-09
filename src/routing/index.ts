@@ -1,4 +1,4 @@
-export { DefaultRouteStrategy as RouteStrategy } from './DefaultRouteBuilder';
+export { DefaultRouteStrategy as RouteStrategy } from './builders/DefaultRouteBuilder';
 export { RouteContext, RouteHandler, Middleware, Route, RouteMetadata, ParameterMetadata, ResponseMetadata, RouteMatch, RouteObserver } from './types';
-export { RouteBuilder } from './RouteBuilder';
+export { RouteBuilder } from './builders/RouteBuilder';
 export { Router } from './Router';
