@@ -11,6 +11,12 @@ export interface LoggerOptions {
   format?: 'json' | 'text';
 }
 
+interface ErrorDetails {
+  message: string;
+  error?: Error | unknown;
+  context?: Record<string, unknown>;
+}
+
 export class Logger {
   private logFilePath: string | null;
   private readonly options: Required<LoggerOptions>;
@@ -23,7 +29,6 @@ export class Logger {
   };
 
   constructor(options: LoggerOptions | string = {}) {
-    // Handle string argument for backward compatibility
     if (typeof options === 'string') {
       options = { logFilePath: options };
     }
@@ -48,7 +53,7 @@ export class Logger {
       console.error(
         `Logger initialization failed for path: ${this.logFilePath} - ${err.message}`
       );
-      throw err; // Re-throw to match test expectations
+      throw err;
     }
   }
 
@@ -90,15 +95,13 @@ export class Logger {
       } catch (error) {
         const err = error as Error;
         console.error(`Failed to write to log file: ${err.message}`);
-        throw err; // Re-throw to match test expectations
+        throw err;
       }
     }
   }
 
   private async checkRotation(): Promise<void> {
-    if (!this.logFilePath || !this.options.maxFileSize) {
-      return;
-    }
+    if (!this.logFilePath || !this.options.maxFileSize) return;
 
     try {
       const stats = await fs.stat(this.logFilePath);
@@ -128,20 +131,67 @@ export class Logger {
       await fs.writeFile(this.logFilePath, '', 'utf-8');
     } catch (error) {
       console.error(`Failed to rotate log files: ${(error as Error).message}`);
-      // Don't throw rotation errors to match test expectations
     }
   }
 
-  public logRequest(req: IncomingMessage): void {
-    const { method = 'undefined', url = 'undefined', headers = {} } = req;
-    const userAgent = headers['user-agent'] || 'unknown';
-    const logMessage = `${method} ${url} - ${userAgent}`;
-    void this.log(logMessage, 'info');
+  private formatErrorDetails(details: ErrorDetails): string {
+    const { message, error, context } = details;
+    const parts = [message];
+
+    if (error instanceof Error) {
+      parts.push(`Error: ${error.message}`);
+      if (error.stack) {
+        parts.push(`Stack: ${error.stack}`);
+      }
+      if (error.cause) {
+        parts.push(`Cause: ${error.cause}`);
+      }
+    } else if (error) {
+      parts.push(`Additional Info: ${JSON.stringify(error)}`);
+    }
+
+    if (context && Object.keys(context).length > 0) {
+      parts.push(`Context: ${JSON.stringify(context, null, 2)}`);
+    }
+
+    return parts.join('\n');
   }
 
-  public async logError(error: Error): Promise<void> {
-    const message = `${error.name}: ${error.message}\nStack: ${error.stack}`;
-    await this.log(message, 'error');
+  public async error(messageOrDetails: string | ErrorDetails, error?: Error): Promise<void> {
+    let details: ErrorDetails;
+
+    if (typeof messageOrDetails === 'string') {
+      details = {
+        message: messageOrDetails,
+        error: error
+      };
+    } else {
+      details = messageOrDetails;
+    }
+
+    const formattedMessage = this.formatErrorDetails(details);
+    await this.log(formattedMessage, 'error');
+  }
+
+  public async debug(message: string, context?: Record<string, unknown>): Promise<void> {
+    const formattedMessage = context 
+      ? `${message}\nContext: ${JSON.stringify(context, null, 2)}`
+      : message;
+    await this.log(formattedMessage, 'debug');
+  }
+
+  public async info(message: string, context?: Record<string, unknown>): Promise<void> {
+    const formattedMessage = context 
+      ? `${message}\nContext: ${JSON.stringify(context, null, 2)}`
+      : message;
+    await this.log(formattedMessage, 'info');
+  }
+
+  public async warn(message: string, context?: Record<string, unknown>): Promise<void> {
+    const formattedMessage = context 
+      ? `${message}\nContext: ${JSON.stringify(context, null, 2)}`
+      : message;
+    await this.log(formattedMessage, 'warn');
   }
 
   public async clear(): Promise<void> {
@@ -151,25 +201,15 @@ export class Logger {
       } catch (error) {
         const err = error as Error;
         console.error(`Failed to clear log file: ${err.message}`);
-        throw err; // Re-throw to match test expectations
+        throw err;
       }
     }
   }
 
-  // Convenience methods
-  public async debug(message: string): Promise<void> {
-    await this.log(message, 'debug');
-  }
-
-  public async info(message: string): Promise<void> {
-    await this.log(message, 'info');
-  }
-
-  public async warn(message: string): Promise<void> {
-    await this.log(message, 'warn');
-  }
-
-  public async error(message: string, error: Error): Promise<void> {
-    await this.log(message, 'error');
+  public logRequest(req: IncomingMessage): void {
+    const { method = 'undefined', url = 'undefined', headers = {} } = req;
+    const userAgent = headers['user-agent'] || 'unknown';
+    const logMessage = `${method} ${url} - ${userAgent}`;
+    void this.log(logMessage, 'info');
   }
 }
