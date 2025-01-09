@@ -12,7 +12,7 @@ import { createCache } from '@/utils/cache/CacheManager';
 import { htmlManager } from '@/utils/html/HtmlManager';
 import { corsManager } from '@/utils/security/CorsManager';
 import { Logger, ErrorHandler, CustomError, AeroSSRBundler, etagGenerator } from '@/utils';
-import { DistRequestHandler } from './distHandler';
+import { DistRequestHandler } from '../handlers/DistRequestHandler';
 
 export class AeroSSR {
   public readonly config: Required<AeroSSRConfig>;

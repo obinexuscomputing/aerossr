@@ -169,7 +169,7 @@ export class Logger {
     await this.log(message, 'warn');
   }
 
-  public async error(message: string): Promise<void> {
+  public async error(message: string, error: Error): Promise<void> {
     await this.log(message, 'error');
   }
 }

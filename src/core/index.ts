@@ -1,3 +1,3 @@
 export * from './AeroSSR';
-export * from './distHandler';
+export * from '../handlers/DistRequestHandler';
 export * from './UnifiedBundler';

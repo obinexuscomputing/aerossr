@@ -1,4 +1,9 @@
 import { Server, IncomingMessage, ServerResponse } from 'http';
+import { Logger } from '@/utils/logging';
+import type { CacheStoreBase } from './cache';
+import type { CorsOptions } from './cors';
+import type { ErrorHandler } from './error';
+import type { StaticFileOptions } from './static';
 
 // Base Interfaces
 export interface CacheStore<T> {
@@ -64,19 +69,20 @@ export interface StaticFileOptions {
   compression?: boolean;
   etag?: boolean;
   headers?: Record<string, string>;
+  port?: number;
 }
 
 // Core AeroSSR Types
 export interface AeroSSRConfig {
-  projectPath: string;
-  port: number;
-  compression?: boolean;
-  corsOrigins?: string | CorsOptions;
+  logFilePath?: string;
+  logger: Logger;
+  bundleCache?: CacheStoreBase<string>;
+  templateCache?: CacheStoreBase<string>;
   cacheMaxAge?: number;
   logFilePath: string | null;
   logger?: Logger;
   bundleCache?: CacheStore<string>;
-  templateCache?: CacheStore<string>;
+  staticFileHandler?: typeof StaticFileHandler;
   defaultMeta?: MetaTags;
   loggerOptions?: LoggerOptions;
   staticFileOptions?: StaticFileOptions;
