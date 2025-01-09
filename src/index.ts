@@ -42,9 +42,7 @@ export type {
   StaticFileOptions,
   MiddlewareOptions,
   // Utility types
-  CacheStoreBase as CacheStore,
-  CorsOptionsBase as CorsOptions,
-  MetaTagsBase as MetaTags,
+  CacheStore,
   CorsOptions,
   MetaTags,
   LoggerOptions,
@@ -53,9 +51,7 @@ export type {
   // Router types
   RouteHandler,
   // Error types
-  CustomError,
-  ErrorHandlerOptions,
-  ErrorHandlerOptions
+
   AsyncOptions,
   // Response types
   ResponseMetadata
