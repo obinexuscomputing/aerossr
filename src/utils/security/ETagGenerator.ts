@@ -6,6 +6,9 @@ export interface ETagOptions {
   encoding?: 'hex' | 'base64';
 }
 
+
+
+
 export class ETagGenerator {
   private readonly defaultOptions: Required<ETagOptions>;
   private cache: Map<string, string>;
@@ -140,6 +143,12 @@ export class ETagGenerator {
   public setDefaultOptions(options: Partial<ETagOptions>): void {
     Object.assign(this.defaultOptions, options);
   }
+}
+
+export function generateETag(content: string | Buffer, options: Partial<ETagOptions> = {}): string {
+  const { weak = false, algorithm = 'md5', encoding = 'hex' } = options;
+  const hash = crypto.createHash(algorithm).update(content).digest(encoding);
+  return weak ? `W/"${hash}"` : `"${hash}"`;
 }
 
 // Export singleton instance
