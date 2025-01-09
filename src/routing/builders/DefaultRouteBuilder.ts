@@ -1,4 +1,4 @@
-import { RouteStrategy } from "./types";
+import { RouteStrategy } from "..";
 
 export class DefaultRouteStrategy implements RouteStrategy {
   matches(path: string, pattern: string): boolean {

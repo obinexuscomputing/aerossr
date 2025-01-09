@@ -1,5 +1,6 @@
-import { RouteHandler, Middleware } from "@/types";
-import { RouteMetadata, Route } from "./types";
+import { Middleware } from "../types";
+import { RouteHandler } from "../types";
+import { RouteMetadata, Route } from "../types";
 
 export class RouteBuilder {
     private _pattern: string;
