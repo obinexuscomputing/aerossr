@@ -50,6 +50,8 @@ const configs = [
       ...basePlugins,
       typescript({
         tsconfig: './tsconfig.json',
+        declaration: true,
+        declarationDir: 'dist/esm/types',
         outDir: 'dist/esm',
       }),
     ],
@@ -64,13 +66,14 @@ const configs = [
       preserveModulesRoot: 'src',
       exports: 'named',
       banner,
-    
     },
     external,
     plugins: [
       ...basePlugins,
       typescript({
         tsconfig: './tsconfig.json',
+        declaration: true,
+        declarationDir: 'dist/cjs/types',
         outDir: 'dist/cjs',
       }),
     ],
@@ -100,6 +103,7 @@ const configs = [
         tsconfig: './tsconfig.json',
         declaration: true,
         declarationDir: 'dist/cli/bin/types',
+        outDir: 'dist/cli/bin',
       }),
       {
         name: 'ensure-directories',
@@ -123,7 +127,7 @@ const configs = [
         name: 'make-executable',
         async writeBundle() {
           if (process.platform === 'win32') return;
-          
+
           const files = [
             'dist/cli/bin/index.cjs',
             'dist/cli/bin/index.mjs'
