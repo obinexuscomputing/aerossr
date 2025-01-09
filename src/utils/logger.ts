@@ -44,10 +44,11 @@ export class Logger {
         mkdirSync(logDir, { recursive: true });
       }
     } catch (error) {
+      const err = error as Error;
       console.error(
-        `Logger initialization failed for path: ${this.logFilePath} - ${(error as Error).message}`
+        `Logger initialization failed for path: ${this.logFilePath} - ${err.message}`
       );
-      throw error;
+      throw err; // Re-throw to match test expectations
     }
   }
 
@@ -67,6 +68,13 @@ export class Logger {
     return `[${timestamp}] [${level.toUpperCase()}] ${message}\n`;
   }
 
+  private shouldLog(level: string): boolean {
+    const levels = ['debug', 'info', 'warn', 'error'];
+    const configuredLevel = levels.indexOf(this.options.logLevel);
+    const messageLevel = levels.indexOf(level);
+    return messageLevel >= configuredLevel;
+  }
+
   public async log(message: string, level: 'debug' | 'info' | 'warn' | 'error' = 'info'): Promise<void> {
     if (!this.shouldLog(level)) {
       return;
@@ -78,19 +86,13 @@ export class Logger {
     if (this.logFilePath) {
       try {
         await this.checkRotation();
-        await fs.appendFile(this.logFilePath, formattedMessage, 'utf8');
+        await fs.appendFile(this.logFilePath, formattedMessage, 'utf-8');
       } catch (error) {
-        console.error(`Failed to write to log file: ${(error as Error).message}`);
-        throw error;
+        const err = error as Error;
+        console.error(`Failed to write to log file: ${err.message}`);
+        throw err; // Re-throw to match test expectations
       }
     }
-  }
-
-  private shouldLog(level: string): boolean {
-    const levels = ['debug', 'info', 'warn', 'error'];
-    const configuredLevel = levels.indexOf(this.options.logLevel);
-    const messageLevel = levels.indexOf(level);
-    return messageLevel >= configuredLevel;
   }
 
   private async checkRotation(): Promise<void> {
@@ -111,23 +113,22 @@ export class Logger {
   private async rotateLogFiles(): Promise<void> {
     if (!this.logFilePath) return;
 
-    for (let i = this.options.maxFiles - 1; i > 0; i--) {
-      const oldPath = `${this.logFilePath}.${i}`;
-      const newPath = `${this.logFilePath}.${i + 1}`;
-      try {
+    try {
+      for (let i = this.options.maxFiles - 1; i > 0; i--) {
+        const oldPath = `${this.logFilePath}.${i}`;
+        const newPath = `${this.logFilePath}.${i + 1}`;
         if (existsSync(oldPath)) {
           await fs.rename(oldPath, newPath);
         }
-      } catch (error) {
-        console.error(`Failed to rotate log file: ${(error as Error).message}`);
       }
-    }
 
-    try {
-      await fs.rename(this.logFilePath, `${this.logFilePath}.1`);
-      await fs.writeFile(this.logFilePath, '');
+      if (existsSync(this.logFilePath)) {
+        await fs.rename(this.logFilePath, `${this.logFilePath}.1`);
+      }
+      await fs.writeFile(this.logFilePath, '', 'utf-8');
     } catch (error) {
-      console.error(`Failed to create new log file: ${(error as Error).message}`);
+      console.error(`Failed to rotate log files: ${(error as Error).message}`);
+      // Don't throw rotation errors to match test expectations
     }
   }
 
@@ -146,15 +147,16 @@ export class Logger {
   public async clear(): Promise<void> {
     if (this.logFilePath && existsSync(this.logFilePath)) {
       try {
-        await fs.writeFile(this.logFilePath, '');
+        await fs.writeFile(this.logFilePath, '', 'utf-8');
       } catch (error) {
-        console.error(`Failed to clear log file: ${(error as Error).message}`);
-        throw error;
+        const err = error as Error;
+        console.error(`Failed to clear log file: ${err.message}`);
+        throw err; // Re-throw to match test expectations
       }
     }
   }
 
-  // Debug level convenience methods
+  // Convenience methods
   public async debug(message: string): Promise<void> {
     await this.log(message, 'debug');
   }
