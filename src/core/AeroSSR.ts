@@ -1,19 +1,21 @@
+// src/core/AeroSSR.ts
 import { Server, createServer, IncomingMessage, ServerResponse } from 'http';
 import { promises as fs } from 'fs';
 import { parse as parseUrl } from 'url';
 import path, { join } from 'path';
 import { gzip } from 'zlib';
 import { promisify } from 'util';
+import { Request, RequestContext, Response } from '../http';
+import { RouteContext } from '@/types';
+import { Router } from '../routing/Router';
+import { RouteHandler, Middleware, RouteStrategy } from '@/routing';
 import { StaticFileMiddleware } from '@/middleware/static/StaticFileMiddleware';
-import { RouteHandler, Middleware } from '@/routing';
-import {  AeroSSRConfig, BundleHandler, CorsOptions, StaticFileOptions } from '@/types';
+import { AeroSSRConfig, BundleHandler, CorsOptions, StaticFileOptions } from '@/types';
 import { createCache } from '@/utils/cache/CacheManager';
 import { htmlManager } from '@/utils/html/HtmlManager';
 import { corsManager } from '@/utils/security/CorsManager';
 import { etagGenerator } from '@/utils/security/ETagGenerator';
 import { Logger, ErrorHandler, CustomError, AeroSSRBundler } from '@/utils';
-import { RequestContext } from '@/http';
-
 
 const gzipAsync = promisify(gzip);
 
@@ -21,10 +23,11 @@ export class AeroSSR {
   public readonly config: Required<AeroSSRConfig>;
   public readonly logger: Logger;
   private readonly bundler: AeroSSRBundler;
+  private readonly router: Router;
   public server: Server | null;
   public readonly routes: Map<string, RouteHandler>;
   private readonly middlewares: Middleware[];
-  
+
   constructor(options: Partial<AeroSSRConfig> = {}) {
     // Initialize base configuration first
     const baseConfig = {
@@ -59,16 +62,17 @@ export class AeroSSR {
     } as Required<AeroSSRConfig>;
 
     // Initialize core components
-    this.logger = new Logger({ 
+    this.logger = new Logger({
       logFilePath: this.config.logFilePath,
-      ...this.config.loggerOptions 
+      ...this.config.loggerOptions
     });
-    
+
+    this.router = new Router(new RouteStrategy());
     this.bundler = new AeroSSRBundler(this.config.projectPath);
     this.server = null;
     this.routes = new Map();
     this.middlewares = [];
-    
+
     // Set up default static file handling
     if (!options.staticFileOptions && !options.staticFileHandler) {
       const defaultStaticOptions: StaticFileOptions = {
@@ -97,7 +101,7 @@ export class AeroSSR {
       path.join(projectPath, 'logs'),
       path.join(projectPath, 'src')
     ];
-  
+
     for (const dir of requiredDirs) {
       try {
         await fs.mkdir(dir, { recursive: true });
@@ -118,7 +122,7 @@ export class AeroSSR {
       compression: options.compression ?? this.config.compression,
       etag: options.etag !== false
     };
-  
+
     const staticFileMiddleware = new StaticFileMiddleware(staticOptions);
     this.use(staticFileMiddleware.middleware());
   }
@@ -149,7 +153,7 @@ export class AeroSSR {
     if (typeof handler !== 'function') {
       throw new Error('Route handler must be a function');
     }
-    this.routes.set(path, handler);
+    this.router.add(this.router.route(path).handler(handler));
   }
 
   public clearCache(): void {
@@ -157,97 +161,87 @@ export class AeroSSR {
     this.config.templateCache.clear();
     this.bundler.clearCache();
   }
-
-/**
-   * Execute middleware chain
-   */
-private async executeMiddlewares(
-  req: IncomingMessage,
-  res: ServerResponse,
-  index = 0
-): Promise<void> {
-  // Create request context
-  const context: RequestContext = {
-    req,
-    res,
-    params: {},
-    query: {},
-    state: {}
-  };
-
-  // Early return if no middlewares
-  if (index >= this.middlewares.length) {
-    return;
+  private createContext(rawReq: IncomingMessage, rawRes: ServerResponse): RouteContext {
+    const req = new Request(rawReq);
+    const res = new Response(rawRes);
+    return {
+      req,
+      res,
+      params: {},
+      query: {},
+      state: {},
+      next: async () => {}
+    };
   }
 
-  const chain = [...this.middlewares];
-  let currentIndex = index;
-
-  // Create middleware chain executor
-  const executeChain = async (): Promise<void> => {
-    const middleware = chain[currentIndex];
-    if (!middleware) {
+  private async executeMiddlewares(context: RequestContext): Promise<void> {
+    // Early return if no middlewares
+    if (this.middlewares.length === 0) {
       return;
     }
 
-    try {
-      currentIndex++;
-      await middleware(context);
-    } catch (error) {
-      const middlewareError = new Error(
-        `Middleware execution failed: ${error instanceof Error ? error.message : String(error)}`
-      ) as CustomError;
-      if (error instanceof Error) {
-        middlewareError.cause = error;
+    const chain = [...this.middlewares];
+    let currentIndex = 0;
+
+    // Create middleware chain executor
+    const executeChain = async (): Promise<void> => {
+      const middleware = chain[currentIndex];
+      if (!middleware) {
+        return;
       }
-      throw middlewareError;
-    }
-  };
 
-  await executeChain();
-}
+      try {
+        currentIndex++;
+        await middleware(context);
+      } catch (error) {
+        const middlewareError = new Error(
+          `Middleware execution failed: ${error instanceof Error ? error.message : String(error)}`
+        ) as CustomError;
+        if (error instanceof Error) {
+          middlewareError.cause = error;
+        }
+        throw middlewareError;
+      }
+    };
 
+    await executeChain();
+  }
 
   private async handleRequest(
-    req: IncomingMessage,
-    res: ServerResponse
+    rawReq: IncomingMessage,
+    rawRes: ServerResponse
   ): Promise<void> {
     try {
-      this.logger.log(`Request received: ${req.method} ${req.url}`);
-      
+      this.logger.log(`Request received: ${rawReq.method} ${rawReq.url}`);
+
+      const context = this.createContext(rawReq, rawRes);
+
       // Handle CORS preflight
-      if (req.method === 'OPTIONS') {
-        corsManager.handlePreflight(res, this.config.corsOrigins as CorsOptions);
+      if (context.req.method === 'OPTIONS') {
+        corsManager.handlePreflight(context.res.raw);
         return;
       }
-  
+
       // Set CORS headers
-      corsManager.setCorsHeaders(res, this.config.corsOrigins as CorsOptions);
-  
+      corsManager.setCorsHeaders(context.res.raw);
+
       // Execute middleware chain
-      await this.executeMiddlewares(req, res);
-  
-      const parsedUrl = parseUrl(req.url || '', true);
+      await this.executeMiddlewares(context);
+
+      const parsedUrl = parseUrl(rawReq.url || '', true);
       const pathname = parsedUrl.pathname || '/';
-  
-      // Route handling
-      const routeHandler = this.routes.get(pathname);
-      if (routeHandler) {
-        await routeHandler(req, res);
-        return;
-      }
-  
+
       // Special routes
       if (pathname === '/dist') {
-        await this.handleBundle(req, res, parsedUrl.query);
+        await this.handleBundle(context.req.raw, context.res.raw, parsedUrl.query);
         return;
       }
-  
-      // Default handler
-      await this.handleDefaultRequest(req, res);
+
+      // Route handling
+      await this.router.handle(context.req.raw, context.res.raw);
     } catch (err) {
       const error = err as CustomError;
-      await ErrorHandler.handleErrorStatic(error, req, res, { logger: this.logger });
+      await ErrorHandler.handleErrorStatic(error, rawReq, rawRes, { logger: this.logger });
     }
   }
 
@@ -259,30 +253,25 @@ private async executeMiddlewares(
     try {
       const entryPoint = (query.entryPoint as string) || 'main.js';
 
-      // Generate bundle
       const bundle = await this.bundler.generateBundle(entryPoint, {
         minify: true,
         sourceMap: false
       });
 
-      // Generate ETag
       const etag = etagGenerator.generate(bundle.code);
 
-      // Handle conditional requests
       if (req.headers['if-none-match'] === etag) {
         res.writeHead(304);
         res.end();
         return;
       }
 
-      // Set headers
       const headers = {
         'Content-Type': 'application/javascript',
         'Cache-Control': `public, max-age=${this.config.cacheMaxAge}`,
         'ETag': etag,
       };
 
-      // Handle compression
       if (this.config.compression && req.headers['accept-encoding']?.includes('gzip')) {
         const compressed = await gzipAsync(bundle.code);
         headers['Content-Encoding'] = 'gzip';
@@ -304,9 +293,6 @@ private async executeMiddlewares(
     }
   }
 
-  /**
-   * Handle default request for static files
-   */
   private async handleDefaultRequest(
     req: IncomingMessage,
     res: ServerResponse
@@ -323,20 +309,18 @@ private async executeMiddlewares(
       const meta = {
         title: `Page - ${pathname}`,
         description: `Content for ${pathname}`,
-        ...this.config.defaultMeta // Merge with default meta
+        ...this.config.defaultMeta
       };
 
       // Inject meta tags
       html = htmlManager.injectMetaTags(html, meta);
 
-      // Set response headers
       const headers = {
         'Content-Type': 'text/html',
         'Cache-Control': 'no-cache',
         'X-Content-Type-Options': 'nosniff'
       };
 
-      // Send response
       if (!res.headersSent) {
         res.writeHead(200, headers);
       }
@@ -354,7 +338,6 @@ private async executeMiddlewares(
       throw requestError;
     }
   }
-
 
   public async start(): Promise<Server> {
     return new Promise((resolve, reject) => {
