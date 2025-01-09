@@ -1,41 +1,77 @@
-// src/core/AeroSSR.ts
 import { Server, createServer, IncomingMessage, ServerResponse } from 'http';
-import { promises as fs } from 'fs';
+import fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import { parse as parseUrl } from 'url';
 import path, { join } from 'path';
-import { gzip } from 'zlib';
-import { promisify } from 'util';
 import { Request, RequestContext, Response } from '../http';
 import { Router } from '../routing/Router';
 import { RouteHandler, Middleware, RouteStrategy } from '@/routing';
 import { StaticFileMiddleware } from '@/middleware/static/StaticFileMiddleware';
-import { AeroSSRConfig, BundleHandler, CorsOptions, StaticFileOptions } from '@/types';
+import { AeroSSRConfig, CorsOptions, StaticFileOptions } from '@/types';
 import { createCache } from '@/utils/cache/CacheManager';
 import { htmlManager } from '@/utils/html/HtmlManager';
 import { corsManager } from '@/utils/security/CorsManager';
-import { etagGenerator } from '@/utils/security/ETagGenerator';
-import { Logger, ErrorHandler, CustomError, AeroSSRBundler } from '@/utils';
-
-const gzipAsync = promisify(gzip);
+import { Logger, ErrorHandler, CustomError, AeroSSRBundler, etagGenerator } from '@/utils';
+import { DistRequestHandler } from './distHandler';
 
 export class AeroSSR {
   public readonly config: Required<AeroSSRConfig>;
   public readonly logger: Logger;
   private readonly bundler: AeroSSRBundler;
+  private readonly distHandler: DistRequestHandler;
   private readonly router: Router;
-  public server: Server | null;
+  public server: Server | null = null;
   public readonly routes: Map<string, RouteHandler>;
   private readonly middlewares: Middleware[];
 
   constructor(options: Partial<AeroSSRConfig> = {}) {
-    // Initialize base configuration first
-    const baseConfig = {
-      projectPath: path.resolve(options.projectPath || process.cwd()),
-      publicPath: path.resolve(options.projectPath || process.cwd(), 'public'),
+    // Step 1: Initialize base configuration
+    const baseConfig = this.initializeBaseConfig(options);
+
+    // Step 2: Create required directories
+    this.createRequiredDirectoriesSync(baseConfig.projectPath);
+
+    // Step 3: Initialize logger early for error tracking
+    this.logger = new Logger({
+      logFilePath: baseConfig.logFilePath,
+      ...baseConfig.loggerOptions
+    });
+
+    // Step 4: Initialize core components
+    this.bundler = new AeroSSRBundler(baseConfig.projectPath);
+    this.router = new Router(new RouteStrategy());
+    this.routes = new Map();
+    this.middlewares = [];
+
+    // Step 5: Complete configuration with derived components
+    this.config = this.initializeFullConfig(baseConfig, options);
+
+    // Step 6: Initialize handlers
+    this.distHandler = new DistRequestHandler(
+      this.bundler, 
+      this.config, 
+      this.logger
+    );
+
+    // Step 7: Initialize static file handling
+    this.initializeStaticFileHandling(options);
+
+    // Step 8: Initialize CORS
+    corsManager.updateDefaults(this.config.corsOrigins as CorsOptions);
+
+    // Step 9: Validate final configuration
+    this.validateConfig();
+  }
+  
+  private initializeBaseConfig(options: Partial<AeroSSRConfig>): AeroSSRConfig {
+    const projectPath = path.resolve(options.projectPath || process.cwd());
+    return {
+      projectPath,
+      publicPath: path.resolve(projectPath, 'public'),
       port: options.port || 3000,
       compression: options.compression !== false,
       cacheMaxAge: options.cacheMaxAge || 3600,
-      logFilePath: options.logFilePath || path.join(process.cwd(), 'logs', 'server.log'),
+      logFilePath: options.logFilePath || path.join(projectPath, 'logs', 'server.log'),
       loggerOptions: options.loggerOptions || {},
       corsOrigins: corsManager.normalizeCorsOptions(options.corsOrigins),
       defaultMeta: {
@@ -46,55 +82,18 @@ export class AeroSSR {
         ...options.defaultMeta,
       },
     } as AeroSSRConfig;
-
-    // Create required directories
-    this.createRequiredDirectories(baseConfig.projectPath);
-
-    // Complete configuration with derived components
-    this.config = {
+  }
+  private initializeFullConfig(baseConfig: AeroSSRConfig, options: Partial<AeroSSRConfig>): Required<AeroSSRConfig> {
+    return {
       ...baseConfig,
       bundleCache: options.bundleCache || createCache<string>(),
       templateCache: options.templateCache || createCache<string>(),
       errorHandler: options.errorHandler || ErrorHandler.handleErrorStatic,
       staticFileHandler: options.staticFileHandler || this.handleDefaultRequest.bind(this),
-      bundleHandler: options.bundleHandler as BundleHandler || this.handleBundle.bind(this),
-    } as Required<AeroSSRConfig>;
-
-    // Initialize core components
-    this.logger = new Logger({
-      logFilePath: this.config.logFilePath,
-      ...this.config.loggerOptions
-    });
-
-    this.router = new Router(new RouteStrategy());
-    this.bundler = new AeroSSRBundler(this.config.projectPath);
-    this.server = null;
-    this.routes = new Map();
-    this.middlewares = [];
-
-    // Set up default static file handling
-    if (!options.staticFileOptions && !options.staticFileHandler) {
-      const defaultStaticOptions: StaticFileOptions = {
-        root: 'public',
-        maxAge: 86400,
-        index: ['index.html'],
-        dotFiles: 'ignore',
-        compression: this.config.compression,
-        etag: true
-      };
-      this.setupStaticFileHandling(defaultStaticOptions);
-    } else if (options.staticFileOptions) {
-      this.setupStaticFileHandling(options.staticFileOptions);
-    }
-
-    // Update CORS manager defaults
-    corsManager.updateDefaults(this.config.corsOrigins as CorsOptions);
-
-    // Validate configuration
-    this.validateConfig();
+      bundleHandler: this.distHandler.handleDistRequest.bind(this.distHandler),
+    } as unknown as Required<AeroSSRConfig>;
   }
-
-  private async createRequiredDirectories(projectPath: string): Promise<void> {
+  private createRequiredDirectoriesSync(projectPath: string): void {
     const requiredDirs = [
       path.join(projectPath, 'public'),
       path.join(projectPath, 'logs'),
@@ -103,11 +102,12 @@ export class AeroSSR {
 
     for (const dir of requiredDirs) {
       try {
-        await fs.mkdir(dir, { recursive: true });
-      } catch (error) {
-        if (this.logger) {
-          this.logger.log(`Failed to create directory ${dir}: ${error}`);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
         }
+      } catch (error) {
+        // We'll log this later once logger is initialized
+        console.warn(`Failed to create directory ${dir}: ${error}`);
       }
     }
   }
@@ -126,6 +126,22 @@ export class AeroSSR {
     this.use(staticFileMiddleware.middleware());
   }
 
+  private initializeStaticFileHandling(options: Partial<AeroSSRConfig>): void {
+    if (!options.staticFileOptions && !options.staticFileHandler) {
+      const defaultStaticOptions: StaticFileOptions = {
+        root: 'public',
+        maxAge: 86400,
+        index: ['index.html'],
+        dotFiles: 'ignore',
+        compression: this.config.compression,
+        etag: true
+      };
+      this.setupStaticFileHandling(defaultStaticOptions);
+    } else if (options.staticFileOptions) {
+      this.setupStaticFileHandling(options.staticFileOptions);
+    }
+  }
+
   private validateConfig(): void {
     if (this.config.port < 0 || this.config.port > 65535) {
       throw new Error('Invalid port number');
@@ -133,10 +149,11 @@ export class AeroSSR {
     if (this.config.cacheMaxAge < 0) {
       throw new Error('Cache max age cannot be negative');
     }
-    if (this.config.errorHandler && typeof this.config.errorHandler !== 'function') {
+    if (typeof this.config.errorHandler !== 'function') {
       throw new Error('Error handler must be a function');
     }
   }
+
 
   public use(middleware: (req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => Promise<void>): void {
     if (typeof middleware !== 'function') {
@@ -285,7 +302,7 @@ export class AeroSSR {
       };
 
       if (this.config.compression && req.headers['accept-encoding']?.includes('gzip')) {
-        const compressed = await gzipAsync(bundle.code);
+        const compressed = gzipAsync(bundle.code);
         headers['Content-Encoding'] = 'gzip';
         headers['Vary'] = 'Accept-Encoding';
         res.writeHead(200, headers);
@@ -305,6 +322,10 @@ export class AeroSSR {
     }
   }
 
+  public async handleDistRequest(req: Request, res: Response): Promise<void> {
+    await this.distHandler.handleDistRequest(req, res);
+  }    
+
   private async handleDefaultRequest(
     req: IncomingMessage,
     res: ServerResponse
@@ -315,7 +336,7 @@ export class AeroSSR {
 
       // Template lookup
       const htmlPath = join(this.config.projectPath, 'public', 'index.html');
-      let html = await fs.readFile(htmlPath, 'utf-8');
+      let html = await fsPromises.readFile(htmlPath, 'utf-8');
 
       // Meta tags
       const meta = {
@@ -397,3 +418,7 @@ export class AeroSSR {
 }
 
 export default AeroSSR;
+
+function gzipAsync(code: string) {
+  throw new Error('Function not implemented.');
+}
