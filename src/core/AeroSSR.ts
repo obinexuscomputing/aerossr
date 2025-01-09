@@ -6,12 +6,12 @@ import { gzip } from 'zlib';
 import { promisify } from 'util';
 import { StaticFileMiddleware } from '@/middleware/static/StaticFileMiddleware';
 import { RouteHandler, Middleware } from '@/routing';
-import { AeroSSRConfig, BundleHandler, StaticFileOptions } from '@/types';
+import { AeroSSRBundler, AeroSSRConfig, BundleHandler, CorsOptions, StaticFileOptions } from '@/types';
 import { createCache } from '@/utils/cache/CacheManager';
 import { htmlManager } from '@/utils/html/HtmlManager';
 import { corsManager } from '@/utils/security/CorsManager';
 import { etagGenerator } from '@/utils/security/ETagGenerator';
-import { CorsOptions } from '.';
+import { Logger, ErrorHandler, CustomError } from '@/utils';
 
 
 const gzipAsync = promisify(gzip);

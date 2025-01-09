@@ -1,10 +1,10 @@
 import { Command } from 'commander';
-import { AeroSSR } from '../';
-import { aeroCommands, MiddlewareConfig } from './commands';
 import { existsSync } from 'fs';
 import { promises as fs } from 'fs';
 import { join, resolve } from 'path';
-import { Logger } from '../utils/Logger';
+import { Logger } from '../../src/utils/';
+import AeroSSR from '@/core/AeroSSR';
+import { MiddlewareConfig, aeroCommands } from './commands/commands';
 
 export interface AeroConfig {
   port: number;

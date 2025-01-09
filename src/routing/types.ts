@@ -8,7 +8,8 @@ export interface RouteContext {
   next: () => Promise<void>;
 }
 
-export type RouteHandler = (context: RouteContext) => Promise<void>;
+
+export type RouteHandler = (req: IncomingMessage, res: ServerResponse) => Promise<void>;
 export type Middleware = (context: RouteContext, next: () => Promise<void>) => Promise<void>;
 
 export interface RouteStrategy {
