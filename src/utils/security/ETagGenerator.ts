@@ -1,4 +1,3 @@
-// src/utils/ETagGenerator.ts
 import * as crypto from 'crypto';
 
 export interface ETagOptions {
