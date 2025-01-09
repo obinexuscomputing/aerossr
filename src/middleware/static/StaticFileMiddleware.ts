@@ -102,7 +102,7 @@ export class StaticFileMiddleware {
     res: ServerResponse
   ): Promise<void> {
     const mimeType = this.getMimeType(path.extname(filepath).toLowerCase());
-    const headers = {
+    const headers: Record<string, string> = {
       'Content-Type': mimeType,
       'Cache-Control': `public, max-age=${this.maxAge}`,
       'Last-Modified': stats.mtime.toUTCString(),
