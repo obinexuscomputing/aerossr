@@ -169,3 +169,16 @@ export interface CacheItemOptions {
     /** Update item metadata for eviction decisions */
     updateMetadata(key: string, item: CacheItem<T>): void;
   }
+
+  
+export interface CacheStoreBase<T> {
+
+  size: number;
+
+  get(key: string): T | undefined;
+
+  set(key: string, value: T): void;
+
+  clear(): void;
+
+}

@@ -74,21 +74,20 @@ export interface StaticFileOptions {
 
 // Core AeroSSR Types
 export interface AeroSSRConfig {
-  logFilePath?: string;
+  port: number;
+  logFilePath: string;
+  projectPath: string;
   logger: Logger;
   bundleCache?: CacheStoreBase<string>;
   templateCache?: CacheStoreBase<string>;
   cacheMaxAge?: number;
-  logFilePath: string | null;
-  logger?: Logger;
-  bundleCache?: CacheStore<string>;
   staticFileHandler?: typeof StaticFileHandler;
   defaultMeta?: MetaTags;
   loggerOptions?: LoggerOptions;
   staticFileOptions?: StaticFileOptions;
   errorHandler?: ErrorHandler;
-  staticFileHandler?: StaticFileHandler;
   bundleHandler?: BundleHandler;
+  corsOrigins?: CorsOptions;
 }
 
 // Middleware Types
@@ -185,6 +184,43 @@ export declare class AeroSSR {
 export type RequiredConfig = Required<AeroSSRConfig> & {
   corsOrigins: Required<CorsOptions>;
 };
+import { Logger } from '@/utils/logging';
+import { CacheStoreBase } from './cache';
+import { CorsOptions } from './cors';
+import { ErrorHandler } from './error';
+import { StaticFileOptions } from './static';
 
+export interface AeroSSRConfig {
+  // Required properties
+  projectPath: string;
+  logger: Logger;  // Make logger required
+
+  // Optional properties with defaults
+  publicPath?: string;
+  port?: number;
+  compression?: boolean;
+  cacheMaxAge?: number;
+  logFilePath?: string;
+  loggerOptions?: object;
+  corsOrigins?: string | CorsOptions;
+  bundleCache?: CacheStoreBase<string>;
+  templateCache?: CacheStoreBase<string>;
+  
+  // Optional handlers and middleware
+  errorHandler?: ErrorHandler;
+  staticFileOptions?: StaticFileOptions;
+  
+  // Optional metadata
+  defaultMeta?: {
+    title?: string;
+    description?: string;
+    charset?: string;
+    viewport?: string;
+    [key: string]: string | undefined;
+  };
+}
+
+// Re-export the type to avoid conflicts
+export type { AeroSSRConfig as AeroSSRConfigType } from './aerossr';
 // Export default
 export default AeroSSR;

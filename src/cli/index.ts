@@ -5,7 +5,7 @@ import { join, resolve } from 'path';
 import { Logger } from '../../src/utils/';
 import AeroSSR from '@/core/AeroSSR';
 import { MiddlewareConfig, aeroCommands } from './commands/commands';
-import { AeroSSRConfig } from '@/types/aerossr';
+import { AeroSSRConfig } from '@/types';
 
 export interface AeroConfig {
   port: number;
