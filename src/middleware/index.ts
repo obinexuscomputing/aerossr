@@ -1,2 +1,2 @@
 export * from './security/';
-export * from './static'
+export * from './static/'
