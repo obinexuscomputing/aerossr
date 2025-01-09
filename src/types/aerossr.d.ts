@@ -193,7 +193,8 @@ import { StaticFileOptions } from './static';
 export interface AeroSSRConfig {
   // Required properties
   projectPath: string;
-  logger: Logger;  // Make logger required
+  publicPath?: string;
+    logger: Logger;  // Make logger required
 
   // Optional properties with defaults
   publicPath?: string;
