@@ -1,5 +1,5 @@
 
-import { CacheStoreBase } from "@/types";
+import { CacheStoreBase } from "@/types/index.";
 
 export interface CacheItem<T> {
   value: T;

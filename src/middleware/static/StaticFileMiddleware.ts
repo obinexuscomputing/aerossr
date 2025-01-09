@@ -5,7 +5,7 @@ import { createGzip, gzip } from 'zlib';
 import { promisify } from 'util';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Middleware } from '@/routing';
-import { StaticFileOptions } from '@/types';
+import { StaticFileOptions } from '@/types/index.';
 import { etagGenerator } from '@/utils/security/ETagGenerator';
 
 

@@ -141,3 +141,28 @@ export {
 
 // Export utility type for function parameters
 export type AnyFunction = (...args: any[]) => any;
+
+
+export * from './aerossr';
+export { default as AeroSSR } from './aerossr';
+
+// Core types
+export type {
+  IncomingMessage,
+  ServerResponse,
+  Server
+} from 'http';
+
+// Utility types
+export type AnyFunction = (...args: any[]) => any;
+
+export type HTTPMethod = 
+  | 'GET'
+  | 'POST'
+  | 'PUT'
+  | 'DELETE'
+  | 'PATCH'
+  | 'HEAD'
+  | 'OPTIONS'
+  | 'TRACE'
+  | 'CONNECT';
