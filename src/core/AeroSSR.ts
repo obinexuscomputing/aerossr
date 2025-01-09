@@ -4,15 +4,15 @@ import { parse as parseUrl } from 'url';
 import path, { join } from 'path';
 import { gzip } from 'zlib';
 import { promisify } from 'util';
-import { Logger } from './utils/Logger';
-import { createCache } from './utils/CacheManager';
-import { corsManager, CorsOptions } from './utils/CorsManager';
-import { etagGenerator } from './utils/ETagGenerator';
-import { ErrorHandler, CustomError } from './utils/ErrorHandler';
-import { htmlManager } from './utils/HtmlManager';
-import { AeroSSRBundler } from './utils/Bundler';
-import { AeroSSRConfig, Middleware, RouteHandler, BundleHandler, StaticFileOptions } from './types';
-import { StaticFileMiddleware } from './middlewares';
+import { StaticFileMiddleware } from '@/middleware/static/StaticFileMiddleware';
+import { RouteHandler, Middleware } from '@/routing';
+import { AeroSSRConfig, BundleHandler, StaticFileOptions } from '@/types';
+import { createCache } from '@/utils/cache/CacheManager';
+import { htmlManager } from '@/utils/html/HtmlManager';
+import { corsManager } from '@/utils/security/CorsManager';
+import { etagGenerator } from '@/utils/security/ETagGenerator';
+import { CorsOptions } from '.';
+
 
 const gzipAsync = promisify(gzip);
 
