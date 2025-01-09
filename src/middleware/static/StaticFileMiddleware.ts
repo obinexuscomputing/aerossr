@@ -4,8 +4,10 @@ import * as path from 'path';
 import { createGzip, gzip } from 'zlib';
 import { promisify } from 'util';
 import { IncomingMessage, ServerResponse } from 'http';
+import { Middleware } from '@/routing';
+import { StaticFileOptions } from '@/types';
+import { etagGenerator } from '@/utils/security/ETagGenerator';
 
-import { etagGenerator, Middleware, StaticFileOptions } from '../types';
 
 const gzipAsync = promisify(gzip);
 

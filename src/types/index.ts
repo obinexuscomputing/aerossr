@@ -1,43 +1,34 @@
-// types/index.ts
+// src/types/index.ts
 import type { IncomingMessage, ServerResponse } from 'http';
 
-// Core Base Interfaces
-export interface CacheStoreBase<T> {
+// Core Storage Interfaces
+export interface CacheStore<T> {
   size: number;
   get(key: string): T | undefined;
   set(key: string, value: T): void;
   clear(): void;
 }
 
-export interface CorsOptionsBase {
-  origins?: string | string[];
-  methods?: string[];
-  allowedHeaders?: string[];
-  exposedHeaders?: string[];
-  credentials?: boolean;
-  maxAge?: number;
-}
+// HTTP/Server Types
+export type HTTPMethod = 
+  | 'GET'
+  | 'POST'
+  | 'PUT'
+  | 'DELETE'
+  | 'PATCH'
+  | 'HEAD'
+  | 'OPTIONS'
+  | 'TRACE'
+  | 'CONNECT';
 
-export interface MetaTagsBase {
-  title?: string;
-  description?: string;
-  charset?: string;
-  viewport?: string;
-  [key: string]: string | undefined;
-}
-
-export interface LoggerOptionsBase {
-  logFilePath?: string | null;
-  logLevel?: 'debug' | 'info' | 'warn' | 'error';
-}
-
-// Core Type Definitions
+// Middleware Types
 export type Middleware = (
   req: IncomingMessage,
   res: ServerResponse,
   next: () => Promise<void>
 ) => Promise<void>;
 
+// Handler Types
 export type RouteHandler = (
   req: IncomingMessage,
   res: ServerResponse
@@ -49,7 +40,32 @@ export type ErrorHandler = (
   res: ServerResponse
 ) => Promise<void>;
 
-// File Handling Types
+// Configuration Interfaces
+export interface CorsOptions {
+  origins?: string | string[];
+  methods?: string[];
+  allowedHeaders?: string[];
+  exposedHeaders?: string[];
+  credentials?: boolean;
+  maxAge?: number;
+}
+
+export interface MetaTags {
+  title?: string;
+  description?: string;
+  charset?: string;
+  viewport?: string;
+  [key: string]: string | undefined;
+}
+
+export interface LoggerOptions {
+  logFilePath?: string | null;
+  logLevel?: 'debug' | 'info' | 'warn' | 'error';
+  format?: 'json' | 'text';
+  maxFileSize?: number;
+  maxFiles?: number;
+}
+
 export interface StaticFileOptions {
   root: string;
   maxAge?: number;
@@ -60,6 +76,22 @@ export interface StaticFileOptions {
   headers?: Record<string, string>;
 }
 
+// Utility Types
+export interface AsyncResult<T> {
+  success: boolean;
+  data?: T;
+  error?: Error;
+}
+
+export interface AsyncOptions {
+  timeout?: number;
+  retries?: number;
+  backoff?: 'fixed' | 'exponential';
+  backoffDelay?: number;
+  onRetry?: (error: Error, attempt: number) => void;
+}
+
+// Handler Types
 export type StaticFileHandler = (
   req: IncomingMessage,
   res: ServerResponse,
@@ -78,26 +110,7 @@ export type TemplateHandler = (
   templatePath: string
 ) => Promise<void>;
 
-export type AnyFunction = (...args: any[]) => any;
-
-export interface AsyncResult<T> {
-  success: boolean;
-  data?: T;
-  error?: Error;
-}
-
-export interface AsyncOptions {
-  timeout?: number;
-  retries?: number;
-  onRetry?: (error: Error, attempt: number) => void;
-}
-
-export interface CorsOptions extends CorsOptionsBase {}
-
-export interface MetaTags extends MetaTagsBase {}
-
-export interface LoggerOptions extends LoggerOptionsBase {}
-
+// Main Configuration Interface
 export interface AeroSSRConfig {
   projectPath: string;
   port?: number;
@@ -105,53 +118,26 @@ export interface AeroSSRConfig {
   corsOrigins?: string | CorsOptions;
   compression?: boolean;
   logFilePath?: string | null;
-  bundleCache?: CacheStoreBase<string>;
-  templateCache?: CacheStoreBase<string>;
+  bundleCache?: CacheStore<string>;
+  templateCache?: CacheStore<string>;
   defaultMeta?: MetaTags;
   loggerOptions?: LoggerOptions;
   staticFileOptions?: StaticFileOptions;
-
   errorHandler?: ErrorHandler;
   staticFileHandler?: StaticFileHandler;
   bundleHandler?: BundleHandler;
 }
 
-// Utility Types
-export interface AsyncResult<T> {
-  success: boolean;
-  data?: T;
-  error?: Error;
-}
-
-export type AsyncHandler<T> = (...args: any[]) => Promise<AsyncResult<T>>;
-
-
-// Re-export utility types
-export type { ServerResponse, IncomingMessage } from 'http';
-export * from '../utils/CacheManager';
-export * from '../utils/CorsManager';
-export * from '../utils/HtmlManager';
-export * from '../utils/Logger';
-export * from '../utils/ErrorHandler';
-export * from '../utils/ETagGenerator';
-export * from '../utils/bundler.ts';
-export * from '../utils/AsyncUtils';
-export * from '../utils/CookieManager';
-export * from '../utils/AsyncUtils';
-
-// Create union type for all possible HTTP methods
-export type HTTPMethod = 
-  | 'GET'
-  | 'POST'
-  | 'PUT'
-  | 'DELETE'
-  | 'PATCH'
-  | 'HEAD'
-  | 'OPTIONS'
-  | 'TRACE'
-  | 'CONNECT';
-
-// Create RequiredConfig type with all required fields
+// Required Configuration Type
 export type RequiredConfig = Required<AeroSSRConfig> & {
   corsOrigins: Required<CorsOptions>;
 };
+
+// Re-export Node.js types
+export {
+  IncomingMessage,
+  ServerResponse
+} from 'http';
+
+// Export utility type for function parameters
+export type AnyFunction = (...args: any[]) => any;
