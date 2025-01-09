@@ -1,0 +1,107 @@
+{
+  "name": "@obinexuscomputing/aerossr",
+  "version": "0.1.1",
+  "type": "module",
+  "description": "A Node.js library for server-side rendering (SSR) with TypeScript.",
+  "author": {
+    "name": "Nnamdi Michael Okpala",
+    "email": "okpalan@protonmail.com"
+  },
+  "funding": {
+    "type": "individual",
+    "url": "https://buymeacoffee.com/obinexuscomputing"
+  },
+  "keywords": [
+    "ssr",
+    "server-side rendering",
+    "typescript",
+    "nodejs",
+    "aerossr",
+    "obinexuscomputing",
+    "obinexuscomputing/aerossr"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./cli": {
+      "types": "./dist/types/cli/index.d.ts",
+      "import": "./dist/cli/index.mjs",
+      "require": "./dist/cli/index.cjs"
+    },
+    "./middlewares": {
+      "types": "./dist/types/middlewares/index.d.ts",
+      "import": "./dist/esm/middlewares/index.js",
+      "require": "./dist/cjs/middlewares/index.js"
+    },
+    "./utils": {
+      "types": "./dist/types/utils/index.d.ts",
+      "import": "./dist/esm/utils/index.js",
+      "require": "./dist/cjs/utils/index.js"
+    }
+  },
+  "bin": {
+    "aerossr": "./scripts/bin/aerossr.mjs"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "src",
+    "docs",
+    "scripts/",
+    "examples/"
+  ],
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "scripts": {
+    "build": "rimraf dist && rollup -c",
+    "build:cli": "node scripts/make-cli-executable.cjs",
+    "prepare": "npm run build && npm run build:cli",
+    "clean": "rimraf dist coverage",
+    "lint": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\" --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"__tests__/**/*.ts\"",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "prepublishOnly": "npm run build && npm run build:cli",
+    "postinstall": "node ./scripts/chmod-cli.cjs"
+  },
+  "dependencies": {
+    "commander": "^13.0.0",
+    "jest-environment-jsdom": "^29.7.0"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@rollup/plugin-alias": "^5.1.1",
+    "@rollup/plugin-commonjs": "^28.0.2",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.5",
+    "jest": "^29.7.0",
+    "rimraf": "^6.0.1",
+    "rollup": "^4.29.1",
+    "rollup-plugin-copy": "^3.5.0",
+    "rollup-plugin-dts": "^6.1.1",
+    "ts-jest": "^29.2.5",
+    "ts-jest-resolver": "^2.0.1",
+    "ts-node": "^10.9.2",
+    "tslib": "^2.8.1"
+  },
+  "peerDependencies": {
+    "typescript": ">=4.7.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

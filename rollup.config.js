@@ -53,6 +53,8 @@ const configs = [
         declaration: true,
         declarationDir: 'dist/esm/types',
         outDir: 'dist/esm',
+        outputToFilesystem: true, // Suppress warning
+
       }),
     ],
   },
@@ -75,6 +77,8 @@ const configs = [
         declaration: true,
         declarationDir: 'dist/cjs/types',
         outDir: 'dist/cjs',
+        outputToFilesystem: true, // Suppress warning
+
       }),
     ],
   },
@@ -104,6 +108,7 @@ const configs = [
         declaration: true,
         declarationDir: 'dist/cli/bin/types',
         outDir: 'dist/cli/bin',
+        outputToFilesystem: true, // Suppress warning
       }),
       {
         name: 'ensure-directories',
