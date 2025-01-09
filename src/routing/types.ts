@@ -59,3 +59,40 @@ export interface RouteStrategy {
 
 export type RouteHandler = (context: RouteContext) => Promise<void>;
 export type Middleware = (req: IncomingMessage, res: ServerResponse, next: () => Promise<void>, ...args: any[]) => Promise<void>;
+
+export interface RouteStrategy {
+  matches(path: string, pattern: string): boolean;
+  extractParams(path: string, pattern: string): Record<string, string>;
+  extractQuery(url: string): Record<string, string | string[]>;
+}
+
+export interface Route {
+  pattern: string;
+  method: string;
+  handler: RouteHandler;
+  middleware: Middleware[];
+  metadata?: RouteMetadata;
+}
+
+export interface RouteMetadata {
+  description?: string;
+  tags?: string[];
+  parameters?: Record<string, ParameterMetadata>;
+}
+
+export interface ParameterMetadata {
+  type: string;
+  required?: boolean;
+  description?: string;
+}
+
+export interface RouteMatch {
+  route: Route;
+  params: Record<string, string>;
+}
+
+export interface RouteObserver {
+  onRouteMatched(route: Route): void;
+  onRouteExecuted(route: Route, duration: number): void;
+  onRouteError(route: Route, error: Error): void;
+}
