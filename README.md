@@ -1,38 +1,33 @@
+Based on the provided documents, I'll help revise the README.md for AeroSSR to be more accurate and comprehensive.
+
 # AeroSSR
 
 [![npm version](https://badge.fury.io/js/@obinexuscomputing%2Faerossr.svg)](https://www.npmjs.com/package/@obinexuscomputing/aerossr)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 
-A high-performance, TypeScript-first server-side rendering (SSR) framework for Node.js applications.
+A high-performance, TypeScript-first server-side rendering (SSR) and bundling framework for Node.js applications.
 
 ## Key Features
 
-- 🚀 High-performance SSR with caching and compression
-- 📁 Advanced static file serving with ETag support
-- 🔌 Flexible middleware system with async/await
-- 🔒 Built-in security features (CORS, rate limiting)
-- 📝 Comprehensive TypeScript definitions
-- 🛠️ CLI tools for project setup and management
+- 🚀 High-performance SSR with built-in bundling
+- 📦 Advanced module bundling with dependency resolution
+- 🔒 Built-in security middleware and headers
+- 🌐 Configurable CORS and static file serving
+- 📝 Comprehensive TypeScript support
+- 🛠️ CLI tools for project management
 - 📊 Built-in logging and monitoring
-- 💾 Configurable caching strategies
+- 💾 Intelligent caching system
 
 ## Installation
 
 ```bash
-# Using npm
 npm install @obinexuscomputing/aerossr
-
-# Using yarn
-yarn add @obinexuscomputing/aerossr
-
-# Using pnpm
-pnpm add @obinexuscomputing/aerossr
 ```
 
 ## Quick Start
 
 ```typescript
-import { AeroSSR, StaticFileMiddleware } from '@obinexuscomputing/aerossr';
+import { AeroSSR } from '@obinexuscomputing/aerossr';
 
 const app = new AeroSSR({
   port: 3000,
@@ -40,116 +35,165 @@ const app = new AeroSSR({
   logFilePath: 'logs/server.log'
 });
 
-// Static files
-app.use(new StaticFileMiddleware({
-  root: 'public',
-  maxAge: 86400,
-  compression: true
-}).middleware());
-
-// API routes
-app.route('/api/data', async (req, res) => {
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ status: 'success' }));
+// Add middleware
+app.use(async (req, res, next) => {
+  const start = Date.now();
+  await next();
+  app.logger.log(`${req.method} ${req.url} - ${Date.now() - start}ms`);
 });
 
+// Define routes
+app.route('/', async (req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/html' });
+  res.end('<h1>Welcome to AeroSSR!</h1>');
+});
+
+// Start server
 await app.start();
 ```
 
 ## CLI Usage
 
+Initialize a new project:
+
 ```bash
-# Initialize new project
-npx aerossr init -d ./my-project
-
-# Add middleware
-npx aerossr middleware -n auth -p ./middleware/auth.js
-
-# Configure settings
-npx aerossr config -u port=4000
+npx @obinexuscomputing/aerossr init
 ```
 
-## Advanced Features
+Add middleware:
 
-### Middleware System
+```bash
+npx @obinexuscomputing/aerossr middleware \
+  --name auth \
+  --path ./middleware/auth.js
+```
+
+Update configuration:
+
+```bash
+npx @obinexuscomputing/aerossr config \
+  --update port=4000
+```
+
+## Core Features
+
+### Bundling System
 ```typescript
-// Custom middleware
-app.use(async (req, res, next) => {
-  const start = performance.now();
-  await next();
-  console.log(`${req.method} ${req.url} - ${performance.now() - start}ms`);
+import { AeroSSRBundler } from '@obinexuscomputing/aerossr';
+
+const bundler = new AeroSSRBundler('./src');
+const bundle = await bundler.generateBundle('main.ts', {
+  minify: true,
+  target: 'browser'
 });
 ```
 
-### Security Features
+### Security Middleware
 ```typescript
 import { SecurityMiddleware } from '@obinexuscomputing/aerossr';
 
 app.use(SecurityMiddleware.csrfProtection);
-app.use(SecurityMiddleware.rateLimit(100, 60000)); // 100 requests per minute
+app.use(SecurityMiddleware.rateLimit(100, 60000));
+app.use(SecurityMiddleware.securityHeaders);
 ```
 
-### Caching Strategies
+### Cookie Management
 ```typescript
-import { createCache } from '@obinexuscomputing/aerossr';
+import { cookieManager } from '@obinexuscomputing/aerossr';
 
-const cache = createCache<string>();
 app.use(async (req, res, next) => {
-  const key = req.url;
-  const cached = cache.get(key);
-  if (cached) return res.end(cached);
+  cookieManager.setCookie('session', 'value', 1, {
+    secure: true,
+    sameSite: 'Strict'
+  });
   await next();
 });
 ```
 
-### Static File Configuration
+### Static File Handling
 ```typescript
-app.use(new StaticFileMiddleware({
+import { StaticFileMiddleware } from '@obinexuscomputing/aerossr';
+
+const staticFiles = new StaticFileMiddleware({
   root: 'public',
   maxAge: 86400,
   index: ['index.html'],
-  dotFiles: 'ignore',
   compression: true,
   etag: true
-}).middleware());
+});
+
+app.use(staticFiles.middleware());
 ```
 
-## Performance Optimization
+### Advanced Logging
+```typescript
+import { Logger } from '@obinexuscomputing/aerossr';
 
-- Built-in gzip compression
-- Automatic ETag generation
-- Configurable caching headers
-- Static file optimization
-- Memory-efficient streaming
+const logger = new Logger({
+  logFilePath: 'logs/app.log',
+  logLevel: 'info',
+  format: 'json'
+});
+
+logger.log('Server started');
+```
+
+## Configuration Options
+
+```typescript
+const app = new AeroSSR({
+  port: 3000,
+  compression: true,
+  logFilePath: 'logs/server.log',
+  corsOrigins: '*',
+  cacheMaxAge: 3600,
+  defaultMeta: {
+    title: 'My App',
+    description: 'Built with AeroSSR'
+  }
+});
+```
 
 ## TypeScript Support
 
-Full TypeScript support with comprehensive type definitions:
+Comprehensive type definitions for all features:
 
 ```typescript
 import type {
-  RouteHandler,
+  AeroSSRConfig,
   Middleware,
-  StaticFileOptions,
-  LoggerOptions,
-  CacheStore
+  RouteHandler,
+  CacheOptions,
+  BundleOptions
 } from '@obinexuscomputing/aerossr';
+```
+
+## Project Structure
+```
+my-project/
+├── public/
+│   ├── index.html
+│   └── assets/
+├── src/
+│   ├── main.ts
+│   └── components/
+├── logs/
+└── aerossr.config.json
 ```
 
 ## Documentation
 
-- [API Reference](./docs/API.md)
-- [Configuration Guide](./docs/CONFIG.md)
-- [Security Best Practices](./docs/SECURITY.md)
-- [Contributing Guidelines](./CONTRIBUTING.md)
+- [Getting Started](./docs/getting-started.md)
+- [API Reference](./docs/api.md)
+- [Security Guide](./docs/security.md)
+- [Contributing](./CONTRIBUTING.md)
 
 ## Support
 
-- [GitHub Issues](https://github.com/obinexuscomputing/aerossr/issues)
-- [GitLab Issues](https://gitlab.com/obinexuscomputing/aerossr/issues)
-- [Buy Me a Coffee](https://buymeacoffee.com/obinexuscomputing)
-- [Discord Community](https://discord.gg/obinexuscomputing)
+- Report issues: [GitHub Issues](https://github.com/obinexuscomputing/aerossr/issues)
+- Get help: [Discord Community](https://discord.gg/obinexuscomputing)
+- Support development: [Buy Me a Coffee](https://buymeacoffee.com/obinexuscomputing)
 
 ## License
 
-MIT © [OBINexus Computing](https://github.com/obinexuscomputing)
+ISC © [OBINexus Computing](https://github.com/obinexuscomputing)
