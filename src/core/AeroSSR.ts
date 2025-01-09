@@ -168,7 +168,7 @@ export class AeroSSR {
       res,
       params: {},
       query: {},
-      state: {}
+      state: {},
     };
   }
 
@@ -177,34 +177,45 @@ export class AeroSSR {
     if (this.middlewares.length === 0) {
       return;
     }
-
+  
     const chain = [...this.middlewares];
-    let currentIndex = 0;
-
-    // Create middleware chain executor
-    const executeChain = async (): Promise<void> => {
-      const middleware = chain[currentIndex];
+    let index = 0;
+  
+    const next = async (): Promise<void> => {
+      const middleware = chain[index];
       if (!middleware) {
         return;
       }
-
+  
       try {
-        currentIndex++;
-        await middleware(context);
-        await middleware({ ...context, next: async () => {} });
+        // Create new context with next function for current middleware
+        const middlewareContext = {
+          ...context,
+          next: async () => {
+            index++;
+            await next();
+          }
+        };
+  
+        // Execute current middleware
+        await middleware(middlewareContext);
+      } catch (error) {
         const middlewareError = new Error(
           `Middleware execution failed: ${error instanceof Error ? error.message : String(error)}`
         ) as CustomError;
+  
         if (error instanceof Error) {
           middlewareError.cause = error;
+          middlewareError.stack = error.stack;
         }
+  
         throw middlewareError;
       }
     };
-
-    await executeChain();
+  
+    // Start the middleware chain
+    await next();
   }
-
   private async handleRequest(
     rawReq: IncomingMessage,
     rawRes: ServerResponse
