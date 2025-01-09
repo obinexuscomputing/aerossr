@@ -1,2 +1,2 @@
-export * from './StaticFileMiddleware';
-export * from './SecurityMiddleware';
+export * from './security/';
+export * from './static'
