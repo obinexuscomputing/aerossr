@@ -1,5 +1,5 @@
-// src/utils/HTMLManager.ts
-import { MetaTags } from '../types';
+// src/utils/html/HTMLManager.ts
+import { MetaTags } from '../../types';
 
 export class HTMLManager {
   private defaultMeta: Required<MetaTags>;
@@ -45,32 +45,32 @@ export class HTMLManager {
    */
   private formatMetaTag(key: string, value: string): string {
     if (key === 'title') {
-      return `<title>${value}</title>`;
+      return `<title>${this.sanitizeContent(value)}</title>`;
     }
     if (key.startsWith('og')) {
-      return `<meta property="og:${key.slice(2).toLowerCase()}" content="${value}">`;
+      return `<meta property="og:${key.slice(2).toLowerCase()}" content="${this.sanitizeContent(value)}">`;
     }
     if (key.startsWith('twitter')) {
-      return `<meta name="twitter:${key.slice(7).toLowerCase()}" content="${value}">`;
+      return `<meta name="twitter:${key.slice(7).toLowerCase()}" content="${this.sanitizeContent(value)}">`;
     }
     if (key === 'charset') {
-      return `<meta charset="${value}">`;
+      return `<meta charset="${this.sanitizeContent(value)}">`;
     }
-    return `<meta name="${key}" content="${value}">`;
+    return `<meta name="${key}" content="${this.sanitizeContent(value)}">`;
   }
 
   /**
    * Injects meta tags into HTML
    */
-  public injectMetaTags(html: string, meta: Partial<MetaTags> = {}, defaultMeta?: MetaTags): string {
-    const finalMeta: MetaTags = {
+  public injectMetaTags(html: string, meta: Partial<MetaTags> = {}): string {
+    const finalMeta: Required<MetaTags> = {
       ...this.defaultMeta,
       ...meta
     };
 
     const metaTags = Object.entries(finalMeta)
       .filter(([_, value]) => value !== undefined && value !== '')
-      .map(([key, value]) => this.formatMetaTag(key, value as string))
+      .map(([key, value]) => this.formatMetaTag(key, String(value)))
       .join('\n    ');
 
     return html.replace('</head>', `    ${metaTags}\n  </head>`);
@@ -80,8 +80,7 @@ export class HTMLManager {
    * Validates meta tags structure
    */
   public validateMetaTags(meta: Partial<MetaTags>): boolean {
-    // Basic validation rules
-    const validations = {
+    const validations: Record<string, (value: string) => boolean> = {
       title: (value: string) => value.length <= 60,
       description: (value: string) => value.length <= 160,
       keywords: (value: string) => value.split(',').length <= 10,
@@ -90,11 +89,9 @@ export class HTMLManager {
     };
 
     return Object.entries(meta).every(([key, value]) => {
-      if (!value) return true;
-      if (validations[key as keyof typeof validations]) {
-        return validations[key as keyof typeof validations](value);
-      }
-      return true;
+      if (!value || typeof value !== 'string') return true;
+      const validator = validations[key];
+      return validator ? validator(value) : true;
     });
   }
 
@@ -103,11 +100,87 @@ export class HTMLManager {
    */
   private sanitizeContent(content: string): string {
     return content
-      .replace(/<\/?[^>]+(>|$)/g, '') // Remove HTML tags while preserving content
+      .replace(/<\/?[^>]+(>|$)/g, '') // Remove HTML tags
       .replace(/"/g, '&quot;')  // Escape quotes
+      .replace(/&/g, '&amp;')   // Escape ampersands
+      .replace(/</g, '&lt;')    // Escape less than
+      .replace(/>/g, '&gt;')    // Escape greater than
       .trim();
   }
 
+  /**
+   * Helper method to decode HTML entities
+   */
+  private decodeHTMLEntities(str: string): string {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = str;
+    return textarea.value;
+  }
+
+  /**
+   * Convert property name to camelCase
+   */
+  private propertyNameToCamelCase(name: string): string {
+    if (name.startsWith('og:')) {
+      const ogProp = name.slice(3);
+      return 'og' + ogProp.charAt(0).toUpperCase() + ogProp.slice(1);
+    }
+    if (name.startsWith('twitter:')) {
+      const twitterProp = name.slice(8);
+      return 'twitter' + twitterProp.charAt(0).toUpperCase() + twitterProp.slice(1);
+    }
+    
+    return name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+  }
+
+  /**
+   * Extracts existing meta tags from HTML
+   */
+  public extractMetaTags(html: string): MetaTags {
+    const meta: MetaTags = {};
+    
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    if (titleMatch) {
+      meta.title = this.decodeHTMLEntities(titleMatch[1]);
+    }
+
+    const metaTagPattern = /<meta\s+(?:[^>]*?\s+)?(?:name|property)="([^"]+)"[^>]*?content="([^"]+)"[^>]*>/g;
+    let match: RegExpExecArray | null;
+    
+    while ((match = metaTagPattern.exec(html)) !== null) {
+      const [_, nameOrProperty, content] = match;
+      if (!nameOrProperty || !content) continue;
+
+      const propertyName = this.propertyNameToCamelCase(nameOrProperty);
+      const decodedContent = this.decodeHTMLEntities(content);
+      
+      if (nameOrProperty === 'charset') {
+        meta.charset = decodedContent;
+      } else {
+        meta[propertyName as keyof MetaTags] = decodedContent;
+      }
+    }
+
+    const charsetMatch = html.match(/<meta\s+charset="([^"]+)"[^>]*>/i);
+    if (charsetMatch) {
+      meta.charset = this.decodeHTMLEntities(charsetMatch[1]);
+    }
+
+    return meta;
+  }
+
+  /**
+   * Creates meta tags object with sanitized values
+   */
+  public createMetaTags(meta: Partial<MetaTags>): MetaTags {
+    return Object.entries(meta).reduce((acc, [key, value]) => {
+      if (value !== undefined && typeof value === 'string') {
+        const sanitized = this.sanitizeContent(value);
+        acc[key as keyof MetaTags] = this.decodeHTMLEntities(sanitized);
+      }
+      return acc;
+    }, {} as MetaTags);
+  }
 
   /**
    * Generates complete HTML document with meta tags
@@ -125,97 +198,6 @@ export class HTMLManager {
 
     return this.injectMetaTags(baseHTML, meta);
   }
-/**
- * Helper method to decode HTML entities
- */
-private decodeHTMLEntities(str: string): string {
-  const doc = new DOMParser().parseFromString(str, 'text/html');
-  return doc.documentElement.textContent || str;
-}
-
-/**
- * Convert property name to camelCase
- */
-private propertyNameToCamelCase(name: string): string {
-  // Handle special cases first
-  if (name.startsWith('og:')) {
-    const ogProp = name.slice(3); // Remove 'og:'
-    return 'og' + ogProp.charAt(0).toUpperCase() + ogProp.slice(1);
-  }
-  if (name.startsWith('twitter:')) {
-    const twitterProp = name.slice(8); // Remove 'twitter:'
-    return 'twitter' + twitterProp.charAt(0).toUpperCase() + twitterProp.slice(1);
-  }
-  
-  // General kebab-case to camelCase conversion
-  return name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-}
-
-/**
- * Extracts existing meta tags from HTML
- */
-public extractMetaTags(html: string): MetaTags {
-  const meta: MetaTags = {};
-  
-  // Extract title
-  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-  if (titleMatch) {
-    meta.title = this.decodeHTMLEntities(titleMatch[1]);
-  }
-
-  // Extract meta tags
-  const metaTags = html.matchAll(/<meta\s+(?:[^>]*?\s+)?(?:name|property)="([^"]+)"[^>]*?content="([^"]+)"[^>]*>/g);
-  
-  for (const match of metaTags) {
-    const [_, nameOrProperty, content] = match;
-    if (!nameOrProperty || !content) continue;
-
-    // Normalize property name
-    const propertyName = this.propertyNameToCamelCase(nameOrProperty);
-    
-    // Decode content
-    const decodedContent = this.decodeHTMLEntities(content);
-    
-    // Special handling for charset
-    if (nameOrProperty === 'charset') {
-      meta.charset = decodedContent;
-      continue;
-    }
-
-    meta[propertyName] = decodedContent;
-  }
-
-  // Also check for charset in meta tag
-  const charsetMatch = html.match(/<meta\s+charset="([^"]+)"[^>]*>/i);
-  if (charsetMatch) {
-    meta.charset = this.decodeHTMLEntities(charsetMatch[1]);
-  }
-
-  return meta;
-}
-
-/**
- * Creates meta tags object with sanitized values
- */
-public createMetaTags(meta: Partial<MetaTags>): MetaTags {
-  // Create a temporary div to decode entities
-  const sanitizedMeta: MetaTags = Object.entries(meta).reduce((acc, [key, value]) => {
-    if (value !== undefined) {
-      // First encode special characters, then decode entities
-      acc[key] = this.decodeHTMLEntities(value.replace(/["<>]/g, (char) => {
-        const entities: { [key: string]: string } = {
-          '"': '&quot;',
-          '<': '&lt;',
-          '>': '&gt;'
-        };
-        return entities[char];
-      }));
-    }
-    return acc;
-  }, {} as MetaTags);
-
-  return sanitizedMeta;
-}
 }
 
 // Export singleton instance
