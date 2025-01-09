@@ -1,6 +1,6 @@
 import { ServerResponse } from 'http';
 
-export interface CorsOptions extends CorsOptionsBase {
+export interface CorsOptions {
   origins?: string | string[];
   methods?: string[];
   allowedHeaders?: string[];
