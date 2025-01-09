@@ -126,7 +126,8 @@ export class AeroSSRCLI {
           const app = new AeroSSR({
             port: config.port,
             logFilePath: config.logPath,
-            projectPath: process.cwd()
+            projectPath: process.cwd(),
+            logger: this.logger
           });
 
           const middlewareConfig: MiddlewareConfig = {

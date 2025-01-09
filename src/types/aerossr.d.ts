@@ -69,11 +69,11 @@ export interface StaticFileOptions {
 // Core AeroSSR Types
 export interface AeroSSRConfig {
   projectPath: string;
-  port?: number;
+  port: number;
   compression?: boolean;
   corsOrigins?: string | CorsOptions;
   cacheMaxAge?: number;
-  logFilePath?: string | null;
+  logFilePath: string | null;
   logger?: Logger;
   bundleCache?: CacheStore<string>;
   templateCache?: CacheStore<string>;
