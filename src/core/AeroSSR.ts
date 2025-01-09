@@ -157,28 +157,55 @@ export class AeroSSR {
     this.bundler.clearCache();
   }
 
-  private async executeMiddlewares(
-    req: IncomingMessage,
-    res: ServerResponse,
-    index = 0
-  ): Promise<void> {
-    if (index >= this.middlewares.length) {
+/**
+   * Execute middleware chain
+   */
+private async executeMiddlewares(
+  req: IncomingMessage,
+  res: ServerResponse,
+  index = 0
+): Promise<void> {
+  // Create request context
+  const context: RequestContext = {
+    req,
+    res,
+    params: {},
+    query: {},
+    state: {}
+  };
+
+  // Early return if no middlewares
+  if (index >= this.middlewares.length) {
+    return;
+  }
+
+  const chain = [...this.middlewares];
+  let currentIndex = index;
+
+  // Create middleware chain executor
+  const executeChain = async (): Promise<void> => {
+    const middleware = chain[currentIndex];
+    if (!middleware) {
       return;
     }
 
-    const chain = [...this.middlewares];
-    let currentIndex = index;
-
-    const next = async (): Promise<void> => {
-      const middleware = chain[currentIndex];
-      if (middleware) {
-        currentIndex++;
-        await middleware(req, res, next);
+    try {
+      currentIndex++;
+      await middleware(context);
+    } catch (error) {
+      const middlewareError = new Error(
+        `Middleware execution failed: ${error instanceof Error ? error.message : String(error)}`
+      ) as CustomError;
+      if (error instanceof Error) {
+        middlewareError.cause = error;
       }
-    };
+      throw middlewareError;
+    }
+  };
 
-    await next();
-  }
+  await executeChain();
+}
+
 
   private async handleRequest(
     req: IncomingMessage,
@@ -276,6 +303,9 @@ export class AeroSSR {
     }
   }
 
+  /**
+   * Handle default request for static files
+   */
   private async handleDefaultRequest(
     req: IncomingMessage,
     res: ServerResponse
@@ -292,28 +322,38 @@ export class AeroSSR {
       const meta = {
         title: `Page - ${pathname}`,
         description: `Content for ${pathname}`,
+        ...this.config.defaultMeta // Merge with default meta
       };
 
       // Inject meta tags
-      html = htmlManager.injectMetaTags(html, meta, this.config.defaultMeta);
+      html = htmlManager.injectMetaTags(html, meta);
 
-      // Set response
-      res.writeHead(200, {
+      // Set response headers
+      const headers = {
         'Content-Type': 'text/html',
         'Cache-Control': 'no-cache',
         'X-Content-Type-Options': 'nosniff'
-      });
+      };
+
+      // Send response
+      if (!res.headersSent) {
+        res.writeHead(200, headers);
+      }
       res.end(html);
     } catch (error) {
       const requestError = new Error(
         `Default request handling failed: ${error instanceof Error ? error.message : String(error)}`
       ) as CustomError;
+      
       if (error instanceof Error) {
         requestError.cause = error;
+        requestError.stack = error.stack;
       }
+      
       throw requestError;
     }
   }
+
 
   public async start(): Promise<Server> {
     return new Promise((resolve, reject) => {
