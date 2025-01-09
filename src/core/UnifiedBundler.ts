@@ -5,9 +5,10 @@ import { createHash } from 'crypto';
 import { gzip } from 'zlib';
 import { promisify } from 'util';
 import { IncomingMessage, ServerResponse } from 'http';
-import { CacheStoreBase, Logger } from '@/types';
 import { createCache } from '@/utils/cache/CacheManager';
 import { etagGenerator } from '@/utils/security/ETagGenerator';
+import { CacheStoreBase } from '@/types';
+import { Logger } from '@/utils';
 
 const gzipAsync = promisify(gzip);
 
