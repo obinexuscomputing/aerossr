@@ -100,8 +100,9 @@ export type StaticFileHandler = (
 export type BundleHandler = (
   req: IncomingMessage,
   res: ServerResponse,
-  bundlePath: string
+  query: Record<string, string | string[] | undefined>
 ) => Promise<void>;
+
 
 export type TemplateHandler = (
   req: IncomingMessage,

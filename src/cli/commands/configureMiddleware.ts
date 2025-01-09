@@ -1,6 +1,7 @@
 //src/cli/commands/configureMiddleware.ts
 import { AeroSSR } from '@/core/AeroSSR';
-import { AeroSSRConfig, MiddlewareConfig, BundleHandler } from '@/types/aerossr';
+import { AeroSSRConfig, MiddlewareConfig } from '@/types/aerossr';
+import { BundleHandler } from '@/types';
 import { Logger } from '@/utils/logging';
 import path from 'path';
 
