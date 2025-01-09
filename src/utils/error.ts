@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { Logger } from './Logger';
+import { Logger } from './logging';
 
 export interface CustomError extends Error {
   statusCode?: number;
