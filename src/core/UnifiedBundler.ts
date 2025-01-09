@@ -238,4 +238,190 @@ export class UnifiedBundler {
   private generateHash(content: string): string {
     return createHash('md5').update(content).digest('hex');
   }
+
+  private async resolveDependencies(
+    filePath: string,
+    options: BundleOptions
+  ): Promise<Set<string>> {
+    const deps = new Set<string>();
+    const { maxDepth, ignorePatterns } = options;
+
+    // Skip ignored patterns
+    if (ignorePatterns?.some(pattern => filePath.includes(pattern))) {
+      return deps;
+    }
+
+    async function resolve(this: UnifiedBundler, currentPath: string, depth = 0): Promise<void> {
+      if (depth > (maxDepth || this.defaultOptions.maxDepth) || deps.has(currentPath)) {
+        return;
+      }
+
+      deps.add(currentPath);
+
+      try {
+        const content = await fs.readFile(currentPath, 'utf-8');
+        
+        // Match different import patterns
+        const importPatterns = [
+          /require\s*\(['"]([^'"]+)['"]\)/g,                    // require('...')
+          /import\s+.*?from\s+['"]([^'"]+)['"]/g,              // import ... from '...'
+          /import\s*['"]([^'"]+)['"]/g,                        // import '...'
+          /import\s*\(.*?['"]([^'"]+)['"]\s*\)/g,              // dynamic import('...')
+          /export\s+.*?from\s+['"]([^'"]+)['"]/g               // export ... from '...'
+        ];
+
+        const promises: Promise<void>[] = [];
+
+        for (const pattern of importPatterns) {
+          let match;
+          while ((match = pattern.exec(content)) !== null) {
+            const importPath = match[1];
+            if (!importPath) continue;
+
+            promises.push((async () => {
+              try {
+                const fullPath = await this.resolveFilePath(importPath, currentPath);
+                if (fullPath) {
+                  await resolve.call(this, fullPath, depth + 1);
+                }
+              } catch (err) {
+                if (process.env.NODE_ENV !== 'test') {
+                  this.logger?.warn(`Could not resolve dependency ${importPath} in ${currentPath}`);
+                }
+              }
+            })());
+          }
+        }
+
+        await Promise.all(promises);
+      } catch (err) {
+        throw new Error(`Error processing ${currentPath}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    await resolve.call(this, filePath);
+    return deps;
+  }
+
+  private async resolveFilePath(
+    importPath: string,
+    fromPath: string
+  ): Promise<string | null> {
+    // Handle non-relative imports
+    if (!importPath.startsWith('.') && !importPath.startsWith('/')) {
+      return null;
+    }
+
+    const basePath = path.resolve(path.dirname(fromPath), importPath);
+    const extensions = this.defaultOptions.extensions;
+
+    // Check if path already has extension
+    if (extensions.some(ext => importPath.endsWith(ext))) {
+      try {
+        await fs.access(basePath);
+        return basePath;
+      } catch {
+        return null;
+      }
+    }
+
+    // Try adding extensions
+    for (const ext of extensions) {
+      const fullPath = `${basePath}${ext}`;
+      try {
+        await fs.access(fullPath);
+        return fullPath;
+      } catch {
+        continue;
+      }
+    }
+
+    // Try index files
+    for (const ext of extensions) {
+      const indexPath = path.join(basePath, `index${ext}`);
+      try {
+        await fs.access(indexPath);
+        return indexPath;
+      } catch {
+        continue;
+      }
+    }
+
+    return null;
+  }
+
+  private minifyBundle(code: string): string {
+    if (!code.trim()) return '';
+
+    // Extract and preserve strings
+    const strings: string[] = [];
+    let stringPlaceholderCode = code.replace(
+      /`(?:\\[\s\S]|[^\\`])*`|"(?:\\[\s\S]|[^\\"])*"|'(?:\\[\s\S]|[^\\'])*'/g,
+      (match) => {
+        strings.push(match);
+        return `__STRING_${strings.length - 1}__`;
+      }
+    );
+
+    // Process code while preserving structure
+    let result = '';
+    let inComment = false;
+    let inMultilineComment = false;
+
+    for (let i = 0; i < stringPlaceholderCode.length; i++) {
+      const char = stringPlaceholderCode[i];
+      const nextChar = stringPlaceholderCode[i + 1] || '';
+
+      // Handle comments
+      if (inComment) {
+        if (char === '\n') {
+          inComment = false;
+        }
+        continue;
+      }
+
+      if (inMultilineComment) {
+        if (char === '*' && nextChar === '/') {
+          inMultilineComment = false;
+          i++;
+        }
+        continue;
+      }
+
+      if (char === '/' && nextChar === '/') {
+        inComment = true;
+        i++;
+        continue;
+      }
+
+      if (char === '/' && nextChar === '*') {
+        inMultilineComment = true;
+        i++;
+        continue;
+      }
+
+      // Handle whitespace
+      if (/\s/.test(char)) {
+        const prevChar = result[result.length - 1];
+        const nextNonSpaceChar = stringPlaceholderCode.slice(i + 1).match(/\S/);
+        
+        if (prevChar && nextNonSpaceChar && 
+            /[a-zA-Z0-9_$]/.test(prevChar) && 
+            /[a-zA-Z0-9_$]/.test(nextNonSpaceChar[0])) {
+          result += ' ';
+        }
+        continue;
+      }
+
+      result += char;
+    }
+
+    // Clean up and restore strings
+    result = result
+      .replace(/\s*([+\-*/%=<>!&|^~?:,;{}[\]()])\s*/g, '$1')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return result.replace(/__STRING_(\d+)__/g, (_, index) => strings[parseInt(index)]);
+  }
 }
