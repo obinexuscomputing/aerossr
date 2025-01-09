@@ -1,5 +1,4 @@
 import { ServerResponse } from 'http';
-import { CorsOptionsBase } from '@/types/index.';
 
 export interface CorsOptions extends CorsOptionsBase {
   origins?: string | string[];
