@@ -28,7 +28,6 @@ export {
 // Re-export utility implementations
 export {
   Logger,
-  corsManager,
   etagGenerator,
   ErrorHandler,
   
@@ -40,7 +39,6 @@ export type {
   AeroSSRConfig,
   BundleHandler,
   StaticFileOptions,
-  MiddlewareOptions,
   // Utility types
   CacheStore,
   CorsOptions,
@@ -54,7 +52,6 @@ export type {
 
   AsyncOptions,
   // Response types
-  ResponseMetadata
 } from './types';
 
 // Export version
