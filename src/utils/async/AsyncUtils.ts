@@ -1,4 +1,4 @@
-import { AnyFunction } from "@/types/index.";
+import { AnyFunction } from "@/types";
 
 export interface AsyncOptions {
   timeout?: number;

@@ -1,24 +1,7 @@
 
-import { CacheStoreBase } from "@/types/index.";
+import { CacheItem, CacheStats, CacheOptions } from "@/types";
+import { CacheStoreBase } from "@/types/index.d";
 
-export interface CacheItem<T> {
-  value: T;
-  expires?: number;
-  lastAccessed: number;
-}
-
-export interface CacheOptions {
-  ttl?: number;
-  maxSize?: number;
-}
-
-export interface CacheStats {
-  size: number;
-  hits: number;
-  misses: number;
-  expired: number;
-  evicted: number;
-}
 
 export class CacheManager<T> {
   private cache: Map<string, CacheItem<T>>;
@@ -35,7 +18,9 @@ export class CacheManager<T> {
       hits: 0,
       misses: 0,
       expired: 0,
-      evicted: 0
+      evicted: 0,
+      evictions: 0,
+      expirations: 0
     };
   }
 
@@ -78,7 +63,10 @@ export class CacheManager<T> {
     this.cache.set(key, {
       value,
       expires,
-      lastAccessed: Date.now()
+      lastAccessed: Date.now(),
+      createdAt: Date.now(),
+      hits: 0,
+      priority: 0
     });
 
     this.stats.size = this.cache.size;
@@ -210,7 +198,9 @@ export class CacheManager<T> {
       hits: 0,
       misses: 0,
       expired: 0,
-      evicted: 0
+      evicted: 0,
+      evictions: 0,
+      expirations: 0
     };
   }
 }
@@ -219,7 +209,6 @@ export function createCache<T>(): CacheStoreBase<T> {
   const store = new Map<string, T>();
 
   return {
-    size: store.size,
 
     get(key: string) {
       return store.get(key);

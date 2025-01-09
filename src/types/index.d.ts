@@ -143,7 +143,8 @@ export type AnyFunction = (...args: any[]) => any;
 
 
 export * from './aerossr';
-export { default as AeroSSR } from './aerossr';
+export type { default as AeroSSR } from './aerossr';
+export * from './cache';
 
 // Core types
 export type {
