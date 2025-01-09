@@ -1,13 +1,13 @@
-import { CookieManager } from "../../../src/utils/CookieManager";
+import { CookieManager } from '../../../src/utils/CookieManager';
 
-describe('Cookie Manager', () => {
+describe('CookieManager', () => {
   let cookieManager: CookieManager;
   let documentCookies: string[] = [];
   let mockDoc: { cookie: string };
 
   beforeEach(() => {
-    cookieManager = new CookieManager();
     documentCookies = [];
+    cookieManager = new CookieManager();
 
     mockDoc = {
       get cookie() {
@@ -24,7 +24,7 @@ describe('Cookie Manager', () => {
         }
         
         // Handle cookie setting
-        const newCookie = value.split(';')[0]; // Get just name=value part
+        const [newCookie, ...attributes] = value.split(';');
         const cookieName = newCookie.split('=')[0];
         
         // Replace existing cookie or add new one
@@ -33,9 +33,9 @@ describe('Cookie Manager', () => {
         );
         
         if (existingIndex >= 0) {
-          documentCookies[existingIndex] = newCookie;
+          documentCookies[existingIndex] = [newCookie, ...attributes].join(';');
         } else {
-          documentCookies.push(newCookie);
+          documentCookies.push(value);
         }
       }
     };
@@ -45,6 +45,7 @@ describe('Cookie Manager', () => {
 
   afterEach(() => {
     cookieManager.__clearMockDocument();
+    documentCookies = [];
   });
 
   describe('Cookie Setting', () => {
@@ -52,25 +53,27 @@ describe('Cookie Manager', () => {
       const mockDate = new Date('2025-01-01T00:00:00Z');
       const nextDay = new Date('2025-01-02T00:00:00Z');
       
+      const originalDate = global.Date;
       const MockDate = class extends Date {
-        constructor() {
-          super();
+        constructor(...args: any[]) {
+          if (args.length) {
+            return new originalDate(...args);
+          }
           return mockDate;
         }
-      };
+        static now() {
+          return mockDate.getTime();
+        }
+      } as DateConstructor;
       
-      const originalDate = global.Date;
-      global.Date = MockDate as DateConstructor;
-      global.Date.UTC = originalDate.UTC;
-      global.Date.now = () => mockDate.getTime();
-      global.Date.parse = originalDate.parse;
-      Object.setPrototypeOf(global.Date, originalDate);
+      global.Date = MockDate;
 
       cookieManager.setCookie('test', 'value', 1);
       
-      expect(mockDoc.cookie).toContain('test=value');
-      expect(mockDoc.cookie).toContain(`expires=${nextDay.toUTCString()}`);
-      expect(mockDoc.cookie).toContain('path=/');
+      const cookieValue = mockDoc.cookie;
+      expect(cookieValue).toContain('test=value');
+      expect(cookieValue).toContain(`expires=${nextDay.toUTCString()}`);
+      expect(cookieValue).toContain('path=/');
 
       global.Date = originalDate;
     });
@@ -79,12 +82,31 @@ describe('Cookie Manager', () => {
       cookieManager.setCookie('test', 'value', 1, {
         domain: 'example.com',
         secure: true,
-        sameSite: 'Strict'
+        sameSite: 'Strict',
+        httpOnly: true,
+        path: '/custom'
       });
 
-      expect(mockDoc.cookie).toContain('domain=example.com');
-      expect(mockDoc.cookie).toContain('secure');
-      expect(mockDoc.cookie).toContain('samesite=Strict');
+      const cookieValue = mockDoc.cookie;
+      expect(cookieValue).toContain('test=value');
+      expect(cookieValue).toContain('domain=example.com');
+      expect(cookieValue).toContain('secure');
+      expect(cookieValue).toContain('samesite=Strict');
+      expect(cookieValue).toContain('httponly');
+      expect(cookieValue).toContain('path=/custom');
+    });
+
+    it('should handle special characters in values', () => {
+      const specialValue = 'Hello, World! @#$%&';
+      cookieManager.setCookie('test', specialValue, 1);
+      expect(cookieManager.getCookie('test')).toBe(specialValue);
+    });
+
+    it('should update existing cookie', () => {
+      cookieManager.setCookie('test', 'value1', 1);
+      cookieManager.setCookie('test', 'value2', 1);
+      expect(cookieManager.getCookie('test')).toBe('value2');
+      expect(documentCookies.length).toBe(1);
     });
   });
 
@@ -100,6 +122,7 @@ describe('Cookie Manager', () => {
       
       expect(cookieManager.getCookie('test1')).toBe('value1');
       expect(cookieManager.getCookie('test2')).toBe('value2');
+      expect(documentCookies.length).toBe(2);
     });
 
     it('should return null for non-existent cookie', () => {
@@ -116,18 +139,31 @@ describe('Cookie Manager', () => {
         test2: 'value2'
       });
     });
+
+    it('should handle cookies with spaces around values', () => {
+      documentCookies.push('test=  spaced value  ');
+      expect(cookieManager.getCookie('test')).toBe('spaced value');
+    });
   });
 
   describe('Cookie Deletion', () => {
     it('should delete existing cookie', () => {
       cookieManager.setCookie('test', 'value', 1);
-      cookieManager.deleteCookie('test');
+      expect(documentCookies.length).toBe(1);
       
+      cookieManager.deleteCookie('test');
       expect(cookieManager.getCookie('test')).toBeNull();
+      expect(documentCookies.length).toBe(0);
     });
 
     it('should handle deleting non-existent cookie', () => {
       expect(() => cookieManager.deleteCookie('nonexistent')).not.toThrow();
+    });
+
+    it('should delete cookie with specified path', () => {
+      cookieManager.setCookie('test', 'value', 1, { path: '/custom' });
+      cookieManager.deleteCookie('test', { path: '/custom' });
+      expect(cookieManager.getCookie('test')).toBeNull();
     });
   });
 
@@ -137,61 +173,30 @@ describe('Cookie Manager', () => {
     });
 
     it('should handle cookie errors', () => {
-      mockDoc.cookie = '';
-      Object.defineProperty(mockDoc, 'cookie', {
-        set: () => { throw new Error('Cookie error'); }
-      });
+      cookieManager.__clearMockDocument();
+      expect(cookieManager.areCookiesEnabled()).toBe(false);
+    });
 
+    it('should handle browser cookie blocking', () => {
+      Object.defineProperty(mockDoc, 'cookie', {
+        get: () => '',
+        set: () => { throw new Error('Cookie blocked'); }
+      });
       expect(cookieManager.areCookiesEnabled()).toBe(false);
     });
   });
-});
 
-
-describe('Cookie Manager', () => {
-  let documentCookies: string[] = [];
-  
-  beforeEach(() => {
-    documentCookies = [];
-    const mockDoc = {
-      get cookie() { return documentCookies.join('; '); },
-      set cookie(value: string) {
-        if (value.includes('=')) {
-          documentCookies.push(value);
-        } else {
-          const cookieName = value.split('=')[0];
-          documentCookies = documentCookies.filter(c => !c.startsWith(cookieName + '='));
-        }
-      }
-    };
-    cookieManager.__setMockDocument(mockDoc);
-  });
-
-  afterEach(() => {
-    cookieManager.__clearMockDocument();
-  });
-
-  describe('setCookie', () => {
-    test('should set cookie with correct attributes', () => {
-      cookieManager.setCookie('test', 'value', 1, { path: '/test' });
-      expect(documentCookies[0]).toMatch(/^test=value/);
-      expect(documentCookies[0]).toMatch(/path=\/test/);
+  describe('Error Handling', () => {
+    it('should handle invalid cookie names', () => {
+      expect(cookieManager.setCookie('', 'value', 1)).toBe(false);
+      expect(cookieManager.getCookie('')).toBeNull();
     });
 
-    test('should handle special characters', () => {
-      cookieManager.setCookie('test', 'value with spaces', 1);
-      expect(documentCookies[0]).toContain('test=value%20with%20spaces');
-    });
-  });
-
-  describe('getCookie', () => {
-    test('should retrieve existing cookie', () => {
-      cookieManager.setCookie('test', 'value', 1);
-      expect(cookieManager.getCookie('test')).toBe('value');
-    });
-
-    test('should return null for non-existent cookie', () => {
-      expect(cookieManager.getCookie('nonexistent')).toBeNull();
+    it('should handle undefined document', () => {
+      cookieManager.__clearMockDocument();
+      expect(cookieManager.setCookie('test', 'value', 1)).toBe(false);
+      expect(cookieManager.getCookie('test')).toBeNull();
+      expect(cookieManager.getAllCookies()).toEqual({});
     });
   });
 });

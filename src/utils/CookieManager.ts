@@ -1,4 +1,4 @@
-// src/utils/cookie.ts
+// cookie.ts
 export interface CookieOptions {
   domain?: string;
   path?: string;
@@ -50,36 +50,42 @@ export class CookieManager {
     value: string,
     days: number,
     options: CookieOptions = {}
-  ): void {
+  ): boolean {
     const doc = this.getDocument();
-    if (!doc) return;
+    if (!doc) return false;
 
-    const date = new Date();
-    date.setTime(date.getTime() + (Math.max(0, days) * 24 * 60 * 60 * 1000));
-    
-    const cookieParts = [
-      `${encodeURIComponent(name)}=${encodeURIComponent(value.trim())}`,
-      `expires=${date.toUTCString()}`,
-      `path=${options.path || '/'}`
-    ];
+    try {
+      const date = new Date();
+      date.setTime(date.getTime() + (Math.max(0, days) * 24 * 60 * 60 * 1000));
+      
+      const cookieParts = [
+        `${encodeURIComponent(name)}=${encodeURIComponent(value.trim())}`,
+        `expires=${date.toUTCString()}`,
+        `path=${options.path || '/'}`
+      ];
 
-    if (options.domain) {
-      cookieParts.push(`domain=${options.domain}`);
+      if (options.domain) {
+        cookieParts.push(`domain=${options.domain}`);
+      }
+
+      if (options.secure) {
+        cookieParts.push('secure');
+      }
+
+      if (options.sameSite) {
+        cookieParts.push(`samesite=${options.sameSite}`);
+      }
+
+      if (options.httpOnly) {
+        cookieParts.push('httponly');
+      }
+
+      const cookieString = cookieParts.join('; ');
+      doc.cookie = cookieString;
+      return true;
+    } catch {
+      return false;
     }
-
-    if (options.secure) {
-      cookieParts.push('secure');
-    }
-
-    if (options.sameSite) {
-      cookieParts.push(`samesite=${options.sameSite}`);
-    }
-
-    if (options.httpOnly) {
-      cookieParts.push('httponly');
-    }
-
-    doc.cookie = cookieParts.join('; ');
   }
 
   /**
@@ -89,18 +95,22 @@ export class CookieManager {
     const doc = this.getDocument();
     if (!doc) return null;
 
-    const nameEQ = encodeURIComponent(name) + '=';
-    const cookies = doc.cookie.split(';');
+    try {
+      const nameEQ = encodeURIComponent(name) + '=';
+      const cookies = doc.cookie.split(';');
 
-    for (let cookie of cookies) {
-      cookie = cookie.trim();
-      if (cookie.indexOf(nameEQ) === 0) {
-        const value = cookie.substring(nameEQ.length).trim();
-        return decodeURIComponent(value);
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.indexOf(nameEQ) === 0) {
+          const value = cookie.substring(nameEQ.length).trim();
+          return decodeURIComponent(value);
+        }
       }
-    }
 
-    return null;
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -109,33 +119,38 @@ export class CookieManager {
   public deleteCookie(
     name: string,
     options: Omit<CookieOptions, 'maxAge' | 'expires'> = {}
-  ): void {
+  ): boolean {
     const doc = this.getDocument();
-    if (!doc) return;
+    if (!doc) return false;
 
-    const cookieParts = [
-      `${encodeURIComponent(name)}=`,
-      'expires=Thu, 01 Jan 1970 00:00:00 GMT',
-      `path=${options.path || '/'}`
-    ];
+    try {
+      const cookieParts = [
+        `${encodeURIComponent(name)}=`,
+        'expires=Thu, 01 Jan 1970 00:00:00 GMT',
+        `path=${options.path || '/'}`
+      ];
 
-    if (options.domain) {
-      cookieParts.push(`domain=${options.domain}`);
+      if (options.domain) {
+        cookieParts.push(`domain=${options.domain}`);
+      }
+
+      if (options.secure) {
+        cookieParts.push('secure');
+      }
+
+      if (options.sameSite) {
+        cookieParts.push(`samesite=${options.sameSite}`);
+      }
+
+      if (options.httpOnly) {
+        cookieParts.push('httponly');
+      }
+
+      doc.cookie = cookieParts.join('; ');
+      return true;
+    } catch {
+      return false;
     }
-
-    if (options.secure) {
-      cookieParts.push('secure');
-    }
-
-    if (options.sameSite) {
-      cookieParts.push(`samesite=${options.sameSite}`);
-    }
-
-    if (options.httpOnly) {
-      cookieParts.push('httponly');
-    }
-
-    doc.cookie = cookieParts.join('; ');
   }
 
   /**
@@ -145,15 +160,19 @@ export class CookieManager {
     const doc = this.getDocument();
     if (!doc) return {};
 
-    return doc.cookie
-      .split(';')
-      .reduce((cookies: Record<string, string>, cookie) => {
-        const [name, value] = cookie.split('=').map(c => c.trim());
-        if (name && value) {
-          cookies[decodeURIComponent(name)] = decodeURIComponent(value);
-        }
-        return cookies;
-      }, {});
+    try {
+      return doc.cookie
+        .split(';')
+        .reduce((cookies: Record<string, string>, cookie) => {
+          const [name, value] = cookie.split('=').map(c => c.trim());
+          if (name && value) {
+            cookies[decodeURIComponent(name)] = decodeURIComponent(value);
+          }
+          return cookies;
+        }, {});
+    } catch {
+      return {};
+    }
   }
 
   /**
@@ -167,7 +186,9 @@ export class CookieManager {
       const testKey = '__cookie_test__';
       const testValue = 'test';
       
-      this.setCookie(testKey, testValue, 1);
+      const success = this.setCookie(testKey, testValue, 1);
+      if (!success) return false;
+      
       const result = this.getCookie(testKey) === testValue;
       this.deleteCookie(testKey);
       
