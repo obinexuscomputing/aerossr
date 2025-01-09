@@ -28,8 +28,6 @@ export {
 // Re-export utility implementations
 export {
   Logger,
-  createCache,
-  htmlManager,
   corsManager,
   etagGenerator,
   ErrorHandler,
@@ -47,9 +45,9 @@ export type {
   CacheStoreBase as CacheStore,
   CorsOptionsBase as CorsOptions,
   MetaTagsBase as MetaTags,
-  LoggerOptionsBase as LoggerOptions,
-  // HTTP types
-  HTTPMethod,
+  CorsOptions,
+  MetaTags,
+  LoggerOptions,
   // Middleware types
   Middleware,
   // Router types
@@ -57,8 +55,7 @@ export type {
   // Error types
   CustomError,
   ErrorHandlerOptions,
-  // Async types
-  AsyncResult,
+  ErrorHandlerOptions
   AsyncOptions,
   // Response types
   ResponseMetadata
