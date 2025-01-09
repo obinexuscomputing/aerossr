@@ -138,7 +138,7 @@ export class AeroSSR {
     }
   }
 
-  public use(middleware: Middleware): void {
+  public use(middleware: (req: IncomingMessage, res: ServerResponse, next: () => Promise<void>) => Promise<void>): void {
     if (typeof middleware !== 'function') {
       throw new Error('Middleware must be a function');
     }
@@ -199,7 +199,7 @@ export class AeroSSR {
         };
   
         // Execute current middleware
-        await middleware(middlewareContext);
+        await middleware(context.req.raw, context.res.raw, next);
       } catch (error) {
         const middlewareError = new Error(
           `Middleware execution failed: ${error instanceof Error ? error.message : String(error)}`
