@@ -278,7 +278,7 @@ export class AeroSSR {
         return;
       }
 
-      const headers = {
+      const headers: Record<string, string> = {
         'Content-Type': 'application/javascript',
         'Cache-Control': `public, max-age=${this.config.cacheMaxAge}`,
         'ETag': etag,
