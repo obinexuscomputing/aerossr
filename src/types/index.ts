@@ -134,7 +134,7 @@ export * from '../utils/HtmlManager';
 export * from '../utils/Logger';
 export * from '../utils/ErrorHandler';
 export * from '../utils/ETagGenerator';
-export * from '../utils/Bundler';
+export * from '../utils/bundler.ts';
 export * from '../utils/AsyncUtils';
 export * from '../utils/CookieManager';
 export * from '../utils/AsyncUtils';
