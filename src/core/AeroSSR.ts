@@ -12,6 +12,7 @@ import { htmlManager } from '@/utils/html/HtmlManager';
 import { corsManager } from '@/utils/security/CorsManager';
 import { etagGenerator } from '@/utils/security/ETagGenerator';
 import { Logger, ErrorHandler, CustomError, AeroSSRBundler } from '@/utils';
+import { RequestContext } from '@/http';
 
 
 const gzipAsync = promisify(gzip);
