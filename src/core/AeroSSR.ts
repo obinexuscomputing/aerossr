@@ -191,6 +191,7 @@ export class AeroSSR {
         // Create new context with next function for current middleware
         const middlewareContext = {
           ...context,
+          req: context.req.raw,
           next: async () => {
             index++;
             await next();
