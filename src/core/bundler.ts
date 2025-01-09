@@ -1,7 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { createHash } from 'crypto';
-import { createCache } from './cache/CacheManager';
+import { createCache } from '../utils/cache/CacheManager';
 import { CacheStoreBase } from '@/types';
 
 export interface DependencyOptions {

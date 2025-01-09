@@ -1,10 +1,9 @@
 import type { Config } from '@jest/types';
-import { defaults as tsjPreset } from 'ts-jest/presets';
 
 const config: Config.InitialOptions = {
-  ...tsjPreset,
   preset: 'ts-jest',
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   
   roots: ['<rootDir>/src', '<rootDir>/__tests__'],
   
@@ -18,48 +17,55 @@ const config: Config.InitialOptions = {
     '^src/(.*)$': '<rootDir>/src/$1'
   },
 
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: 'tsconfig.test.json',
-      diagnostics: { 
-        warnOnly: true,
-        ignoreCodes: [151001]
-      }
+      diagnostics: { warnOnly: true }
     }]
   },
 
-  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
-  moduleDirectories: ['node_modules', 'src'],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-
-  collectCoverage: true,
-  coverageDirectory: 'coverage',
-  collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/types/**',
-    '!**/*.test.ts',
-    '!**/*.spec.ts'
-  ],
-  
-  coverageThreshold: {
-    global: {
-      statements: 80,
-      branches: 80,
-      functions: 80,
-      lines: 80
+  globals: {
+    'ts-jest': {
+      isolatedModules: true
     }
   },
 
   setupFilesAfterEnv: ['<rootDir>/setupTests.ts'],
+
+  collectCoverage: true,
+  coverageDirectory: 'coverage',
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
+    }
+  },
 
   verbose: true,
   testTimeout: 30000,
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
-  
-  modulePathIgnorePatterns: ['<rootDir>/dist/']
+
+  projects: [
+    {
+      displayName: 'node',
+      testEnvironment: 'node',
+      testMatch: ['**/__tests__/**/*.node.test.ts']
+    },
+    {
+      displayName: 'jsdom',
+      testEnvironment: 'jsdom',
+      testMatch: ['**/__tests__/**/*.dom.test.ts'],
+      testEnvironmentOptions: {
+        url: 'http://localhost'
+      }
+    }
+  ]
 };
 
 export default config;

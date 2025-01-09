@@ -9,6 +9,6 @@ export { SecurityMiddleware } from './middleware/security';
 export { Request, Response, RequestContext } from './http';
 export { Router, RouteBuilder, type RouteStrategy, type RouteMatch } from './routing';
 export { Logger, corsManager, etagGenerator, ErrorHandler, AeroSSRBundler } from './utils';
-export type { AeroSSRConfig, BundleHandler, StaticFileOptions, MiddlewareOptions, CacheStoreBase as CacheStore, CorsOptionsBase as CorsOptions, MetaTagsBase as MetaTags, CorsOptions, MetaTags, LoggerOptions, Middleware, RouteHandler, CustomError, ErrorHandlerOptions, ErrorHandlerOptions, AsyncOptions, ResponseMetadata } from './types';
+export type { AeroSSRConfig, BundleHandler, StaticFileOptions, MiddlewareOptions, CacheStore, CorsOptions, MetaTags, LoggerOptions, Middleware, RouteHandler, AsyncOptions, ResponseMetadata } from './types';
 export declare const VERSION = "0.1.1";
 //# sourceMappingURL=index.d.ts.map

@@ -217,6 +217,8 @@ export class AeroSSR {
     // Start the middleware chain
     await next();
   }
+
+    
   private async handleRequest(
     rawReq: IncomingMessage,
     rawRes: ServerResponse

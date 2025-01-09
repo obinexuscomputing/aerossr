@@ -1,28 +1,56 @@
 {
   "compilerOptions": {
+    // Target and Module Settings
     "target": "ESNext",
     "module": "ESNext",
-    "lib": ["ESNext", "DOM"],
     "moduleResolution": "Node",
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    
+    // Module Resolution Options
     "baseUrl": ".",
     "rootDir": "src",
-    "outDir": "./dist/",
+    "outDir": "dist",
     "paths": {
       "@/*": ["src/*"],
       "@utils/*": ["src/utils/*"],
       "@types/*": ["src/types/*"],
       "@middlewares/*": ["src/middlewares/*"],
-      
-      
+      "src/*": ["src/*"]
     },
+
+    // Type Declaration Settings
     "declaration": true,
+    "declarationDir": "dist/types",
     "declarationMap": true,
     "sourceMap": true,
-    "composite": true
+    
+    // Project References
+    "composite": true,
+    
+    // Type Checking
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    
+    // Module Interop Settings
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    
+    // JSX Support
+    "jsx": "preserve"
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "__tests__/**/*.ts",
+    "__tests__/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    ".rollup.cache",
+    "buildcache"
+  ]
 }
