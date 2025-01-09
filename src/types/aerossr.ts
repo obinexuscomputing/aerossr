@@ -1,4 +1,3 @@
-// src/types/aerossr.d.ts
 import { Server, IncomingMessage, ServerResponse } from 'http';
 
 // Base Interfaces

@@ -1,4 +1,3 @@
-// src/types/index.ts
 import type { IncomingMessage, ServerResponse } from 'http';
 
 // Core Storage Interfaces
