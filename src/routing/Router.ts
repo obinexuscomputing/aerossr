@@ -47,7 +47,7 @@ export class Router {
 
   public add(routeBuilder: RouteBuilder): void {
     const route = routeBuilder.build();
-    this.routes.push(route);
+    this.routes.push(route as unknown as Route);
   }
 
   public group(prefix: string, callback: (router: Router) => void): void {
