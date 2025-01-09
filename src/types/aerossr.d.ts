@@ -1,4 +1,3 @@
-// src/types/aerossr.d.ts
 import { Server, IncomingMessage, ServerResponse } from 'http';
 import { Logger } from '@/utils/logging';
 import { CacheStoreBase } from './cache';
@@ -85,3 +84,10 @@ export declare class AeroSSR {
   public stop(): Promise<void>;
   public listen(port: number): void;
 }
+
+export interface AeroSSRInstance {
+  server: Server;
+  logger: Logger;
+  config: Required<AeroSSRConfig>;
+}
+
