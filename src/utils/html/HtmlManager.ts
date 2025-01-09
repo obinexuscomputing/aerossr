@@ -1,4 +1,4 @@
-import { MetaTags } from "@/types/aerossr";
+import { MetaTags } from "@/types";
 
 export class HTMLManager {
   private defaultMeta: Required<MetaTags>;
