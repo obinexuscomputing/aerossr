@@ -109,7 +109,7 @@ export class Router {
       const executeChain = async (): Promise<void> => {
         if (chainIndex < chain.length) {
           const middleware = chain[chainIndex++];
-          await middleware(context);
+          await middleware(context.req, context.res, context.next);
           await executeChain();
         } else {
           await route.handler(context);
