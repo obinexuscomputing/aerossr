@@ -14,7 +14,8 @@
       "@/*": ["src/*"],
       "@utils/*": ["src/utils/*"],
       "@types/*": ["src/types/*"],
-      "@middlewares/*": ["src/middlewares/*"]
+      "@middlewares/*": ["src/middlewares/*"],
+      
       
     },
     "declaration": true,
