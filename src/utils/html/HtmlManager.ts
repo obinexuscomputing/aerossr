@@ -1,5 +1,4 @@
-// src/utils/html/HTMLManager.ts
-import { MetaTags } from '../../types/index.';
+import { MetaTags } from "@/types/aerossr";
 
 export class HTMLManager {
   private defaultMeta: Required<MetaTags>;
