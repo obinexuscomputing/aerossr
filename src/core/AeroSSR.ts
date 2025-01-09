@@ -6,7 +6,6 @@ import path, { join } from 'path';
 import { gzip } from 'zlib';
 import { promisify } from 'util';
 import { Request, RequestContext, Response } from '../http';
-import { RouteContext } from '@/types';
 import { Router } from '../routing/Router';
 import { RouteHandler, Middleware, RouteStrategy } from '@/routing';
 import { StaticFileMiddleware } from '@/middleware/static/StaticFileMiddleware';
@@ -161,7 +160,7 @@ export class AeroSSR {
     this.config.templateCache.clear();
     this.bundler.clearCache();
   }
-  private createContext(rawReq: IncomingMessage, rawRes: ServerResponse): RouteContext {
+  private createContext(rawReq: IncomingMessage, rawRes: ServerResponse): RequestContext {
     const req = new Request(rawReq);
     const res = new Response(rawRes);
     return {
@@ -169,8 +168,7 @@ export class AeroSSR {
       res,
       params: {},
       query: {},
-      state: {},
-      next: async () => {}
+      state: {}
     };
   }
 
@@ -193,7 +191,7 @@ export class AeroSSR {
       try {
         currentIndex++;
         await middleware(context);
-      } catch (error) {
+        await middleware({ ...context, next: async () => {} });
         const middlewareError = new Error(
           `Middleware execution failed: ${error instanceof Error ? error.message : String(error)}`
         ) as CustomError;
