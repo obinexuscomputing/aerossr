@@ -11,8 +11,9 @@ import { AeroSSRConfig, CorsOptions, StaticFileOptions } from '@/types';
 import { createCache } from '@/utils/cache/CacheManager';
 import { htmlManager } from '@/utils/html/HtmlManager';
 import { corsManager } from '@/utils/security/CorsManager';
-import { Logger, ErrorHandler, CustomError, AeroSSRBundler, etagGenerator } from '@/utils';
+import { Logger, ErrorHandler, CustomError, etagGenerator } from '@/utils';
 import { DistRequestHandler } from '../handlers/DistRequestHandler';
+import { AeroSSRBundler } from './bundler';
 
 export class AeroSSR {
   public readonly config: Required<AeroSSRConfig>;
