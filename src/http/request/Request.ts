@@ -20,8 +20,9 @@ export class Request {
     this.query = parsedUrl.query;
   }
 
-  public header(name: string): string | undefined {
-    return this.raw.headers[name.toLowerCase()];
+  public header(name: string): string | string[] | undefined {
+    const value = this.raw.headers[name.toLowerCase()];
+    return value;
   }
 
   public get headers(): Record<string, string | string[] | undefined> {
@@ -31,6 +32,8 @@ export class Request {
   public accepts(type: string): boolean {
     const accept = this.header('accept');
     if (!accept) return false;
-    return accept.includes(type) || accept.includes('*/*');
+    return typeof accept === 'string' ? 
+      accept.includes(type) || accept.includes('*/*') : 
+      accept.some(h => h.includes(type) || h.includes('*/*'));
   }
 }
