@@ -3,9 +3,9 @@ import { jest } from '@jest/globals';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { Command } from 'commander';
-import { AeroSSRCLI, cli, AeroConfig } from '../../src/cli';
+import { AeroSSRCLI, cli, AeroConfig } from '.';
 import { Logger } from '../../src/utils/logger';
-import { aeroCommands } from '../../src/cli/commands';
+import { aeroCommands } from './commands';
 import { AeroSSR } from '../../src';
 
 // Mock dependencies
