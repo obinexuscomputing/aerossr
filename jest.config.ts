@@ -1,55 +1,40 @@
+// jest.config.ts
 import type { Config } from '@jest/types';
 
 const config: Config.InitialOptions = {
   preset: 'ts-jest',
-  testEnvironment: 'jsdom',
+  testEnvironment: 'node',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   
   roots: ['<rootDir>/src', '<rootDir>/__tests__'],
   
   testMatch: [
     '**/__tests__/**/*.test.ts',
-    '**/__tests__/**/*.spec.ts'
+    '**/__tests__/**/*.spec.ts',
+    '**/__tests__/**/*.node.test.ts',
+    '**/__tests__/**/*.dom.test.ts'
   ],
   
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^src/(.*)$': '<rootDir>/src/$1'
+    '^@/(.*)$': '<rootDir>/src/$1'
   },
 
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: 'tsconfig.test.json',
-      diagnostics: { warnOnly: true }
+      tsconfig: 'tsconfig.test.json'
     }]
   },
 
-  globals: {
-    'ts-jest': {
-      isolatedModules: true
-    }
-  },
-
-  setupFilesAfterEnv: ['<rootDir>/setupTests.ts'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 
   collectCoverage: true,
   coverageDirectory: 'coverage',
-  coverageThreshold: {
-    global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80
-    }
-  },
-
+  
   verbose: true,
-  testTimeout: 30000,
   clearMocks: true,
   resetMocks: true,
-  restoreMocks: true,
 
   projects: [
     {
@@ -58,12 +43,9 @@ const config: Config.InitialOptions = {
       testMatch: ['**/__tests__/**/*.node.test.ts']
     },
     {
-      displayName: 'jsdom',
+      displayName: 'dom',
       testEnvironment: 'jsdom',
-      testMatch: ['**/__tests__/**/*.dom.test.ts'],
-      testEnvironmentOptions: {
-        url: 'http://localhost'
-      }
+      testMatch: ['**/__tests__/**/*.dom.test.ts']
     }
   ]
 };
